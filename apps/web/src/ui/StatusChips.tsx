@@ -6,7 +6,7 @@ export function connectionLabel(c: ShellState["connection"]): string {
   const ventas = c.pending === 1 ? "1 venta" : `${c.pending} ventas`;
   if (!c.online) return c.pending > 0 ? `Sin conexión · ${ventas} por sincronizar` : "Sin conexión";
   if (c.pending > 0) return `Sincronizando · ${ventas}`;
-  return "En línea";
+  return c.justSynced ? "Todo sincronizado" : "En línea";
 }
 
 export function ConnectionChip({
@@ -32,7 +32,9 @@ export function ConnectionChip({
       )}
     >
       <Icon size={14} aria-hidden />
-      {compact && connection.online && connection.pending === 0 ? null : label}
+      {compact && connection.online && connection.pending === 0 && !connection.justSynced
+        ? null
+        : label}
     </output>
   );
 }

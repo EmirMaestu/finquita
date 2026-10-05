@@ -6,7 +6,7 @@ export type ShellState = {
   businessName: string;
   user: { name: string } | null;
   register: { open: boolean; cashier?: string; since?: string } | null;
-  connection: { online: boolean; pending: number };
+  connection: { online: boolean; pending: number; justSynced?: boolean };
   unreadAlerts: number;
   /** Módulos visibles para el rol (lo que no puede usar, no aparece). */
   visibleModules: ModuleId[] | "all";

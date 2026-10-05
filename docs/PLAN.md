@@ -37,7 +37,7 @@ Cada tarea dice qué secciones del spec leer (§) y cuándo está lista. Las tar
   Listo cuando: hay tests de operación duplicada, orden y rechazo.
 - [x] T13 · **`GET /api/sync/pull?since=`.** Cursor por secuencia; cambios y bajas de las entidades que necesita cada dispositivo.
   Listo cuando: hay tests de cursor y de bajas.
-- [ ] T14 · **Cliente de sincronización en la web.** Dexie con catálogo, clientes, caja y cola; aplicación optimista; envío por lotes de hasta 100; disparadores (inicio, cada 20 s, al volver internet, después de cada venta, aviso por SSE); chip "Sin conexión · N ventas por sincronizar". §Requisitos transversales.
+- [x] T14 · **Cliente de sincronización en la web.** Dexie con catálogo, clientes, caja y cola; aplicación optimista; envío por lotes de hasta 100; disparadores (inicio, cada 20 s, al volver internet, después de cada venta, aviso por SSE); chip "Sin conexión · N ventas por sincronizar". §Requisitos transversales.
   Listo cuando: la cola tiene tests unitarios.
 - [ ] T15 · **SSE `/api/events`** que avisa a los dispositivos que hay cambios.
   Listo cuando: un test verifica que un push dispara el evento.
