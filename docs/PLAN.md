@@ -35,7 +35,7 @@ Cada tarea dice qué secciones del spec leer (§) y cuándo está lista. Las tar
   Listo cuando: hay tests de validación de cada tipo de operación.
 - [x] T12 · **`POST /api/sync/push`.** Aplica las operaciones en transacción, idempotente por `op_id`, con respuesta por operación (aplicada o rechazada con motivo); lo rechazado va a Avisos.
   Listo cuando: hay tests de operación duplicada, orden y rechazo.
-- [ ] T13 · **`GET /api/sync/pull?since=`.** Cursor por secuencia; cambios y bajas de las entidades que necesita cada dispositivo.
+- [x] T13 · **`GET /api/sync/pull?since=`.** Cursor por secuencia; cambios y bajas de las entidades que necesita cada dispositivo.
   Listo cuando: hay tests de cursor y de bajas.
 - [ ] T14 · **Cliente de sincronización en la web.** Dexie con catálogo, clientes, caja y cola; aplicación optimista; envío por lotes de hasta 100; disparadores (inicio, cada 20 s, al volver internet, después de cada venta, aviso por SSE); chip "Sin conexión · N ventas por sincronizar". §Requisitos transversales.
   Listo cuando: la cola tiene tests unitarios.

@@ -15,6 +15,20 @@
       "when": 1791210516453,
       "tag": "0001_auth",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791211860259,
+      "tag": "0002_change_log",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791211868628,
+      "tag": "0003_sync_triggers",
+      "breakpoints": true
     }
   ]
 }
