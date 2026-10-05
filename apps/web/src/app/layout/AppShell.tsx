@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Outlet, useLocation } from "react-router";
+import { InstallGuide } from "../../ui/InstallGuide";
 import { moduleForPath } from "../modules";
 import { useViewport } from "../useViewport";
 import { BottomBar } from "./BottomBar";
@@ -32,6 +33,7 @@ export function AppShell() {
       <div className="flex min-h-full flex-col bg-fondo" data-layout="phone">
         <MobileTopBar title={title} />
         <main className="flex-1 pb-[96px]">
+          <InstallGuide />
           <Outlet />
         </main>
         <BottomBar />

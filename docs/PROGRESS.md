@@ -6,3 +6,4 @@ Formato: AAAA-MM-DD HH:MM · Tarea · Resultado · Commit
 2026-10-05 11:10 · T02 · Drizzle + postgres.js, migración inicial, docker-compose.dev.yml, bases de test por archivo desde plantilla · commit "T02: base de datos y migraciones"
 2026-10-05 11:11 · T03 · createApp con dependencias, ApiError, logs JSON, validate(); 6 tests de API · commit "T03: API base con health, errores, logs JSON y Zod"
 2026-10-05 11:14 · T04 · Tailwind v4 con tokens claro/oscuro, barras de celular, tablet y compu; build ok; 6 tests de layout · commit "T04: app base con tokens, router y layout de iPhone y Mac"
+2026-10-05 11:18 · T05 · vite-plugin-pwa (prompt), íconos de prueba, aviso que espera a que termine la venta, guía de 2 pasos; test del build y del aviso · commit "T05: PWA con manifest, service worker, aviso de versión nueva y guía para iPhone"
