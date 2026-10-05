@@ -12,6 +12,8 @@ export type SyncStatus = {
   rejected: number;
   /** Se acaba de vaciar la cola: "Todo sincronizado". */
   justDrained: boolean;
+  /** Sube cada vez que cambia algo local o termina una sincronización (para refrescar vistas). */
+  version: number;
 };
 
 let state: SyncStatus = {
@@ -22,6 +24,7 @@ let state: SyncStatus = {
   lastSyncAt: null,
   rejected: 0,
   justDrained: false,
+  version: 0,
 };
 const listeners = new Set<() => void>();
 
@@ -55,4 +58,9 @@ export function syncLabel(s: Pick<SyncStatus, "online" | "pendingSales">): strin
     return s.pendingSales ? `Sin conexión · ${ventas} por sincronizar` : "Sin conexión";
   if (s.pendingSales) return `Sincronizando · ${ventas}`;
   return "Todo sincronizado";
+}
+
+/** Avisa a las vistas que cambió algo en la copia local. */
+export function bumpLocalVersion() {
+  setSyncStatus({ version: state.version + 1 });
 }

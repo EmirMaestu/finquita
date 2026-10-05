@@ -2,6 +2,7 @@ import Dexie, { type Table } from "dexie";
 import type {
   Delta,
   LocalBarcode,
+  LocalCashMove,
   LocalCustomer,
   LocalProduct,
   LocalShift,
@@ -26,6 +27,7 @@ export class MostradorDB extends Dexie {
   rejected!: Table<RejectedOp, string>;
   deltas!: Table<Delta, number>;
   sales!: Table<Row, string>;
+  cashMoves!: Table<LocalCashMove, string>;
   meta!: Table<{ key: string; value: unknown }, string>;
 
   constructor(name = "mostrador") {
@@ -47,6 +49,8 @@ export class MostradorDB extends Dexie {
       sales: "id, number, deviceAt, shiftId",
       meta: "key",
     });
+    // v2: movimientos de caja del turno (los del servidor y los propios sin confirmar).
+    this.version(2).stores({ cashMoves: "id, shiftId, opId" });
   }
 
   async getMeta<T>(key: string): Promise<T | undefined> {

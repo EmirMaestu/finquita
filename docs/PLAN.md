@@ -61,7 +61,7 @@ Cada tarea dice qué secciones del spec leer (§) y cuándo está lista. Las tar
 
 ## Hito 4 · Vender y caja
 
-- [ ] T23 · **Caja: abrir turno, turno en curso y movimientos** (retiro, gasto, ingreso, pago a proveedor) con motivo y PIN. §Caja.
+- [x] T23 · **Caja: abrir turno, turno en curso y movimientos** (retiro, gasto, ingreso, pago a proveedor) con motivo y PIN. §Caja.
   Listo cuando: un test calcula el efectivo esperado del ejemplo del spec ($ 121.900).
 - [ ] T24 · **Vender en modo simple** para Mac e iPhone: lista, botones rápidos y Cobrar; atajos de teclado; ventas en espera. §Vender · §Navegación.
   Listo cuando: un e2e vende 4 productos usando solo el teclado.

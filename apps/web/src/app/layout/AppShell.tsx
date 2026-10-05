@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Outlet, useLocation } from "react-router";
+import { PinAuthorizer } from "../../auth/pinAuth";
 import { GlobalScan } from "../../scan/GlobalScan";
 import { InstallGuide } from "../../ui/InstallGuide";
 import { Toaster } from "../../ui/toast";
@@ -41,6 +42,7 @@ export function AppShell() {
         <BottomBar />
         <GlobalScan />
         <Toaster />
+        <PinAuthorizer />
       </div>
     );
   }
@@ -57,6 +59,7 @@ export function AppShell() {
         </div>
         <GlobalScan />
         <Toaster />
+        <PinAuthorizer />
       </div>
     );
   }
@@ -81,6 +84,7 @@ export function AppShell() {
       </div>
       <GlobalScan />
       <Toaster />
+      <PinAuthorizer />
     </div>
   );
 }

@@ -77,3 +77,30 @@ export type Delta = {
   key: string;
   amount: number;
 };
+
+/** Movimiento de caja en el dispositivo: confirmado por el servidor o pendiente en la cola. */
+export type LocalCashMove = {
+  id: string;
+  shiftId: string;
+  kind:
+    | "sale"
+    | "refund"
+    | "void"
+    | "withdrawal"
+    | "expense"
+    | "income"
+    | "credit_payment"
+    | "supplier_payment";
+  method: "cash" | "debit" | "credit" | "transfer" | "qr" | "account";
+  amountCents: number;
+  reason?: string | null;
+  category?: string | null;
+  memberId?: string | null;
+  memberName?: string | null;
+  authorizedByName?: string | null;
+  refId?: string | null;
+  at: string;
+  /** Si vino de la cola local, su op_id (se descarta cuando el servidor lo devuelve). */
+  opId?: string | null;
+  source: "server" | "local";
+};

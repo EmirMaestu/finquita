@@ -14,6 +14,7 @@ import {
   purchaseOrders,
   registers,
   settings,
+  shifts,
   stockMovements,
   supplierInvoices,
   supplierProducts,
@@ -68,6 +69,26 @@ export async function seed(db: Db, opts: SeedOptions = {}) {
         number: 1,
         suggestedFloatCents: cents(20000),
         toleranceCents: cents(500),
+      })
+      .onConflictDoNothing();
+
+    // Turno mañana de Lucía, cerrado sin diferencia: dejó $ 20.000 de cambio.
+    await tx
+      .insert(shifts)
+      .values({
+        id: seedId("shift:manana"),
+        registerId: seedId("register:1"),
+        memberId: seedId("member:lucia"),
+        status: "closed",
+        openedAt: at(0, "08:00"),
+        openingFloatCents: cents(20000),
+        closedAt: at(0, "13:58"),
+        closedBy: seedId("member:lucia"),
+        expectedCashCents: cents(20000),
+        countedCashCents: cents(20000),
+        differenceCents: 0,
+        leftFloatCents: cents(20000),
+        withdrawnCents: 0,
       })
       .onConflictDoNothing();
 

@@ -17,7 +17,7 @@ export async function loginWithPin(page: Page, name: string, pin: string) {
     E2E.macToken,
   );
   await page.goto("/");
-  await page.getByRole("button", { name: new RegExp(`^${name.charAt(0)}${name}`) }).click();
+  await page.getByRole("button", { name: new RegExp(`^${name.charAt(0)} ${name} `) }).click();
   for (const d of pin) await page.getByRole("button", { name: d, exact: true }).click();
   await expect(page.getByRole("navigation", { name: "Módulos" })).toBeVisible();
 }

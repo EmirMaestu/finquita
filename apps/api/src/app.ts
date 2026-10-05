@@ -12,6 +12,7 @@ import { OffClient, type OffConfig, offConfigFromEnv } from "./lib/off";
 import { validationError } from "./lib/validate";
 import { auditRoutes } from "./routes/audit";
 import { authRoutes } from "./routes/auth";
+import { cashRoutes } from "./routes/cash";
 import { catalogRoutes } from "./routes/catalog";
 import { eventRoutes } from "./routes/events";
 import { importRoutes } from "./routes/import";
@@ -100,6 +101,7 @@ export function createApp(deps: AppDeps) {
   app.route("/api", offRoutes);
   app.route("/api", importRoutes);
   app.route("/api", labelRoutes);
+  app.route("/api", cashRoutes);
   app.route("/api", eventRoutes());
 
   return app;

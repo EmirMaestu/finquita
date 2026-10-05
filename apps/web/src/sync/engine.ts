@@ -1,6 +1,6 @@
 import { OfflineError } from "../data/api";
 import type { SyncClient } from "./client";
-import { getSyncStatus, setSyncStatus } from "./status";
+import { bumpLocalVersion, getSyncStatus, setSyncStatus } from "./status";
 
 export const SYNC_INTERVAL_MS = 20_000;
 
@@ -82,6 +82,7 @@ export class SyncEngine {
     try {
       await this.client.sync();
       setSyncStatus({ online: true, lastSyncAt: new Date().toISOString() });
+      bumpLocalVersion();
     } catch (err) {
       if (err instanceof OfflineError) setSyncStatus({ online: false });
     } finally {
