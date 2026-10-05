@@ -29,6 +29,7 @@ import { scanRouter } from "../../scan/GlobalScan";
 import { Button } from "../../ui/Button";
 import { cx } from "../../ui/cx";
 import { EmptyState, ErrorState, SkeletonList } from "../../ui/States";
+import { FirstSteps, useSetupStatus } from "./Setup";
 
 type Attention = {
   key: string;
@@ -412,9 +413,24 @@ export function HomePage() {
     enabled,
     refetchInterval: 60_000,
   });
+  const setup = useSetupStatus(useGrant("settings") === "allow");
   // El cajero no ve el panel: entra directo a Vender.
   if (role === "cashier") return <Navigate to="/vender" replace />;
   if (role === "stocker" || reports === "deny") return <StockerHome />;
+  // Mientras no hay ventas, la checklist de primeros pasos reemplaza al panel.
+  if (
+    setup.data &&
+    !setup.data.hasSales &&
+    !setup.data.dismissed &&
+    setup.data.done < setup.data.total
+  ) {
+    return (
+      <div className="mx-auto flex max-w-2xl flex-col gap-4 p-4 lg:p-6">
+        <Header />
+        <FirstSteps status={setup.data} />
+      </div>
+    );
+  }
   return (
     <div className="flex flex-col gap-4 p-4 lg:p-6">
       <Header />

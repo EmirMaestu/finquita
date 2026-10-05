@@ -31,6 +31,8 @@ authRoutes.get("/me", requireActor(), async (c) => {
       address: business?.address ?? null,
       city: business?.city ?? null,
     },
+    // Instalación nueva: falta cargar el negocio (primer uso).
+    setupNeeded: !business,
     member: { id: member.id, name: member.name, role: member.role, email: member.email },
     permissions: effectiveGrants(member.role, overrides),
     device: device ? { id: device.id, name: device.name, registerId: device.registerId } : null,

@@ -5,6 +5,7 @@ import { localDb, PULL_TABLES } from "../data/db";
 import { isSaleInProgress } from "../lib/saleActivity";
 import { LockScreen } from "../pages/auth/LockScreen";
 import { LoginPage } from "../pages/auth/LoginPage";
+import { SetupBusinessPage } from "../pages/home/Setup";
 import { primeSaleNumbers } from "../sell/complete";
 import { syncEngine } from "../sync";
 import { SkeletonList } from "../ui/States";
@@ -48,6 +49,8 @@ export function SessionGate({ children }: { children: ReactNode }) {
     );
   }
   const { me } = session;
+  if (me.setupNeeded && me.member.role === "owner")
+    return <SetupBusinessPage ownerName={me.member.name} />;
   return (
     <SessionProvider me={me}>
       <SyncOnLogin me={me} />

@@ -33,5 +33,21 @@ export default defineConfig({
       timeout: 180_000,
       env: { API_URL: `http://localhost:${E2E.apiPort}` },
     },
+    {
+      // Instalación nueva para el primer uso: su propia API y base vacía.
+      command: "bun apps/api/scripts/e2e-api.ts",
+      port: E2E.empty.apiPort,
+      reuseExistingServer: false,
+      timeout: 120_000,
+      env: { LOG_LEVEL: "warn", OFF_DISABLED: "1", E2E_EMPTY: "1" },
+    },
+    {
+      // Usa el mismo build: espera a que esté y lo sirve apuntando a la API vacía.
+      command: `sh -c 'until [ -f apps/web/dist/index.html ] && [ -f apps/web/dist/sw.js ]; do sleep 1; done; sleep 2; bun run --cwd apps/web vite preview --port ${E2E.empty.webPort} --strictPort'`,
+      port: E2E.empty.webPort,
+      reuseExistingServer: false,
+      timeout: 240_000,
+      env: { API_URL: `http://localhost:${E2E.empty.apiPort}` },
+    },
   ],
 });

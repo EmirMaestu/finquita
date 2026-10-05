@@ -9,6 +9,8 @@ export type Me = {
   permissions: Record<Permission, Grant>;
   device: { id: string; name: string; registerId: string | null } | null;
   via: "password" | "pin";
+  /** Instalación nueva: falta cargar el negocio. */
+  setupNeeded?: boolean;
 };
 
 export type Session =

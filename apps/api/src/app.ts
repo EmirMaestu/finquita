@@ -32,6 +32,7 @@ import { receiptRoutes } from "./routes/receipts";
 import { reportRoutes } from "./routes/reports";
 import { salesRoutes } from "./routes/sales";
 import { settingsRoutes } from "./routes/settings";
+import { setupRoutes } from "./routes/setup";
 import { stockRoutes } from "./routes/stock";
 import { supplierRoutes } from "./routes/suppliers";
 import { syncRoutes } from "./routes/sync";
@@ -134,6 +135,7 @@ export function createApp(deps: AppDeps) {
   app.route("/api", dashboardRoutes);
   app.route("/api", reportRoutes);
   app.route("/api", settingsRoutes);
+  app.route("/api", setupRoutes);
   app.route("/api", eventRoutes());
 
   return app;
