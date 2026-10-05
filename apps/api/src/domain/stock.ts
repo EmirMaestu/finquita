@@ -84,3 +84,55 @@ export async function applyStock(tx: DbOrTx, ch: StockChange): Promise<StockResu
   }
   return { movementId: id, productId: target.id, resultingQty: resulting };
 }
+
+/**
+ * Aprobar o rechazar un ajuste que quedó pendiente (los que carga el repositor).
+ * Al aprobar recién se mueve el stock, con la fecha de la aprobación.
+ */
+export async function reviewAdjustment(
+  tx: DbOrTx,
+  a: { movementId: string; approve: boolean; memberId: string },
+) {
+  const [m] = await tx
+    .select()
+    .from(stockMovements)
+    .where(eq(stockMovements.id, a.movementId))
+    .for("update");
+  if (!m) throw new Rejection("El ajuste no existe");
+  if (m.status !== "pending") throw new Rejection("Ese ajuste ya fue revisado");
+  if (!a.approve) {
+    await tx
+      .update(stockMovements)
+      .set({ status: "rejected", approvedBy: a.memberId, approvedAt: new Date() })
+      .where(eq(stockMovements.id, m.id));
+    return { status: "rejected" as const, resultingQty: null };
+  }
+  const [p] = await tx.select().from(products).where(eq(products.id, m.productId)).for("update");
+  if (!p) throw new Rejection("El producto no existe");
+  const resulting = roundQty(p.stockQty + m.qty);
+  await tx
+    .update(products)
+    .set({ stockQty: resulting, updatedAt: new Date() })
+    .where(eq(products.id, p.id));
+  await tx
+    .update(stockMovements)
+    .set({
+      status: "applied",
+      resultingQty: resulting,
+      approvedBy: a.memberId,
+      approvedAt: new Date(),
+    })
+    .where(eq(stockMovements.id, m.id));
+  if (resulting < 0) {
+    await raiseAlert(tx, {
+      kind: "negative_stock",
+      severity: "danger",
+      title: `${p.name}: stock negativo (${resulting})`,
+      body: "Revisá el stock.",
+      refType: "product",
+      refId: p.id,
+      dedupeKey: `negative_stock:${p.id}`,
+    });
+  }
+  return { status: "applied" as const, resultingQty: resulting };
+}

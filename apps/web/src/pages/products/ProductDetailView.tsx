@@ -7,6 +7,7 @@ import { fetchProduct, type ProductDetail } from "../../data/products";
 import { Button } from "../../ui/Button";
 import { ErrorState, Skeleton } from "../../ui/States";
 import { Tabs } from "../../ui/Tabs";
+import { AdjustStockSheet } from "./AdjustStockSheet";
 import { ProductChips, StockChip } from "./StockChip";
 
 type Tab = "general" | "precio" | "stock" | "proveedores" | "historial";
@@ -94,14 +95,18 @@ export function ProductDetailView({
   id,
   onEdit,
   onBack,
+  initialAdjust,
 }: {
   id: string;
+  initialAdjust?: boolean;
   onEdit: (p: ProductDetail) => void;
   onBack?: () => void;
 }) {
   const [tab, setTab] = useState<Tab>("general");
   const seeCosts = useCan("view_costs");
   const canEdit = useCan("change_prices");
+  const canAdjust = useCan("adjust_stock");
+  const [adjust, setAdjust] = useState(initialAdjust ?? false);
   const q = useQuery({ queryKey: ["product", id], queryFn: () => fetchProduct(id) });
   if (q.isPending) {
     return (
@@ -321,11 +326,17 @@ export function ProductDetailView({
             <div className="text-texto-suave">Sin cambios registrados.</div>
           ))}
       </div>
-      {canEdit && (
-        <div className="grid grid-cols-1 gap-2 border-t border-borde px-4 py-3.5 lg:px-[18px]">
-          <Button onClick={() => onEdit(p)}>Editar</Button>
+      {(canEdit || canAdjust) && (
+        <div className="grid grid-cols-2 gap-2 border-t border-borde px-4 py-3.5 lg:px-[18px]">
+          {canAdjust && p.kind !== "service" && (
+            <Button variant="secondary" onClick={() => setAdjust(true)}>
+              Ajustar stock
+            </Button>
+          )}
+          {canEdit && <Button onClick={() => onEdit(p)}>Editar</Button>}
         </div>
       )}
+      {adjust && <AdjustStockSheet productId={p.id} onClose={() => setAdjust(false)} />}
     </div>
   );
 }

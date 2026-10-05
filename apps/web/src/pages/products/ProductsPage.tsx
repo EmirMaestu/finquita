@@ -156,7 +156,8 @@ export function ProductsPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [form, setForm] = useState<{ product: ProductItem | ProductDetail | null } | null>(null);
   const [catSheet, setCatSheet] = useState(false);
-  const openId = desktop ? search.get("p") : (params.id ?? null);
+  const openId = desktop ? (search.get("p") ?? params.id ?? null) : (params.id ?? null);
+  const adjustNow = search.get("ajustar") === "1";
 
   const list = useQuery({
     queryKey: ["products", { q, filter }],
@@ -182,6 +183,7 @@ export function ProductsPage() {
     return (
       <div className="min-h-full bg-superficie">
         <ProductDetailView
+          initialAdjust={adjustNow}
           id={params.id}
           onBack={() => navigate("/productos")}
           onEdit={(p) => setForm({ product: p })}
@@ -224,6 +226,7 @@ export function ProductsPage() {
           },
           { label: "Etiquetas de góndola", onSelect: () => navigate("/productos/etiquetas") },
           { label: "Planilla de códigos", onSelect: () => navigate("/productos/planilla") },
+          { label: "Movimientos de stock", onSelect: () => navigate("/productos/movimientos") },
         ]}
       />
       {canEdit && (
@@ -454,7 +457,12 @@ export function ProductsPage() {
               aria-label="Ficha del producto"
               className="flex min-h-0 flex-col overflow-hidden rounded-card border border-borde bg-superficie"
             >
-              <ProductDetailView key={openId} id={openId} onEdit={(p) => setForm({ product: p })} />
+              <ProductDetailView
+                key={openId}
+                initialAdjust={adjustNow}
+                id={openId}
+                onEdit={(p) => setForm({ product: p })}
+              />
             </aside>
           )}
         </div>

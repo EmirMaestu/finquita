@@ -7,6 +7,7 @@ import { MorePage } from "../pages/MorePage";
 import { CodeSheetPage } from "../pages/products/CodeSheetPage";
 import { ImportPage } from "../pages/products/ImportPage";
 import { LoadModePage } from "../pages/products/LoadModePage";
+import { MovementsPage } from "../pages/products/MovementsPage";
 import { ProductsPage } from "../pages/products/ProductsPage";
 import { ShelfLabelsPage } from "../pages/products/ShelfLabelsPage";
 import { SalesHistoryPage } from "../pages/sell/SalesHistoryPage";
@@ -31,6 +32,7 @@ export const routes: RouteObject[] = [
       { path: "productos/importar", element: <ImportPage /> },
       { path: "productos/planilla", element: <CodeSheetPage /> },
       { path: "productos/etiquetas", element: <ShelfLabelsPage /> },
+      { path: "productos/movimientos", element: <MovementsPage /> },
       { path: "productos/:id", element: <ProductsPage /> },
       ...MODULES.filter((m) => !["productos", "caja", "vender"].includes(m.id)).map((m) => ({
         path: `${m.path.slice(1)}/*`,
