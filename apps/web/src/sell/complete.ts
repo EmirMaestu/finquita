@@ -21,6 +21,22 @@ export type Payment = {
   verified?: boolean;
 };
 
+/**
+ * Con conexión, se sincroniza el contador local con el último número del servidor
+ * (así un dispositivo que nunca vendió no arranca de 1 si después se queda sin internet).
+ */
+export async function primeSaleNumbers(): Promise<void> {
+  const db = localDb();
+  try {
+    const regs = await api<{ id: string; lastSaleNumber: number }[]>("/api/registers");
+    for (const r of regs) {
+      const key = `saleSeq:${r.id}`;
+      const local = (await db.getMeta<number>(key)) ?? 0;
+      if (r.lastSaleNumber > local) await db.setMeta(key, r.lastSaleNumber);
+    }
+  } catch {}
+}
+
 /** Número de venta por puesto de cobro: nunca se repite entre dispositivos sin conexión. */
 export async function nextSaleNumber(registerId: string): Promise<number> {
   const db = localDb();

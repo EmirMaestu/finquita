@@ -5,6 +5,7 @@ import { localDb, PULL_TABLES } from "../data/db";
 import { isSaleInProgress } from "../lib/saleActivity";
 import { LockScreen } from "../pages/auth/LockScreen";
 import { LoginPage } from "../pages/auth/LoginPage";
+import { primeSaleNumbers } from "../sell/complete";
 import { syncEngine } from "../sync";
 import { SkeletonList } from "../ui/States";
 import { LiveShell } from "./LiveShell";
@@ -107,6 +108,7 @@ function SyncOnLogin({ me }: { me: Me }) {
         });
       }
       await syncEngine().kick();
+      await primeSaleNumbers();
     })();
   }, [seesCosts]);
   return null;

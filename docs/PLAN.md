@@ -73,7 +73,7 @@ Cada tarea dice qué secciones del spec leer (§) y cuándo está lista. Las tar
   Listo cuando: hay un snapshot del ticket de ejemplo.
 - [x] T28 · **Historial, devoluciones y anulaciones** con PIN; lo devuelto vuelve a la góndola o va a merma. §Vender.
   Listo cuando: hay tests de las dos salidas del stock.
-- [ ] T29 · **Venta sin conexión de punta a punta.** e2e con Playwright: cortar la red, vender 3 veces, reconectar.
+- [x] T29 · **Venta sin conexión de punta a punta.** e2e con Playwright: cortar la red, vender 3 veces, reconectar.
   Listo cuando: las 3 ventas quedan en el servidor una sola vez.
 - [ ] T30 · **Arqueo ciego y cierre:** conteo por denominación, otros medios, tolerancia con comentario obligatorio, comprobante e historial. §Caja.
   Listo cuando: un test con $ 120.700 contados da una diferencia de −$ 1.200.
