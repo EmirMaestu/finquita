@@ -4,6 +4,7 @@ import { CloseShiftPage } from "../pages/cash/CloseShiftPage";
 import { ClosingsPage } from "../pages/cash/ClosingsPage";
 import { ModulePlaceholder } from "../pages/ModulePlaceholder";
 import { MorePage } from "../pages/MorePage";
+import { BulkPricePage } from "../pages/products/BulkPricePage";
 import { CodeSheetPage } from "../pages/products/CodeSheetPage";
 import { ImportPage } from "../pages/products/ImportPage";
 import { LoadModePage } from "../pages/products/LoadModePage";
@@ -33,6 +34,7 @@ export const routes: RouteObject[] = [
       { path: "productos/planilla", element: <CodeSheetPage /> },
       { path: "productos/etiquetas", element: <ShelfLabelsPage /> },
       { path: "productos/movimientos", element: <MovementsPage /> },
+      { path: "productos/precios", element: <BulkPricePage /> },
       { path: "productos/:id", element: <ProductsPage /> },
       ...MODULES.filter((m) => !["productos", "caja", "vender"].includes(m.id)).map((m) => ({
         path: `${m.path.slice(1)}/*`,

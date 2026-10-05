@@ -82,7 +82,7 @@ Cada tarea dice qué secciones del spec leer (§) y cuándo está lista. Las tar
 
 - [x] T31 · **Movimientos y ajustes de stock** con motivo; los del repositor quedan para aprobar. §Productos y stock.
   Listo cuando: hay tests del libro de movimientos y de la aprobación.
-- [ ] T32 · **Cambio masivo de precios** con vista previa y redondeo; los de precio fijo quedan afuera.
+- [x] T32 · **Cambio masivo de precios** con vista previa y redondeo; los de precio fijo quedan afuera.
   Listo cuando: un test aplica +7 % a una categoría.
 - [ ] T33 · **Conteo de inventario:** modo iPhone ciego y revisión en Mac.
   Listo cuando: un e2e completa un conteo chico.

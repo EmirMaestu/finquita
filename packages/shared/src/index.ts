@@ -1,4 +1,5 @@
 export * from "./barcode";
+export * from "./bulkprice";
 export * from "./cart";
 export * from "./cash";
 export * from "./checkout";

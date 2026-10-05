@@ -18,6 +18,7 @@ import { eventRoutes } from "./routes/events";
 import { importRoutes } from "./routes/import";
 import { labelRoutes } from "./routes/labels";
 import { offRoutes } from "./routes/off";
+import { priceRoutes } from "./routes/prices";
 import { salesRoutes } from "./routes/sales";
 import { stockRoutes } from "./routes/stock";
 import { syncRoutes } from "./routes/sync";
@@ -106,6 +107,7 @@ export function createApp(deps: AppDeps) {
   app.route("/api", cashRoutes);
   app.route("/api", salesRoutes);
   app.route("/api", stockRoutes);
+  app.route("/api", priceRoutes);
   app.route("/api", eventRoutes());
 
   return app;
