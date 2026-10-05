@@ -21,6 +21,7 @@ import { labelRoutes } from "./routes/labels";
 import { offRoutes } from "./routes/off";
 import { priceRoutes } from "./routes/prices";
 import { promotionRoutes } from "./routes/promotions";
+import { purchasingRoutes } from "./routes/purchasing";
 import { salesRoutes } from "./routes/sales";
 import { stockRoutes } from "./routes/stock";
 import { supplierRoutes } from "./routes/suppliers";
@@ -114,6 +115,7 @@ export function createApp(deps: AppDeps) {
   app.route("/api", countRoutes);
   app.route("/api", promotionRoutes);
   app.route("/api", supplierRoutes);
+  app.route("/api", purchasingRoutes);
   app.route("/api", eventRoutes());
 
   return app;

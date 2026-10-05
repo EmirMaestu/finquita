@@ -14,6 +14,7 @@ export * from "./pricing";
 export * from "./promotions";
 export * from "./qty";
 export * from "./settings";
+export * from "./suggested";
 export * from "./sync";
 export * from "./ticket";
 export * from "./weights";

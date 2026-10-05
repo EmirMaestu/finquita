@@ -475,7 +475,7 @@ export const SUPPLIERS: {
     contact: "Marcelo",
     whatsapp: "5492614000002",
     balance: 184500,
-    minOrder: 100000,
+    minOrder: 150000,
     termsDays: 15,
   },
   {
