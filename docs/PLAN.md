@@ -65,7 +65,7 @@ Cada tarea dice qué secciones del spec leer (§) y cuándo está lista. Las tar
   Listo cuando: un test calcula el efectivo esperado del ejemplo del spec ($ 121.900).
 - [x] T24 · **Vender en modo simple** para Mac e iPhone: lista, botones rápidos y Cobrar; atajos de teclado; ventas en espera. §Vender · §Navegación.
   Listo cuando: un e2e vende 4 productos usando solo el teclado.
-- [ ] T25 · **Pesables:** teclado de peso con atajos de 100 g, ¼ kg y ½ kg, y modo por plata. §Vender.
+- [x] T25 · **Pesables:** teclado de peso con atajos de 100 g, ¼ kg y ½ kg, y modo por plata. §Vender.
   Listo cuando: los tests dan 0,750 kg × $ 3.800 = $ 2.850 y "$ 2.000 de queso" a $ 13.500/kg = cortar 148 g.
 - [ ] T26 · **Cobro:** Efectivo, Tarjeta, Transferencia o QR (con "Verificada") y Fiado (con límite); pago combinado y vuelto. §Vender.
   Listo cuando: un e2e reproduce el flujo 1 de §Flujos clave (total $ 18.550, vuelto $ 1.450).
