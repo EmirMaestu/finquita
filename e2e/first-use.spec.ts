@@ -30,6 +30,13 @@ test("primer uso: de la base vacía a la primera venta", async ({ page }) => {
   await page.getByRole("link", { name: "Inicio" }).click();
   await expect(steps).toContainText("2 de 7");
 
+  // 2. Habilitar la Mac del mostrador (desde ahí el equipo entra con PIN).
+  await page.goto(at("/ajustes/dispositivos"));
+  const device = page.getByRole("region", { name: "Este dispositivo" });
+  await device.getByRole("button", { name: "Habilitar este dispositivo" }).click();
+  await expect(device).toContainText("Está habilitado");
+  await page.getByRole("link", { name: "Inicio" }).click();
+
   // 6. Abrir la primera caja.
   await steps.getByRole("button", { name: "Abrir caja" }).click();
   await ensureShiftOpen(page);

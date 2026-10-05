@@ -3,6 +3,7 @@ import {
   formatMoney,
   formatQty,
   formatTime,
+  newId,
   ORDER_STATUS,
   type OrderStatus,
   orderNumber,
@@ -17,6 +18,7 @@ import { ApiError, api, downloadFile } from "../../data/api";
 import { Button } from "../../ui/Button";
 import { Chip, FilterChip } from "../../ui/Chip";
 import { cx } from "../../ui/cx";
+import { SelectField, TextField } from "../../ui/Field";
 import { Sheet } from "../../ui/Sheet";
 import { EmptyState, ErrorState, SkeletonList } from "../../ui/States";
 import { toast } from "../../ui/toast";
@@ -369,8 +371,143 @@ function OrderView({ id }: { id: string }) {
   );
 }
 
+const WEEK = ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"];
+
+/** Pedido fijo nuevo: proveedor, días y productos con su cantidad. */
+function StandingForm({ onClose }: { onClose: () => void }) {
+  const qc = useQueryClient();
+  const suppliers = useQuery({
+    queryKey: ["suppliers"],
+    queryFn: () => api<{ id: string; name: string }[]>("/api/suppliers?light=1"),
+  });
+  const [supplierId, setSupplierId] = useState("");
+  const [name, setName] = useState("Reparto diario");
+  const [days, setDays] = useState<number[]>([1, 2, 3, 4, 5, 6]);
+  const [search, setSearch] = useState("");
+  const [lines, setLines] = useState<{ productId: string; name: string; qty: string }[]>([]);
+  const found = useQuery({
+    queryKey: ["standing-search", search],
+    queryFn: () =>
+      api<{ items: { id: string; name: string }[] }>(
+        `/api/products?q=${encodeURIComponent(search)}&limit=6`,
+      ),
+    enabled: search.trim().length > 1,
+  });
+  const save = useMutation({
+    mutationFn: () =>
+      api(`/api/standing-orders/${newId()}`, {
+        method: "PUT",
+        body: {
+          supplierId,
+          name: name.trim(),
+          weekdays: days,
+          lines: lines
+            .map((l) => ({ productId: l.productId, qty: Number(l.qty.replace(",", ".")) || 0 }))
+            .filter((l) => l.qty > 0),
+        },
+      }),
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ["standing-orders"] });
+      onClose();
+    },
+    onError: (e) =>
+      toast({ text: e instanceof ApiError ? e.message : "No se pudo guardar.", tone: "error" }),
+  });
+  return (
+    <Sheet
+      open
+      onClose={onClose}
+      title="Nuevo pedido fijo"
+      footer={
+        <Button
+          className="flex-1"
+          disabled={!supplierId || !lines.length || save.isPending}
+          onClick={() => save.mutate()}
+        >
+          Guardar
+        </Button>
+      }
+    >
+      <div className="flex flex-col gap-3">
+        <SelectField
+          label="Proveedor"
+          value={supplierId}
+          onChange={(e) => setSupplierId(e.target.value)}
+        >
+          <option value="">Elegí</option>
+          {(suppliers.data ?? []).map((x) => (
+            <option key={x.id} value={x.id}>
+              {x.name}
+            </option>
+          ))}
+        </SelectField>
+        <TextField label="Nombre" value={name} onChange={(e) => setName(e.target.value)} />
+        <div className="flex flex-wrap gap-1.5">
+          {WEEK.map((d, i) => (
+            <FilterChip
+              key={d}
+              active={days.includes(i)}
+              onClick={() =>
+                setDays((x) => (x.includes(i) ? x.filter((y) => y !== i) : [...x, i].sort()))
+              }
+            >
+              {d}
+            </FilterChip>
+          ))}
+        </div>
+        <TextField
+          label="Agregar producto"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Pan francés"
+        />
+        {search.trim().length > 1 &&
+          (found.data?.items ?? []).map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              className="rounded-md px-2 py-1.5 text-left text-sm hover:bg-neutro-suave"
+              onClick={() => {
+                setLines((l) => [
+                  ...l.filter((x) => x.productId !== p.id),
+                  { productId: p.id, name: p.name, qty: "1" },
+                ]);
+                setSearch("");
+              }}
+            >
+              {p.name}
+            </button>
+          ))}
+        {lines.map((l) => (
+          <div key={l.productId} className="flex items-center gap-2 text-sm">
+            <span className="flex-1">{l.name}</span>
+            <input
+              aria-label={`Cantidad ${l.name}`}
+              inputMode="decimal"
+              value={l.qty}
+              onChange={(e) =>
+                setLines((x) =>
+                  x.map((y) => (y.productId === l.productId ? { ...y, qty: e.target.value } : y)),
+                )
+              }
+              className="tnum h-10 w-20 rounded-md border border-borde-fuerte px-2 text-right"
+            />
+            <Button
+              variant="ghost"
+              onClick={() => setLines((x) => x.filter((y) => y.productId !== l.productId))}
+            >
+              Quitar
+            </Button>
+          </div>
+        ))}
+      </div>
+    </Sheet>
+  );
+}
+
 function StandingOrders() {
   const navigate = useNavigate();
+  const [creating, setCreating] = useState(false);
   const s = useQuery({
     queryKey: ["standing-orders"],
     queryFn: () => api<Standing[]>("/api/standing-orders"),
@@ -380,13 +517,23 @@ function StandingOrders() {
       api<{ id: string }>(`/api/standing-orders/${id}/draft`, { body: {} }),
     onSuccess: (o) => navigate(`/compras/pedidos/${o.id}`),
   });
-  if (!s.data?.length) return null;
   return (
     <section aria-label="Pedidos fijos" className="rounded-card border border-borde bg-superficie">
-      <div className="border-b border-borde px-4 py-2.5 text-xs font-semibold tracking-[.06em] text-texto-suave uppercase">
-        Pedido fijo
+      <div className="flex items-center border-b border-borde px-4 py-2">
+        <span className="flex-1 text-xs font-semibold tracking-[.06em] text-texto-suave uppercase">
+          Pedido fijo
+        </span>
+        <Button variant="ghost" onClick={() => setCreating(true)}>
+          Nuevo pedido fijo
+        </Button>
       </div>
-      {s.data.map((x) => (
+      {!s.data?.length && (
+        <div className="px-4 py-3 text-sm text-texto-suave">
+          Para el reparto diario (pan, lácteos): una lista que se repite y se ajusta antes de
+          mandarla.
+        </div>
+      )}
+      {(s.data ?? []).map((x) => (
         <div
           key={x.id}
           className="flex items-center gap-3 border-b border-borde px-4 py-3 last:border-b-0"
@@ -403,6 +550,7 @@ function StandingOrders() {
           </Button>
         </div>
       ))}
+      {creating && <StandingForm onClose={() => setCreating(false)} />}
     </section>
   );
 }

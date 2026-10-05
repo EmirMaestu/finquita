@@ -18,7 +18,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { NoPermissionFor } from "../../app/guards";
 import { useCan } from "../../app/session";
-import { ApiError, api, downloadFile } from "../../data/api";
+import { ApiError, api, credentials, downloadFile } from "../../data/api";
 import { useScanner } from "../../scan/useScanner";
 import { syncEngine } from "../../sync";
 import { Button } from "../../ui/Button";
@@ -663,6 +663,93 @@ type Device = {
   lastSeenAt: string | null;
 };
 
+/** Habilitar este navegador (la Mac del mostrador o un celular): desde ahí se entra con PIN. */
+function ThisDevice() {
+  const qc = useQueryClient();
+  const regs = useQuery({
+    queryKey: ["registers"],
+    queryFn: () => api<Register[]>("/api/registers"),
+  });
+  const [has, setHas] = useState(() => !!credentials.get().deviceToken);
+  const [name, setName] = useState("Mac del mostrador");
+  const [kind, setKind] = useState<"mac" | "iphone" | "tablet" | "other">("mac");
+  const [registerId, setRegisterId] = useState("");
+  const enable = useMutation({
+    mutationFn: () =>
+      api<{ token: string }>("/api/devices", {
+        body: {
+          name: name.trim(),
+          kind,
+          ...(registerId || regs.data?.[0]?.id
+            ? { registerId: registerId || regs.data?.[0]?.id }
+            : {}),
+        },
+      }),
+    onSuccess: async (r) => {
+      credentials.setDevice(r.token);
+      setHas(true);
+      toast({ text: "Listo: en este dispositivo se entra con PIN" });
+      await qc.invalidateQueries({ queryKey: ["devices"] });
+      await qc.invalidateQueries({ queryKey: ["me"] });
+    },
+    onError: (e) =>
+      toast({ text: e instanceof ApiError ? e.message : "No se pudo habilitar.", tone: "error" }),
+  });
+  if (has) {
+    return (
+      <Card title="Este dispositivo">
+        <p className="m-0 text-sm">
+          Está habilitado: el equipo entra con su PIN y la sesión se bloquea sola a los 5 minutos
+          sin uso.
+        </p>
+      </Card>
+    );
+  }
+  return (
+    <Card
+      title="Este dispositivo"
+      footer={
+        <Button disabled={!name.trim() || enable.isPending} onClick={() => enable.mutate()}>
+          Habilitar este dispositivo
+        </Button>
+      }
+    >
+      <p className="m-0 text-sm text-texto-suave">
+        Habilitalo para que el equipo entre con PIN (sin tu contraseña). Lo podés revocar cuando
+        quieras.
+      </p>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <TextField
+          label="Nombre del dispositivo"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
+        <SelectField
+          label="Tipo"
+          value={kind}
+          onChange={(e) => setKind(e.target.value as typeof kind)}
+        >
+          <option value="mac">Mac</option>
+          <option value="iphone">iPhone</option>
+          <option value="tablet">Tablet</option>
+          <option value="other">Otro</option>
+        </SelectField>
+        <SelectField
+          label="Caja"
+          value={registerId}
+          onChange={(e) => setRegisterId(e.target.value)}
+        >
+          {(regs.data ?? []).map((r) => (
+            <option key={r.id} value={r.id}>
+              {r.name}
+            </option>
+          ))}
+        </SelectField>
+      </div>
+    </Card>
+  );
+}
+
 function DevicesSection() {
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -675,6 +762,7 @@ function DevicesSection() {
   useScanner({ onScan: (c) => setLast(c) });
   return (
     <div className="flex flex-col gap-4">
+      <ThisDevice />
       <Card title="Prueba de la pistola">
         <p className="m-0 text-sm">
           Escaneá cualquier código con la pistola: tiene que aparecer acá abajo, entero.
