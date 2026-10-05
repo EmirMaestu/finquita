@@ -1,10 +1,10 @@
 import { Bell, PanelLeft, Search } from "lucide-react";
 import { ConnectionChip, RegisterChip } from "../../ui/StatusChips";
 import { useShell } from "../shell";
+import { UserMenu } from "../UserMenu";
 
 export function DesktopTopBar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
   const shell = useShell();
-  const initial = shell.user?.name.charAt(0).toUpperCase() ?? "?";
   return (
     <header className="flex h-14 shrink-0 items-center gap-4 border-b border-borde bg-superficie px-4">
       <div className="flex w-[208px] items-center gap-2.5">
@@ -48,12 +48,7 @@ export function DesktopTopBar({ onToggleSidebar }: { onToggleSidebar?: () => voi
           </span>
         )}
       </button>
-      <span
-        title={shell.user?.name}
-        className="inline-flex size-9 items-center justify-center rounded-full bg-acento-suave text-sm font-semibold text-texto"
-      >
-        {initial}
-      </span>
+      <UserMenu />
     </header>
   );
 }

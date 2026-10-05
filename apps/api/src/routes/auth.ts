@@ -6,7 +6,7 @@ import type { AppEnv } from "../app";
 import { actorOf, requireActor } from "../auth/actor";
 import { loadOverrides } from "../auth/permissions";
 import { hashPin, PIN_RE, verifyMemberPin } from "../auth/pin";
-import { devices, members, pinSessions } from "../db/schema/index";
+import { businesses, devices, members, pinSessions } from "../db/schema/index";
 import { auditFrom } from "../lib/audit";
 import { ApiError, forbidden, notFound } from "../lib/errors";
 import { hashToken, newToken } from "../lib/tokens";
@@ -20,7 +20,9 @@ export const authRoutes = new Hono<AppEnv>();
 authRoutes.get("/me", requireActor(), async (c) => {
   const { member, device, via } = actorOf(c);
   const overrides = await loadOverrides(c.get("db"), member.id);
+  const [business] = await c.get("db").select({ name: businesses.name }).from(businesses).limit(1);
   return c.json({
+    business: { name: business?.name ?? "Mostrador" },
     member: { id: member.id, name: member.name, role: member.role, email: member.email },
     permissions: effectiveGrants(member.role, overrides),
     device: device ? { id: device.id, name: device.name, registerId: device.registerId } : null,

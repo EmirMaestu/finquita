@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render } from "@testing-library/react";
 import { act, type ReactElement } from "react";
 import { createMemoryRouter, type RouteObject, RouterProvider } from "react-router";
@@ -16,10 +17,13 @@ export function renderRoutes(
   { path = "/", shell = {} }: { path?: string; shell?: Partial<ShellState> } = {},
 ) {
   const router = createMemoryRouter(routes, { initialEntries: [path] });
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const utils = render(
-    <ShellProvider value={{ ...defaultShell, ...shell }}>
-      <RouterProvider router={router} />
-    </ShellProvider>,
+    <QueryClientProvider client={client}>
+      <ShellProvider value={{ ...defaultShell, ...shell }}>
+        <RouterProvider router={router} />
+      </ShellProvider>
+    </QueryClientProvider>,
   );
   return { ...utils, router };
 }

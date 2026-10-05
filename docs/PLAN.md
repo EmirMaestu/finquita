@@ -48,7 +48,7 @@ Cada tarea dice qué secciones del spec leer (§) y cuándo está lista. Las tar
 
 - [x] T17 · **API de catálogo:** productos, códigos, categorías, presentaciones vinculadas, precio fijo, servicios a comisión y envases retornables. §Productos y stock.
   Listo cuando: el CRUD tiene tests y respeta permisos.
-- [ ] T18 · **Lista y ficha de producto.** Tabla en Mac, tarjetas en iPhone, filtros y selección múltiple; ficha con pestañas. §Productos y stock.
+- [x] T18 · **Lista y ficha de producto.** Tabla en Mac, tarjetas en iPhone, filtros y selección múltiple; ficha con pestañas. §Productos y stock.
   Listo cuando: un e2e crea y edita un producto.
 - [ ] T19 · **Lectores.** Hook que reconoce la pistola por velocidad de tipeo en cualquier pantalla de Vender; escáner por cámara con @zxing/browser; pitido y aviso en pantalla. §Requisitos transversales.
   Listo cuando: el hook tiene tests con eventos de teclado simulados.

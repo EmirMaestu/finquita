@@ -2,9 +2,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router";
-import { LiveShell } from "./app/LiveShell";
 import { PwaUpdater } from "./app/PwaUpdater";
 import { routes } from "./app/routes";
+import { SessionGate } from "./app/SessionGate";
 import { applyTheme, savedTheme } from "./app/theme";
 import { syncEngine } from "./sync";
 import { listenServerEvents } from "./sync/events";
@@ -30,10 +30,10 @@ if (!root) throw new Error("Falta #root");
 createRoot(root).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <LiveShell>
+      <SessionGate>
         <RouterProvider router={router} />
         <PwaUpdater />
-      </LiveShell>
+      </SessionGate>
     </QueryClientProvider>
   </StrictMode>,
 );

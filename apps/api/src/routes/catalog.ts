@@ -67,8 +67,29 @@ async function present(db: Db, rows: ProductRow[], costs: boolean) {
     ? await db.select().from(products).where(inArray(products.id, baseIds))
     : [];
   const baseById = new Map(bases.map((b) => [b.id, b]));
-  const cats = await db.select({ id: categories.id, name: categories.name }).from(categories);
-  const catName = new Map(cats.map((x) => [x.id, x.name]));
+  const cats = await db
+    .select({ id: categories.id, name: categories.name, parentId: categories.parentId })
+    .from(categories);
+  const catById = new Map(cats.map((x) => [x.id, x]));
+  const catPath = (id: string | null) => {
+    const c = id ? catById.get(id) : undefined;
+    if (!c) return null;
+    const parent = c.parentId ? catById.get(c.parentId) : undefined;
+    return parent ? `${parent.name} › ${c.name}` : c.name;
+  };
+  const sups = await db
+    .select({
+      productId: supplierProducts.productId,
+      name: suppliers.name,
+      isPrimary: supplierProducts.isPrimary,
+    })
+    .from(supplierProducts)
+    .innerJoin(suppliers, eq(suppliers.id, supplierProducts.supplierId))
+    .where(inArray(supplierProducts.productId, ids));
+  const supplierOf = new Map<string, string>();
+  for (const sp of sups.sort((a, b) => Number(b.isPrimary) - Number(a.isPrimary))) {
+    if (!supplierOf.has(sp.productId)) supplierOf.set(sp.productId, sp.name);
+  }
   return rows.map((r) => {
     const base = r.stockBaseId ? baseById.get(r.stockBaseId) : undefined;
     const stock = base
@@ -91,7 +112,8 @@ async function present(db: Db, rows: ProductRow[], costs: boolean) {
             marginBp: costCents ? marginOnCostBp(costCents, r.priceCents) : marginBp,
           }
         : {}),
-      categoryName: r.categoryId ? (catName.get(r.categoryId) ?? null) : null,
+      categoryName: catPath(r.categoryId),
+      supplierName: supplierOf.get(r.id) ?? null,
       barcodes: codes.filter((b) => b.productId === r.id).map((b) => b.code),
       stockQty: stock,
       stockState: r.kind === "service" ? "ok" : stockState(stock, r.minStock),
@@ -105,7 +127,7 @@ const listQuery = z.object({
   categoryId: z.uuid().optional(),
   supplierId: z.uuid().optional(),
   filter: z
-    .enum(["low", "out", "negative", "expiring", "stale", "inactive", "review", "quick"])
+    .enum(["low", "out", "negative", "expiring", "stale", "inactive", "review", "quick", "no_cost"])
     .optional(),
   sort: z.enum(["name", "stock", "price", "updated"]).default("name"),
   limit: z.coerce.number().int().min(1).max(500).default(100),
@@ -157,6 +179,7 @@ catalogRoutes.get("/products", requireActor(), validate("query", listQuery), asy
   if (f.filter === "review")
     where.push(or(eq(products.needsReview, true), eq(products.priceReview, true)));
   if (f.filter === "quick") where.push(eq(products.quickButton, true));
+  if (f.filter === "no_cost") where.push(isNull(products.costCents));
   if (f.filter === "expiring") {
     where.push(
       sql`exists (select 1 from ${lots} where ${lots.productId} = ${products.id} and ${lots.qtyRemaining} > 0 and ${lots.expiresOn} <= ${addDays(todayAR(), 30)})`,
