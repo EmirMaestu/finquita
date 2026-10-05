@@ -126,7 +126,7 @@ async function openChargesStored(tx: DbOrTx, customerId: string) {
       amountCents: customerLedger.amountCents,
       createdAt: customerLedger.createdAt,
       saleId: customerLedger.saleId,
-      allocated: sql<string>`coalesce((select sum(${ledgerAllocations.amountCents}) from ${ledgerAllocations} where ${ledgerAllocations.chargeId} = ${customerLedger.id}), 0)`,
+      allocated: sql<string>`coalesce((select sum(a.amount_cents) from ledger_allocations a where a.charge_id = customer_ledger.id), 0)`,
     })
     .from(customerLedger)
     .where(and(eq(customerLedger.customerId, customerId), sql`${customerLedger.amountCents} > 0`))

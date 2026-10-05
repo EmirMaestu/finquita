@@ -19,7 +19,6 @@ import {
   saleReturns,
   sales,
   shifts,
-  stockCountLines,
   stockCounts,
   stockMovements,
   supplierInvoices,
@@ -335,7 +334,7 @@ export async function stockerTasks(db: Db, memberId: string, now = new Date()) {
   const counts = await db
     .select({
       c: stockCounts,
-      total: sql<number>`(select count(*)::int from ${stockCountLines} where ${stockCountLines.countId} = ${stockCounts.id})`,
+      total: sql<number>`(select count(*)::int from stock_count_lines l where l.count_id = stock_counts.id)`,
     })
     .from(stockCounts)
     .where(and(eq(stockCounts.assignedTo, memberId), eq(stockCounts.status, "open")));

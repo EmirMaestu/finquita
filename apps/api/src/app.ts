@@ -29,6 +29,7 @@ import { priceRoutes } from "./routes/prices";
 import { promotionRoutes } from "./routes/promotions";
 import { purchasingRoutes } from "./routes/purchasing";
 import { receiptRoutes } from "./routes/receipts";
+import { reportRoutes } from "./routes/reports";
 import { salesRoutes } from "./routes/sales";
 import { stockRoutes } from "./routes/stock";
 import { supplierRoutes } from "./routes/suppliers";
@@ -130,6 +131,7 @@ export function createApp(deps: AppDeps) {
   app.route("/api", customerRoutes);
   app.route("/api", alertRoutes);
   app.route("/api", dashboardRoutes);
+  app.route("/api", reportRoutes);
   app.route("/api", eventRoutes());
 
   return app;

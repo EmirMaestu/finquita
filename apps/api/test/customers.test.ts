@@ -137,6 +137,33 @@ describe("flujo 6: fiado de Rosa Giménez", () => {
 });
 
 describe("cuenta corriente", () => {
+  it("dos pagos seguidos: el segundo se aplica a lo que quedó abierto, no a lo ya pagado", async () => {
+    const tomas = await as(app(), ref.t.db, "tomas");
+    const shiftId = newId();
+    const pay = (amountCents: number) =>
+      op("credit.payment", {
+        id: newId(),
+        customerId: ROSA,
+        amountCents,
+        method: "cash",
+        shiftId,
+        applyTo: "oldest",
+      });
+    await tomas.post("/api/sync/push", {
+      deviceNow: new Date().toISOString(),
+      ops: [openShift(shiftId), pay(500_000)],
+    });
+    await tomas.post("/api/sync/push", {
+      deviceNow: new Date().toISOString(),
+      ops: [pay(500_000)],
+    });
+    const charges = ((await tomas.get(`/api/customers/${ROSA}`)).body.movements as Mov[])
+      .filter((m) => m.kind === "sale")
+      .reverse();
+    // $ 8.400 cancelados con $ 5.000 + $ 3.400; de los $ 10.000 quedan $ 8.400.
+    expect(charges.map((m) => m.openCents)).toEqual([0, 840_000]);
+  });
+
   it("lista con la plata en la calle y filtros de vencidos y sobre el límite", async () => {
     const carlos = await as(app(), ref.t.db, "carlos");
     const all = await carlos.get("/api/customers");

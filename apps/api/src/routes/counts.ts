@@ -87,8 +87,8 @@ countRoutes.get("/counts", requireActor(), requirePermission("count_receive"), a
     .select({
       c: stockCounts,
       assignedName: members.name,
-      total: sql<number>`(select count(*) from ${stockCountLines} where ${stockCountLines.countId} = ${stockCounts.id})::int`,
-      counted: sql<number>`(select count(*) from ${stockCountLines} where ${stockCountLines.countId} = ${stockCounts.id} and ${stockCountLines.countedQty} is not null)::int`,
+      total: sql<number>`(select count(*) from stock_count_lines l where l.count_id = stock_counts.id)::int`,
+      counted: sql<number>`(select count(*) from stock_count_lines l where l.count_id = stock_counts.id and l.counted_qty is not null)::int`,
     })
     .from(stockCounts)
     .leftJoin(members, eq(members.id, stockCounts.assignedTo))

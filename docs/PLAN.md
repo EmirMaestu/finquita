@@ -113,7 +113,7 @@ Cada tarea dice qué secciones del spec leer (§) y cuándo está lista. Las tar
   Listo cuando: hay tests de stock bajo, diferencia de caja y pedido sin confirmar en 24 h.
 - [x] T42 · **Inicio:** panel del día con números, "Requiere atención", accesos y gráficos; variantes por rol. §Inicio.
   Listo cuando: un test con ventas conocidas verifica los números del panel.
-- [ ] T43 · **Reportes:** las siete preguntas de §Reportes, con período, comparación y exportar a Excel o CSV.
+- [x] T43 · **Reportes:** las siete preguntas de §Reportes, con período, comparación y exportar a Excel o CSV.
   Listo cuando: hay tests de margen y de resultado del mes.
 
 ## Hito 9 · Ajustes y primeros pasos

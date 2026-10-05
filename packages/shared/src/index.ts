@@ -17,6 +17,7 @@ export * from "./pricing";
 export * from "./promotions";
 export * from "./qty";
 export * from "./receiving";
+export * from "./reports";
 export * from "./settings";
 export * from "./suggested";
 export * from "./sync";
