@@ -100,3 +100,51 @@ export function ticketLines(t: TicketData, width: TicketWidth = 58): string[] {
   out.push(center(t.footer ?? "¡Gracias por tu compra!", w));
   return out;
 }
+
+export type ClosingData = {
+  business: { name: string };
+  registerName: string;
+  shiftLabel: string;
+  cashier: string;
+  openedAt: Date;
+  closedAt: Date;
+  lines: { label: string; amountCents: number }[];
+  expectedCashCents: number;
+  countedCashCents: number;
+  differenceCents: number;
+  byMethod: { label: string; amountCents: number; count: number }[];
+  salesCents: number;
+  leftFloatCents: number;
+  withdrawnCents: number;
+  note?: string | null;
+};
+
+/** Comprobante de cierre de turno, para imprimir o compartir. */
+export function closingLines(c: ClosingData, width: TicketWidth = 58): string[] {
+  const w = TICKET_CHARS[width];
+  const rule = "-".repeat(w);
+  const signed = (v: number) =>
+    v > 0 ? `+${formatMoney(v)}` : v < 0 ? `-${formatMoney(Math.abs(v))}` : formatMoney(0);
+  const out = [center(c.business.name.toUpperCase(), w), center("CIERRE DE CAJA", w), rule];
+  out.push(`${c.registerName} · ${c.shiftLabel}`);
+  out.push(`Cajero: ${c.cashier}`);
+  out.push(lr("Apertura", `${formatDate(c.openedAt)} ${formatTime(c.openedAt)}`, w));
+  out.push(lr("Cierre", `${formatDate(c.closedAt)} ${formatTime(c.closedAt)}`, w));
+  out.push(rule);
+  for (const l of c.lines) out.push(lr(l.label.slice(0, w - 12), formatMoney(l.amountCents), w));
+  out.push(lr("Efectivo esperado", formatMoney(c.expectedCashCents), w));
+  out.push(lr("Efectivo contado", formatMoney(c.countedCashCents), w));
+  out.push(lr("Diferencia", signed(c.differenceCents), w));
+  out.push(rule);
+  for (const m of c.byMethod)
+    out.push(lr(`${m.label} (${m.count})`, formatMoney(m.amountCents), w));
+  out.push(lr("Ventas del turno", formatMoney(c.salesCents), w));
+  out.push(rule);
+  out.push(lr("Queda de fondo", formatMoney(c.leftFloatCents), w));
+  out.push(lr("Se retira", formatMoney(c.withdrawnCents), w));
+  if (c.note) {
+    out.push(rule);
+    out.push(...wrap(`Comentario: ${c.note}`, w));
+  }
+  return out;
+}

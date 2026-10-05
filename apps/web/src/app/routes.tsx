@@ -1,5 +1,7 @@
 import { Navigate, type RouteObject } from "react-router";
 import { CashPage } from "../pages/cash/CashPage";
+import { CloseShiftPage } from "../pages/cash/CloseShiftPage";
+import { ClosingsPage } from "../pages/cash/ClosingsPage";
 import { ModulePlaceholder } from "../pages/ModulePlaceholder";
 import { MorePage } from "../pages/MorePage";
 import { CodeSheetPage } from "../pages/products/CodeSheetPage";
@@ -19,6 +21,8 @@ export const routes: RouteObject[] = [
     children: [
       { index: true, element: <Navigate to="/inicio" replace /> },
       { path: "caja", element: <CashPage /> },
+      { path: "caja/cierre", element: <CloseShiftPage /> },
+      { path: "caja/historial", element: <ClosingsPage /> },
       { path: "vender", element: <SellPage /> },
       { path: "vender/historial", element: <SalesHistoryPage /> },
       { path: "vender/historial/:id", element: <SalesHistoryPage /> },

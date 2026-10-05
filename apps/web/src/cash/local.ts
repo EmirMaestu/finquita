@@ -189,3 +189,48 @@ export async function loadShiftView(shift: LocalShift): Promise<ShiftView> {
     .sort((a, b) => (a.at < b.at ? -1 : 1));
   return { summary: summarizeShift(shift.openingFloatCents, moves), moves, offline, ...meta };
 }
+
+/**
+ * Cierre: el dispositivo calcula con lo que sabe y el servidor recalcula al sincronizar
+ * (si no coincide, avisa). El turno queda cerrado en la copia local al instante.
+ */
+export async function closeShiftLocal(a: {
+  memberId: string;
+  shiftId: string;
+  countedCashCents: number;
+  counts: Record<string, number> | null;
+  otherMedia: Record<string, { counted: number; expected: number }>;
+  expectedCashCents: number;
+  note: string | null;
+  leftFloatCents: number;
+}) {
+  const db = localDb();
+  const at = new Date().toISOString();
+  const shift = await db.shifts.get(a.shiftId);
+  if (shift)
+    await db.shifts.put({
+      ...shift,
+      status: "closed",
+      closedAt: at,
+      leftFloatCents: a.leftFloatCents,
+    });
+  await syncClient().enqueue({
+    opId: newId(),
+    type: "cash.shift_close",
+    memberId: a.memberId,
+    deviceAt: at,
+    payload: {
+      shiftId: a.shiftId,
+      countedCashCents: a.countedCashCents,
+      counts: a.counts,
+      otherMedia: a.otherMedia,
+      expectedCashCents: a.expectedCashCents,
+      differenceCents: a.countedCashCents - a.expectedCashCents,
+      note: a.note,
+      leftFloatCents: a.leftFloatCents,
+      withdrawnCents: Math.max(0, a.countedCashCents - a.leftFloatCents),
+    },
+  });
+  bumpLocalVersion();
+  void syncEngine().kick();
+}

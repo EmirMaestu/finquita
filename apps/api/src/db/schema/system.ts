@@ -27,7 +27,8 @@ export type AlertKind =
   | "duplicate_barcode"
   | "credit_over_limit"
   | "shift_mismatch"
-  | "clock_skew";
+  | "clock_skew"
+  | "shift_closed";
 
 /** Avisos: campana en la app y push. */
 export const alerts = pgTable(

@@ -24,11 +24,16 @@ export function op<T extends OpType>(
   };
 }
 
-export function openShift(shiftId = newId(), floatCents = 2_000_000, by: MemberKey = "tomas") {
+export function openShift(
+  shiftId = newId(),
+  floatCents = 2_000_000,
+  by: MemberKey = "tomas",
+  at?: string,
+) {
   return op(
     "cash.shift_open",
     { shiftId, registerId: REGISTER, openingFloatCents: floatCents },
-    { by },
+    { by, at },
   );
 }
 

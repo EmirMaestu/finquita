@@ -1,4 +1,11 @@
-import { formatMoney, newId, type OpPayload } from "@mostrador/shared";
+import {
+  closeNotice,
+  formatMoney,
+  newId,
+  type OpPayload,
+  shiftName,
+  summarizeShift,
+} from "@mostrador/shared";
 import { and, desc, eq, sql } from "drizzle-orm";
 import {
   type CashMovementKind,
@@ -219,18 +226,26 @@ export async function closeShift(tx: DbOrTx, ctx: OpContext, p: OpPayload<"cash.
     .select({ name: members.name })
     .from(members)
     .where(eq(members.id, s.memberId));
-  if (Math.abs(difference) > tolerance) {
-    await raiseAlert(tx, {
-      kind: "cash_difference",
-      severity: "danger",
-      title: `Cierre con diferencia de ${difference > 0 ? "+" : ""}${formatMoney(difference)}`,
-      body: `${reg?.name ?? "Caja"} · ${cashier?.name ?? ""}: esperado ${formatMoney(expected)}, contado ${formatMoney(p.countedCashCents)}.`,
-      refType: "shift",
-      refId: s.id,
-      dedupeKey: `cash_difference:${s.id}`,
-      data: { expected, counted: p.countedCashCents, difference },
-    });
-  }
+  const moves = await tx.select().from(cashMovements).where(eq(cashMovements.shiftId, s.id));
+  const notice = closeNotice({
+    shiftLabel: shiftName(s.openedAt),
+    cashier: cashier?.name ?? "",
+    salesCents: summarizeShift(s.openingFloatCents, moves).salesCents,
+    countedCents: p.countedCashCents,
+    differenceCents: difference,
+  });
+  // El dueño se entera de cada cierre; con diferencia fuera de tolerancia, como alerta.
+  const over = Math.abs(difference) > tolerance;
+  await raiseAlert(tx, {
+    kind: over ? "cash_difference" : "shift_closed",
+    severity: over ? "danger" : "info",
+    title: notice,
+    body: p.note ?? null,
+    refType: "shift",
+    refId: s.id,
+    dedupeKey: `shift_close:${s.id}`,
+    data: { expected, counted: p.countedCashCents, difference, registerName: reg?.name ?? "Caja" },
+  });
   if (mismatch !== 0) {
     await raiseAlert(tx, {
       kind: "shift_mismatch",

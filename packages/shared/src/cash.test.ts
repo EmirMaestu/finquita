@@ -40,3 +40,49 @@ describe("efectivo esperado", () => {
     );
   });
 });
+
+import { closeNotice, closeResult, signedMoney } from "./cash";
+
+describe("arqueo y cierre", () => {
+  it("con $ 120.700 contados la diferencia es −$ 1.200 y pide comentario", () => {
+    const r = closeResult({
+      expectedCashCents: 12_190_000,
+      countedCashCents: 12_070_000,
+      system: { debit: 5_640_000, credit: 1_120_000, qr: 4_910_000, transfer: 2_170_000 },
+      counted: { debit: 5_640_000, credit: 1_120_000, qr: 4_910_000, transfer: 2_170_000 },
+      toleranceCents: 50_000,
+    });
+    expect(r.cashDifferenceCents).toBe(-120_000);
+    expect(r.overTolerance).toBe(true);
+    expect(r.rows[0]).toMatchObject({ label: "Efectivo", differenceCents: -120_000 });
+    expect(r.rows.slice(1).every((x) => x.differenceCents === 0)).toBe(true);
+    expect(signedMoney(-120_000)).toBe("−$ 1.200");
+    expect(signedMoney(30_000)).toBe("+$ 300");
+  });
+
+  it("dentro de la tolerancia no pide comentario", () => {
+    expect(
+      closeResult({
+        expectedCashCents: 1_000_000,
+        countedCashCents: 970_000,
+        system: {},
+        counted: {},
+        toleranceCents: 50_000,
+      }).overTolerance,
+    ).toBe(false);
+  });
+
+  it("arma la notificación del cierre", () => {
+    expect(
+      closeNotice({
+        shiftLabel: "turno tarde",
+        cashier: "Tomás",
+        salesCents: 23_680_000,
+        countedCents: 12_070_000,
+        differenceCents: -120_000,
+      }),
+    ).toBe(
+      "Cierre turno tarde (Tomás): ventas $ 236.800, efectivo contado $ 120.700, diferencia −$ 1.200",
+    );
+  });
+});

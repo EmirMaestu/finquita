@@ -216,6 +216,9 @@ export function CashPage() {
           <Button variant="secondary" onClick={() => setSheet("income")}>
             Ingreso
           </Button>
+          <Button variant="ghost" onClick={() => navigate("/caja/historial")}>
+            Historial
+          </Button>
           <Button onClick={() => navigate("/caja/cierre")}>Arqueo y cierre</Button>
         </div>
       </div>

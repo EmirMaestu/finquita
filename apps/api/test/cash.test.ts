@@ -1,6 +1,8 @@
 import { newId, type OpPayload } from "@mostrador/shared";
+import { eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import { createApp } from "../src/app";
+import { alerts } from "../src/db/schema/index";
 import { as, memberId, pinOf } from "./helpers/actors";
 import type { TestClient } from "./helpers/client";
 import { TEST_AUTH } from "./helpers/client";
@@ -211,5 +213,88 @@ describe("caja: turno en curso", () => {
     await push(tomas, [openShift(shiftId)]);
     const nico = await as(app(), ref.t.db, "nico");
     expect((await nico.get(`/api/shifts/${shiftId}`)).status).toBe(403);
+  });
+});
+
+describe("arqueo y cierre", () => {
+  it("con $ 120.700 contados la diferencia es −$ 1.200, pide comentario y avisa al dueño", async () => {
+    const tomas = await as(app(), ref.t.db, "tomas");
+    const shiftId = newId();
+    await push(tomas, [
+      // Turno tarde: abrió a las 14:00.
+      openShift(shiftId, 2_000_000, "tomas", "2026-10-03T14:00:00-03:00"),
+      op("sale.create", miscSale(shiftId, 9_840_000, "cash", 11)),
+      op("credit.payment", {
+        id: newId(),
+        customerId: customer("rosa"),
+        amountCents: 800_000,
+        method: "cash",
+        shiftId,
+        applyTo: "oldest",
+      }),
+      op(
+        "cash.movement",
+        {
+          id: newId(),
+          shiftId,
+          kind: "expense",
+          amountCents: 450_000,
+          reason: "Artículos de limpieza",
+          category: "cleaning",
+        },
+        { authorizedBy: "julian" },
+      ),
+    ]);
+    const close = (note: string | null) =>
+      op("cash.shift_close", {
+        shiftId,
+        countedCashCents: 12_070_000,
+        counts: { "20000": 5, "10000": 2, "500": 1, "200": 1 },
+        expectedCashCents: 12_190_000,
+        differenceCents: -120_000,
+        note,
+        leftFloatCents: 2_000_000,
+        withdrawnCents: 10_070_000,
+      });
+    // Sin comentario no se cierra (con conexión, desde la app, el comentario es obligatorio).
+    const { closeShift } = await import("../src/domain/cash");
+    const { ContextBuilder } = await import("../src/domain/context");
+    const ctx = await new ContextBuilder(ref.t.db).build({
+      memberId: memberId("tomas"),
+      deviceId: null,
+      at: new Date(),
+      offline: false,
+    });
+    const noNote = close(null).payload;
+    await expect(ref.t.db.transaction((tx) => closeShift(tx, ctx, noNote))).rejects.toThrow(
+      "tolerancia",
+    );
+
+    const r = await push(tomas, [close("Di mal un vuelto a la tarde")]);
+    expect(r.body.results[0]).toMatchObject({
+      status: "applied",
+      result: { expectedCashCents: 12_190_000, differenceCents: -120_000, mismatchCents: 0 },
+    });
+    const s = await tomas.get(`/api/shifts/${shiftId}`);
+    expect(s.body.shift).toMatchObject({
+      status: "closed",
+      countedCashCents: 12_070_000,
+      differenceCents: -120_000,
+      leftFloatCents: 2_000_000,
+      closeNote: "Di mal un vuelto a la tarde",
+    });
+    const [alert] = await ref.t.db.select().from(alerts).where(eq(alerts.refId, shiftId));
+    expect(alert).toMatchObject({
+      kind: "cash_difference",
+      severity: "danger",
+      title:
+        "Cierre turno tarde (Tomás): ventas $ 98.400, efectivo contado $ 120.700, diferencia −$ 1.200",
+    });
+    // El historial de cierres lo muestra con su diferencia.
+    const hist = await tomas.get("/api/shifts?limit=5");
+    expect(hist.body.find((x: { id: string }) => x.id === shiftId)).toMatchObject({
+      differenceCents: -120_000,
+      salesCents: 9_840_000,
+    });
   });
 });
