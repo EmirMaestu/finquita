@@ -7,6 +7,18 @@ test("vende 4 productos usando solo el teclado", async ({ page }) => {
   await ensureShiftOpen(page);
   const search = page.getByLabel("Escaneá o buscá por nombre");
   await expect(search).toBeVisible();
+  // Lo que ya vendió el turno (otros tests pueden haber vendido antes).
+  type Reg = { openShift: { id: string } | null; lastSaleNumber: number };
+  type Shift = { summary: { salesCents: number; byMethod: { cash: { count: number } } } };
+  const before = await (async () => {
+    const [r] = await apiFromPage<Reg[]>(page, "/api/registers");
+    const s = await apiFromPage<Shift>(page, `/api/shifts/${r?.openShift?.id}`);
+    return {
+      number: r?.lastSaleNumber ?? 0,
+      sales: s.summary.salesCents,
+      cash: s.summary.byMethod.cash.count,
+    };
+  })();
   await search.focus();
 
   const add = async (text: string, name: RegExp) => {
@@ -46,16 +58,13 @@ test("vende 4 productos usando solo el teclado", async ({ page }) => {
   await expect(page.getByRole("status", { name: "Total" })).toHaveText("$ 0");
 
   // La venta llegó al servidor, una sola vez.
-  type Reg = { openShift: { id: string } | null; lastSaleNumber: number };
   await expect
     .poll(async () => (await apiFromPage<Reg[]>(page, "/api/registers"))[0]?.lastSaleNumber, {
       timeout: 25_000,
     })
-    .toBeGreaterThanOrEqual(1);
+    .toBe(before.number + 1);
   const [reg] = await apiFromPage<Reg[]>(page, "/api/registers");
-  const shift = await apiFromPage<{
-    summary: { salesCents: number; byMethod: { cash: { count: number } } };
-  }>(page, `/api/shifts/${reg?.openShift?.id}`);
-  expect(shift.summary.salesCents).toBe(2_610_000);
-  expect(shift.summary.byMethod.cash.count).toBe(1);
+  const shift = await apiFromPage<Shift>(page, `/api/shifts/${reg?.openShift?.id}`);
+  expect(shift.summary.salesCents - before.sales).toBe(2_610_000);
+  expect(shift.summary.byMethod.cash.count - before.cash).toBe(1);
 });

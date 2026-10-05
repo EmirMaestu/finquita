@@ -1,8 +1,15 @@
-import { formatMoney, METHOD_LABEL, type PaymentMethodCode, surchargeFor } from "@mostrador/shared";
+import type { Tender } from "@mostrador/shared";
+import {
+  canComplete,
+  checkoutState,
+  formatMoney,
+  METHOD_LABEL,
+  makeTender,
+  type PaymentMethodCode,
+} from "@mostrador/shared";
 import { Banknote, CreditCard, HandCoins, QrCode, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSettings } from "../../data/settings";
-import type { Payment } from "../../sell/complete";
 import { Button } from "../../ui/Button";
 import { cx } from "../../ui/cx";
 import { NumPad } from "../../ui/NumPad";
@@ -43,13 +50,13 @@ export function PaymentDialog({
   totalCents: number;
   /** Cliente asignado (F5): habilita Fiado. */
   fiado: FiadoInfo | null;
-  onConfirm: (payments: Payment[], surchargeCents: number) => void;
+  onConfirm: (payments: Tender[], surchargeCents: number) => void;
   onClose: () => void;
   busy?: boolean;
 }) {
   const settings = useSettings();
   const methods = settings.payments.methods;
-  const [payments, setPayments] = useState<Payment[]>([]);
+  const [payments, setPayments] = useState<Tender[]>([]);
   const [tab, setTab] = useState<Tab>("cash");
   const [card, setCard] = useState<"debit" | "credit">("debit");
   const [transfer, setTransfer] = useState<"transfer" | "qr">("qr");
@@ -61,19 +68,29 @@ export function PaymentDialog({
     box.current?.focus();
   }, []);
 
-  const surcharge = payments.reduce((s, p) => s + (p.surchargeCents ?? 0), 0);
-  const due = totalCents + surcharge;
-  const paid = payments.reduce((s, p) => s + p.amountCents, 0);
-  const remaining = Math.max(0, due - paid);
+  const typedCents = typed !== null ? Number(typed || "0") * 100 : null;
+  const state = checkoutState(totalCents, payments);
+  const { remainingCents: remaining, changeCents } = state;
+  const surcharge = state.surchargeCents;
+  const due = state.dueCents;
   const method: PaymentMethodCode =
     tab === "card" ? card : tab === "transfer" ? transfer : tab === "account" ? "account" : "cash";
   const bp = methods[method]?.surchargeBp ?? 0;
-  const base = typed !== null ? Number(typed || "0") * 100 : remaining;
-  const extra = tab === "cash" ? 0 : surchargeFor(Math.min(base, remaining), bp);
-  const changeCents = Math.max(0, paid - due);
+  const pending = makeTender({
+    method,
+    remainingCents: remaining,
+    typedCents,
+    surchargeBp: bp,
+    verified,
+  });
+  const base = typedCents ?? remaining;
+  const extra = pending?.surchargeCents ?? 0;
   /** Lo que todavía falta, contando lo que se está tipeando en el medio elegido. */
-  const current = remaining > 0 ? (tab === "cash" ? base : Math.min(base, remaining)) : 0;
-  const stillDue = Math.max(0, remaining - current);
+  const current = pending ? pending.amountCents - extra : 0;
+  // Con algo tipeado, "Falta" descuenta ese monto; sin tipear, muestra lo que falta.
+  const stillDue = typed !== null ? Math.max(0, remaining - current) : remaining;
+  const projectedChange =
+    tab === "cash" && pending ? Math.max(0, pending.amountCents - remaining) : changeCents;
 
   const blocked =
     tab === "transfer" && !verified
@@ -86,32 +103,17 @@ export function PaymentDialog({
     if (busy) return;
     let list = payments;
     if (remaining > 0) {
-      if (blocked) return;
-      const amount = tab === "cash" ? base : Math.min(base, remaining);
-      if (amount <= 0) return;
-      const s = tab === "cash" ? 0 : surchargeFor(amount, bp);
-      const p: Payment = {
-        method,
-        amountCents: amount + s,
-        surchargeCents: s,
-        ...(tab === "cash" ? { tenderedCents: amount } : {}),
-        ...(tab === "transfer" ? { verified } : {}),
-      };
-      list = [...payments, p];
-      const sur = list.reduce((acc, x) => acc + (x.surchargeCents ?? 0), 0);
-      const sum = list.reduce((acc, x) => acc + x.amountCents, 0);
-      if (sum < totalCents + sur) {
+      if (blocked || !pending) return;
+      list = [...payments, pending];
+      if (!canComplete(totalCents, list)) {
         setPayments(list);
         setTyped(null);
         setVerified(false);
         return;
       }
     }
-    onConfirm(
-      list,
-      list.reduce((acc, x) => acc + (x.surchargeCents ?? 0), 0),
-    );
-  }, [busy, payments, remaining, blocked, tab, base, bp, method, verified, totalCents, onConfirm]);
+    onConfirm(list, checkoutState(totalCents, list).surchargeCents);
+  }, [busy, payments, remaining, blocked, pending, totalCents, onConfirm]);
 
   // Teclado: dígitos al monto, Enter o Ctrl+Enter confirma, Esc vuelve a la venta.
   useEffect(() => {
@@ -137,8 +139,6 @@ export function PaymentDialog({
     });
   }, []);
 
-  const projectedChange =
-    tab === "cash" && remaining > 0 ? Math.max(0, base - remaining) : changeCents;
   const summary = useMemo(
     () => payments.map((p, i) => ({ ...p, key: `${i}-${p.method}` })),
     [payments],
@@ -367,9 +367,7 @@ export function PaymentDialog({
                   className="block tnum text-[32px] font-semibold tracking-[-.02em]"
                   aria-label="Monto"
                 >
-                  {formatMoney(
-                    remaining > 0 ? (tab === "cash" ? base : Math.min(base, remaining)) : 0,
-                  )}
+                  {formatMoney(current)}
                 </output>
               </div>
               <NumPad onKey={onKey} keyboard />
@@ -419,9 +417,7 @@ export function PaymentDialog({
             disabled={busy || (remaining > 0 && Boolean(blocked))}
             className="h-16 text-xl"
           >
-            {remaining > 0 && (tab === "cash" ? base : Math.min(base, remaining)) < remaining
-              ? "Agregar pago"
-              : "Confirmar cobro"}
+            {remaining > 0 && current < remaining ? "Agregar pago" : "Confirmar cobro"}
             <kbd className="rounded bg-white/20 px-1.5 py-0.5 text-xs">Ctrl ⏎</kbd>
           </Button>
         </div>

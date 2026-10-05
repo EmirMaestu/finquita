@@ -1,4 +1,4 @@
-import { newId } from "@mostrador/shared";
+import { newId, todayAR } from "@mostrador/shared";
 import { eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import { createApp } from "../src/app";
@@ -10,7 +10,8 @@ import { TEST_AUTH } from "./helpers/client";
 import { product } from "./helpers/ops";
 import { useSeededDb } from "./helpers/seeded";
 
-const ref = useSeededDb();
+// El escenario con fecha de hoy: lo vencido se calcula contra la fecha real.
+const ref = useSeededDb({ today: todayAR() });
 const app = () => createApp({ db: ref.t.db, auth: TEST_AUTH });
 
 type Change = { entity: string; id: string; op: string; data?: Record<string, unknown> };
@@ -164,5 +165,20 @@ describe("GET /api/sync/pull", () => {
     });
     const r = await pullAll(mac, cursor);
     expect(r.changes.map((c) => c.entity).sort()).toEqual(["barcodes", "products"]);
+  });
+});
+
+describe("clientes en el pull", () => {
+  it("bajan con su deuda vencida, para fiar sin conexión", async () => {
+    const mac = await as(app(), ref.t.db, "tomas");
+    const { changes } = await pullAll(mac);
+    const byName = (n: string) =>
+      changes.find((c) => c.entity === "customers" && c.data?.name === n)?.data;
+    expect(byName("El Tano (obra)")).toMatchObject({
+      balanceCents: 4_210_000,
+      overdueCents: 4_210_000,
+    });
+    expect(byName("Familia Ortiz")).toMatchObject({ balanceCents: 780_000, overdueCents: 160_000 });
+    expect(byName("Rosa Giménez")).toMatchObject({ balanceCents: 1_840_000, overdueCents: 0 });
   });
 });

@@ -1,4 +1,4 @@
-import { effectiveGrant, type Overrides, type Role } from "@mostrador/shared";
+import { effectiveGrant, type Overrides, type Role, todayAR } from "@mostrador/shared";
 import { inArray, sql } from "drizzle-orm";
 import type { PgColumn, PgTable } from "drizzle-orm/pg-core";
 import type { Db } from "../db/client";
@@ -54,7 +54,18 @@ const ENTITIES: Record<string, EntityDef> = {
   },
   barcodes: { load: byIds(barcodes), shape: (r) => r },
   categories: { load: byIds(categories), shape: notDeleted },
-  customers: { load: byIds(customers), shape: notDeleted },
+  customers: {
+    // Con lo vencido calculado: el cobro con fiado lo necesita sin conexión.
+    load: async (db, ids) => {
+      const rows = (await db.select().from(customers).where(inArray(customers.id, ids))) as Row[];
+      const credit = await creditByCustomer(db, ids);
+      return rows.map((r) => ({
+        ...r,
+        ...(credit.get(String(r.id)) ?? { overdueCents: 0, oldestDebtAt: null }),
+      }));
+    },
+    shape: notDeleted,
+  },
   registers: { load: byIds(registers), shape: (r) => r },
   suppliers: {
     load: byIds(suppliers),
@@ -109,6 +120,46 @@ const ENTITIES: Record<string, EntityDef> = {
     shape: notDeleted,
   },
 };
+
+/**
+ * Deuda vencida y fecha de la deuda más vieja de cada cliente, con las asignaciones de pagos
+ * (lo que no está asignado a una compra, se aplica a las más viejas primero).
+ */
+export async function creditByCustomer(db: Db, ids: string[]) {
+  const out = new Map<string, { overdueCents: number; oldestDebtAt: string | null }>();
+  if (!ids.length) return out;
+  const today = todayAR();
+  const rows = await db.execute<{
+    customer_id: string;
+    id: string;
+    amount: string;
+    due_on: string | null;
+    created_at: Date;
+    allocated: string;
+  }>(sql`
+    select l.customer_id, l.id, l.amount_cents::text as amount, l.due_on::text, l.created_at,
+      coalesce((select sum(a.amount_cents) from ledger_allocations a where a.charge_id = l.id), 0)::text as allocated
+    from customer_ledger l
+    where l.customer_id in ${sql.raw(
+      `(${
+        ids
+          .filter((i) => /^[0-9a-f-]{36}$/i.test(i))
+          .map((i) => `'${i}'`)
+          .join(",") || "null"
+      })`,
+    )} and l.amount_cents > 0
+    order by l.created_at, l.id`);
+  for (const id of ids) out.set(id, { overdueCents: 0, oldestDebtAt: null });
+  for (const r of rows) {
+    const open = Number(r.amount) - Number(r.allocated);
+    if (open <= 0) continue;
+    const cur = out.get(r.customer_id) ?? { overdueCents: 0, oldestDebtAt: null };
+    if (r.due_on && r.due_on < today) cur.overdueCents += open;
+    cur.oldestDebtAt ??= new Date(r.created_at).toISOString();
+    out.set(r.customer_id, cur);
+  }
+  return out;
+}
 
 /** Cursor "xid:seq": ya se entregó todo lo anterior a ese punto. */
 function parseCursor(since: string | undefined): { xid: string; seq: number } {

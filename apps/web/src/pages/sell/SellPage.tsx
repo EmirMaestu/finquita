@@ -3,6 +3,7 @@ import {
   addProduct,
   bumpQty,
   cartTotals,
+  creditNeedsPin,
   discountFor,
   formatMoney,
   METHOD_LABEL,
@@ -19,7 +20,9 @@ import { useViewport } from "../../app/useViewport";
 import { requestPin } from "../../auth/pinAuth";
 import { useRegister } from "../../cash/useRegister";
 import { localStock } from "../../data/catalog";
+import { localBalance } from "../../data/customers";
 import { localDb } from "../../data/db";
+import { useLive } from "../../data/live";
 import { useSettings } from "../../data/settings";
 import type { LocalProduct } from "../../data/types";
 import { beep } from "../../scan/beep";
@@ -36,6 +39,7 @@ import { Sheet } from "../../ui/Sheet";
 import { toast } from "../../ui/toast";
 import { MovementSheet } from "../cash/MovementSheet";
 import { OpenShift } from "../cash/OpenShift";
+import { CustomerPicker } from "./CustomerPicker";
 import { PaymentDialog } from "./PaymentDialog";
 import { QuickButtons } from "./QuickButtons";
 import { SaleDone } from "./SaleDone";
@@ -59,6 +63,7 @@ type Dialog =
   | { kind: "weight"; product: LocalProduct }
   | { kind: "discount" }
   | { kind: "cash" }
+  | { kind: "customer" }
   | null;
 
 type Done = { number: number; totalCents: number; changeCents: number; method: string };
@@ -130,6 +135,16 @@ export function SellPage() {
   const [busy, setBusy] = useState(false);
   const search = useRef<HTMLInputElement>(null);
   const totals = cartTotals(cart);
+  const creditGrant = useGrant("credit_over_limit");
+  const customer = useLive(
+    async () => {
+      if (!cart.customerId) return null;
+      const c = await localDb().customers.get(cart.customerId);
+      return c ? { ...c, balance: await localBalance(c) } : null;
+    },
+    [cart.customerId, version],
+    null,
+  );
 
   useEffect(() => {
     void productIndex(version).then((idx) => setQuick(idx.quickButtons()));
@@ -190,6 +205,8 @@ export function SellPage() {
         beep("error");
         return;
       }
+      // Un escaneo con el cartel de "Venta lista" arranca la próxima venta.
+      setDone(null);
       setQuery((q) => stripScanLeak(q, code));
       const idx = await productIndex(version);
       const p = idx.search(code, 1)[0];
@@ -236,6 +253,33 @@ export function SellPage() {
   const finish = useCallback(
     async (payments: Payment[], surchargeCents: number) => {
       if (!me || !reg.shift || !reg.registerId) return;
+      // Fiado por encima del límite o con deuda vencida: el cajero necesita PIN.
+      let authorizedBy: string | null = null;
+      const fiado = payments
+        .filter((p) => p.method === "account")
+        .reduce((a, p) => a + p.amountCents, 0);
+      if (
+        fiado &&
+        customer &&
+        creditNeedsPin({
+          balanceCents: customer.balance,
+          limitCents: customer.creditLimitCents,
+          overdueCents: customer.overdueCents ?? 0,
+          chargeCents: fiado,
+        })
+      ) {
+        if (creditGrant === "pin") {
+          const a = await requestPin(
+            "credit_over_limit",
+            `Fiado de ${formatMoney(fiado)} a ${customer.name}: ${customer.overdueCents ? "tiene deuda vencida" : "se pasa del límite"}. Pedido por ${me.member.name}.`,
+          );
+          if (!a) return;
+          authorizedBy = a.memberId;
+        } else if (creditGrant === "deny") {
+          toast({ text: "No podés fiar por encima del límite", tone: "error" });
+          return;
+        }
+      }
       setBusy(true);
       try {
         const s = await completeSale({
@@ -245,6 +289,7 @@ export function SellPage() {
           cart: sale.get().cart,
           payments,
           surchargeCents,
+          authorizedBy,
         });
         const main = payments.reduce((a, b) => (b.amountCents > a.amountCents ? b : a));
         setDone({
@@ -261,7 +306,7 @@ export function SellPage() {
         setBusy(false);
       }
     },
-    [me, reg.shift, reg.registerId],
+    [me, reg.shift, reg.registerId, customer, creditGrant],
   );
 
   const applyDiscount = useCallback(
@@ -308,8 +353,7 @@ export function SellPage() {
       if (k === "F2") return focusSearch();
       if (k === "F3") return setDialog({ kind: "misc" });
       if (k === "F4") return s.cart.lines.length && setDialog({ kind: "discount" });
-      if (k === "F5")
-        return toast({ text: "Asignar cliente: buscalo en Clientes y fiado", tone: "info" });
+      if (k === "F5") return setDialog({ kind: "customer" });
       if (k === "F6") return setDialog({ kind: "held" });
       if (k === "F9") return reg.shift && setDialog({ kind: "cash" });
       if (k === "F10") return void openDrawer();
@@ -391,7 +435,16 @@ export function SellPage() {
           saleLabel="Venta en curso"
           itemCount={totals.itemCount}
           totalCents={totals.totalCents}
-          fiado={null}
+          fiado={
+            customer
+              ? {
+                  customerName: customer.name,
+                  balanceCents: customer.balance,
+                  limitCents: customer.creditLimitCents,
+                  overdue: Boolean(customer.overdueCents),
+                }
+              : null
+          }
           busy={busy}
           onConfirm={(p, s) => void finish(p, s)}
           onClose={() => {
@@ -445,6 +498,22 @@ export function SellPage() {
         />
       )}
       {dialog?.kind === "help" && <ShortcutsHelp onClose={() => setDialog(null)} />}
+      {dialog?.kind === "customer" && (
+        <CustomerPicker
+          current={cart.customerId}
+          onClose={() => setDialog(null)}
+          onClear={() => {
+            sale.setCart({ ...sale.get().cart, customerId: null });
+            setDialog(null);
+          }}
+          onPick={(c) => {
+            sale.setCart({ ...sale.get().cart, customerId: c.id });
+            setDialog(null);
+            if (c.overdueCents) toast({ text: `${c.name} tiene deuda vencida`, tone: "error" });
+            focusSearch();
+          }}
+        />
+      )}
       {dialog?.kind === "weight" && (
         <WeightDialog
           product={dialog.product}
@@ -681,13 +750,31 @@ export function SellPage() {
         </div>
         <button
           type="button"
-          onClick={() =>
-            toast({ text: "Asignar cliente o fiado llega en el cobro con fiado", tone: "info" })
-          }
-          className="flex items-center gap-2.5 rounded-lg border border-dashed border-borde px-3 py-2.5 text-left text-sm font-medium text-texto-suave"
+          onClick={() => setDialog({ kind: "customer" })}
+          className={cx(
+            "flex items-center gap-2.5 rounded-lg border px-3 py-2.5 text-left text-sm font-medium",
+            customer
+              ? customer.overdueCents
+                ? "border-peligro bg-peligro-suave text-peligro"
+                : "border-borde text-texto"
+              : "border-dashed border-borde text-texto-suave",
+          )}
         >
           <User size={20} aria-hidden />
-          <span className="flex-1">Asignar cliente o fiado</span>
+          <span className="flex-1">
+            {customer ? (
+              <>
+                <span className="font-semibold">{customer.name}</span>
+                <span className="block text-xs">
+                  Saldo {formatMoney(customer.balance)} · límite{" "}
+                  {formatMoney(customer.creditLimitCents)}
+                  {customer.overdueCents ? ` · vencido ${formatMoney(customer.overdueCents)}` : ""}
+                </span>
+              </>
+            ) : (
+              "Asignar cliente o fiado"
+            )}
+          </span>
           <kbd className="rounded border border-borde px-1.5 py-0.5 text-[11px] font-semibold">
             F5
           </kbd>

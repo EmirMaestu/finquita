@@ -1,6 +1,7 @@
 export * from "./barcode";
 export * from "./cart";
 export * from "./cash";
+export * from "./checkout";
 export * from "./credit";
 export * from "./csv";
 export * from "./dates";

@@ -26,10 +26,11 @@ export default defineConfig({
       env: { LOG_LEVEL: "warn", OFF_DISABLED: "1" },
     },
     {
-      command: `bun run --cwd apps/web vite --port ${E2E.webPort} --strictPort`,
+      // Build real + preview: igual que en producción (sin recargas del servidor de desarrollo).
+      command: `bun run --cwd apps/web vite build --logLevel warn && bun run --cwd apps/web vite preview --port ${E2E.webPort} --strictPort`,
       port: E2E.webPort,
       reuseExistingServer: false,
-      timeout: 120_000,
+      timeout: 180_000,
       env: { API_URL: `http://localhost:${E2E.apiPort}` },
     },
   ],

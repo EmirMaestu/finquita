@@ -41,6 +41,9 @@ export type LocalCustomer = {
   terms: string;
   termsDays: number;
   active: boolean;
+  /** Deuda vencida y fecha de la deuda más vieja (las calcula el servidor). */
+  overdueCents?: number;
+  oldestDebtAt?: string | null;
 };
 
 export type LocalShift = {
