@@ -29,7 +29,18 @@ Consumo esperado: menos de 2 GB de RAM entre todo (hay límites por servicio). L
 2. Guardar `RESTIC_PASSWORD` también fuera del servidor: sin ella, las copias no se pueden leer.
 3. `.env` nunca se sube al repo.
 
-## 3. Construir las imágenes (CI)
+## 3. Deploy en un paso (sin CI)
+
+En el VPS, desde la carpeta del repo y con el `.env` completo:
+
+```sh
+./infra/deploy.sh          # construye las imágenes en el servidor y levanta todo
+./infra/deploy.sh --pull   # para actualizar: trae lo último de GitHub y vuelve a desplegar
+```
+
+Revisa el `.env`, etiqueta las imágenes con el commit, levanta los servicios y espera a que la API responda. Para volver a una versión anterior: `REGISTRY=mostrador TAG=<commit> docker compose -f infra/docker-compose.prod.yml --env-file .env up -d` (las versiones están en `docker images mostrador/api`).
+
+## 3 bis. Construir las imágenes con CI (opcional)
 
 El CI construye y publica las tres imágenes desde la raíz del repo:
 

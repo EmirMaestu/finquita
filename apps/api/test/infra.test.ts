@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { parse } from "yaml";
@@ -92,5 +92,18 @@ describe("infraestructura de producción", () => {
     );
     for (const v of used)
       expect(env, `falta ${v} en .env.example`).toMatch(new RegExp(`^${v}=`, "m"));
+  });
+
+  it("deploy.sh: controla el .env, construye las tres imágenes con el commit y levanta", () => {
+    const sh = read("infra/deploy.sh");
+    expect(sh.startsWith("#!/usr/bin/env bash")).toBe(true);
+    expect(sh).toContain("set -euo pipefail");
+    for (const f of ["apps/api/Dockerfile", "apps/web/Dockerfile", "infra/backup/Dockerfile"]) {
+      expect(sh).toContain(`docker build -f ${f}`);
+      expect(() => read(f)).not.toThrow();
+    }
+    expect(sh).toContain('TAG="$(git rev-parse --short HEAD)"');
+    expect(sh).toContain("up -d --remove-orphans");
+    expect(statSync(resolve(root, "infra/deploy.sh")).mode & 0o111).not.toBe(0);
   });
 });
