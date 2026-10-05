@@ -91,7 +91,7 @@ Cada tarea dice qué secciones del spec leer (§) y cuándo está lista. Las tar
 
 ## Hito 6 · Compras
 
-- [ ] T35 · **Proveedores:** ficha, condiciones, WhatsApp, productos con código y costo. §Proveedores y compras.
+- [x] T35 · **Proveedores:** ficha, condiciones, WhatsApp, productos con código y costo. §Proveedores y compras.
   Listo cuando: el CRUD tiene tests.
 - [ ] T36 · **Pedido sugerido** con la fórmula del spec y su explicación en palabras.
   Listo cuando: el test da 24 unidades (2 cajas de 12) para 3 por día, 11 días a cubrir y stock 9.

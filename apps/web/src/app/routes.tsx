@@ -14,6 +14,7 @@ import { MovementsPage } from "../pages/products/MovementsPage";
 import { ProductsPage } from "../pages/products/ProductsPage";
 import { PromotionsPage } from "../pages/products/PromotionsPage";
 import { ShelfLabelsPage } from "../pages/products/ShelfLabelsPage";
+import { SuppliersPage } from "../pages/purchases/SuppliersPage";
 import { SalesHistoryPage } from "../pages/sell/SalesHistoryPage";
 import { SellPage } from "../pages/sell/SellPage";
 import { AppShell } from "./layout/AppShell";
@@ -29,6 +30,8 @@ export const routes: RouteObject[] = [
       { path: "caja/cierre", element: <CloseShiftPage /> },
       { path: "caja/historial", element: <ClosingsPage /> },
       { path: "vender", element: <SellPage /> },
+      { path: "compras", element: <Navigate to="/compras/pedidos" replace /> },
+      { path: "compras/proveedores", element: <SuppliersPage /> },
       { path: "vender/historial", element: <SalesHistoryPage /> },
       { path: "vender/historial/:id", element: <SalesHistoryPage /> },
       { path: "productos", element: <ProductsPage /> },
@@ -43,10 +46,12 @@ export const routes: RouteObject[] = [
       { path: "productos/vencimientos", element: <ExpiryPage /> },
       { path: "productos/conteos/:id", element: <CountPage /> },
       { path: "productos/:id", element: <ProductsPage /> },
-      ...MODULES.filter((m) => !["productos", "caja", "vender"].includes(m.id)).map((m) => ({
-        path: `${m.path.slice(1)}/*`,
-        element: <ModulePlaceholder />,
-      })),
+      ...MODULES.filter((m) => !["productos", "caja", "vender", "compras"].includes(m.id)).map(
+        (m) => ({
+          path: `${m.path.slice(1)}/*`,
+          element: <ModulePlaceholder />,
+        }),
+      ),
       { path: "mas", element: <MorePage /> },
       { path: "*", element: <Navigate to="/inicio" replace /> },
     ],

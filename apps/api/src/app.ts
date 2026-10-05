@@ -23,6 +23,7 @@ import { priceRoutes } from "./routes/prices";
 import { promotionRoutes } from "./routes/promotions";
 import { salesRoutes } from "./routes/sales";
 import { stockRoutes } from "./routes/stock";
+import { supplierRoutes } from "./routes/suppliers";
 import { syncRoutes } from "./routes/sync";
 
 export type AppDeps = { db: Db; auth?: AuthConfig; events?: EventHub; off?: Partial<OffConfig> };
@@ -112,6 +113,7 @@ export function createApp(deps: AppDeps) {
   app.route("/api", priceRoutes);
   app.route("/api", countRoutes);
   app.route("/api", promotionRoutes);
+  app.route("/api", supplierRoutes);
   app.route("/api", eventRoutes());
 
   return app;
