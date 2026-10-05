@@ -26,7 +26,7 @@ Cada tarea dice qué secciones del spec leer (§) y cuándo está lista. Las tar
   Listo cuando: hay tests de login, PIN correcto, PIN incorrecto y bloqueo.
 - [x] T09 · **Permisos en la API.** Middleware que aplica la matriz, con autorización por PIN para las acciones marcadas así y ajustes por persona. §Usuarios y permisos.
   Listo cuando: hay tests por rol de al menos 8 acciones de la matriz.
-- [ ] T10 · **Auditoría.** Registro de cambios sensibles (quién, dispositivo, cuándo, valor anterior y nuevo) y endpoint de lectura con filtros. §Requisitos transversales.
+- [x] T10 · **Auditoría.** Registro de cambios sensibles (quién, dispositivo, cuándo, valor anterior y nuevo) y endpoint de lectura con filtros. §Requisitos transversales.
   Listo cuando: el helper y el endpoint tienen tests.
 
 ## Hito 2 · Motor sin conexión

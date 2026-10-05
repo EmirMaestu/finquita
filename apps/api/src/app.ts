@@ -8,6 +8,7 @@ import type { Db } from "./db/client";
 import { ApiError, notFound } from "./lib/errors";
 import { log } from "./lib/log";
 import { validationError } from "./lib/validate";
+import { auditRoutes } from "./routes/audit";
 import { authRoutes } from "./routes/auth";
 
 export type AppDeps = { db: Db; auth?: AuthConfig };
@@ -79,6 +80,7 @@ export function createApp(deps: AppDeps) {
 
   app.use("/api/*", resolveActor());
   app.route("/api", authRoutes);
+  app.route("/api", auditRoutes);
 
   return app;
 }

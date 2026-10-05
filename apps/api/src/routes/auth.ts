@@ -7,6 +7,7 @@ import { actorOf, requireActor } from "../auth/actor";
 import { loadOverrides } from "../auth/permissions";
 import { hashPin, PIN_RE, verifyMemberPin } from "../auth/pin";
 import { devices, members, pinSessions } from "../db/schema/index";
+import { auditFrom } from "../lib/audit";
 import { ApiError, forbidden, notFound } from "../lib/errors";
 import { hashToken, newToken } from "../lib/tokens";
 import { validate } from "../lib/validate";
@@ -117,6 +118,11 @@ authRoutes.put("/members/:id/pin", requireActor(), validate("json", setPin), asy
     .where(eq(members.id, id))
     .returning({ id: members.id });
   if (!updated.length) throw notFound("No encontramos a esa persona.");
+  await auditFrom(c, c.get("db"), {
+    action: "member.pin_changed",
+    entityType: "member",
+    entityId: id,
+  });
   return c.json({ ok: true });
 });
 
@@ -150,6 +156,12 @@ authRoutes.post("/devices", requireActor(), validate("json", enableDevice), asyn
       enabledBy: actor.member.id,
       enabledAt: new Date(),
     });
+  await auditFrom(c, c.get("db"), {
+    action: "device.enabled",
+    entityType: "device",
+    entityId: id,
+    after: { name: body.name, kind: body.kind },
+  });
   return c.json({ device: { id, name: body.name, kind: body.kind }, token }, 201);
 });
 
@@ -171,5 +183,6 @@ authRoutes.delete("/devices/:id", requireActor(), async (c) => {
     .returning({ id: devices.id });
   if (!updated.length) throw notFound("No encontramos ese dispositivo.");
   await db.delete(pinSessions).where(eq(pinSessions.deviceId, id));
+  await auditFrom(c, db, { action: "device.revoked", entityType: "device", entityId: id });
   return c.json({ ok: true });
 });
