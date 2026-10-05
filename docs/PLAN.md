@@ -104,7 +104,7 @@ Cada tarea dice qué secciones del spec leer (§) y cuándo está lista. Las tar
 
 ## Hito 7 · Clientes y fiado
 
-- [ ] T40 · **Clientes y cuenta corriente:** límites, plazo, cobro que cancela lo más viejo y estado de cuenta para compartir. §Clientes y fiado.
+- [x] T40 · **Clientes y cuenta corriente:** límites, plazo, cobro que cancela lo más viejo y estado de cuenta para compartir. §Clientes y fiado.
   Listo cuando: el test del flujo 6 da $ 18.400 → $ 25.100 → $ 5.100.
 
 ## Hito 8 · Inicio, avisos y reportes

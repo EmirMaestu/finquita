@@ -1,5 +1,5 @@
-import { type DateStr, diffDays } from "./dates";
-import type { Cents } from "./money";
+import { type DateStr, diffDays, formatDate, formatTime } from "./dates";
+import { type Cents, formatMoney } from "./money";
 
 export type LedgerEntry = {
   id: string;
@@ -62,4 +62,55 @@ export function creditSummary(entries: LedgerEntry[], asOf: DateStr): CreditSumm
     overdueCents,
     oldestDebtDays: oldest ? diffDays(oldest.date, asOf) : null,
   };
+}
+
+export const TERMS_LABEL: Record<"weekly" | "biweekly" | "30d" | "month_end", string> = {
+  weekly: "Semanal",
+  biweekly: "Quincenal",
+  "30d": "30 días",
+  month_end: "Fin de mes",
+};
+
+/** Recibo de un pago de fiado, para imprimir o compartir. */
+export function creditReceiptText(r: {
+  businessName: string;
+  customerName: string;
+  amountCents: number;
+  methodLabel: string;
+  at: Date;
+  balanceAfterCents: number;
+}): string {
+  const when = `${formatDate(r.at)} ${formatTime(r.at)}`;
+  return [
+    `${r.businessName} · Recibo de pago`,
+    `${r.customerName} pagó ${formatMoney(r.amountCents)} (${r.methodLabel.toLowerCase()}) el ${when}.`,
+    r.balanceAfterCents > 0
+      ? `Saldo pendiente: ${formatMoney(r.balanceAfterCents)}.`
+      : r.balanceAfterCents < 0
+        ? `Saldo a favor: ${formatMoney(-r.balanceAfterCents)}.`
+        : "Cuenta al día. ¡Gracias!",
+  ].join("\n");
+}
+
+/** Estado de cuenta corto para mandar por WhatsApp (el detalle va en el PDF). */
+export function statementText(s: {
+  businessName: string;
+  customerName: string;
+  asOf: DateStr;
+  balanceCents: number;
+  overdueCents: number;
+  open: { date: DateStr; openCents: number }[];
+}): string {
+  const out = [
+    `Hola ${s.customerName.split(" ")[0]}, te paso tu cuenta en ${s.businessName} al ${formatDate(s.asOf)}:`,
+  ];
+  for (const o of s.open)
+    out.push(`• Compra del ${formatDate(o.date).slice(0, 5)}: ${formatMoney(o.openCents)}`);
+  out.push(
+    s.balanceCents >= 0
+      ? `Saldo: ${formatMoney(s.balanceCents)}.`
+      : `Saldo a favor: ${formatMoney(-s.balanceCents)}.`,
+  );
+  if (s.overdueCents > 0) out.push(`Vencido: ${formatMoney(s.overdueCents)}.`);
+  return out.join("\n");
 }

@@ -2,6 +2,7 @@ import { Navigate, type RouteObject } from "react-router";
 import { CashPage } from "../pages/cash/CashPage";
 import { CloseShiftPage } from "../pages/cash/CloseShiftPage";
 import { ClosingsPage } from "../pages/cash/ClosingsPage";
+import { CustomersPage } from "../pages/customers/CustomersPage";
 import { ModulePlaceholder } from "../pages/ModulePlaceholder";
 import { MorePage } from "../pages/MorePage";
 import { BulkPricePage } from "../pages/products/BulkPricePage";
@@ -43,6 +44,8 @@ export const routes: RouteObject[] = [
       { path: "compras/pedidos/:id", element: <OrdersPage /> },
       { path: "compras/recepcion", element: <ReceivePage /> },
       { path: "compras/facturas", element: <PayablesPage /> },
+      { path: "clientes", element: <CustomersPage /> },
+      { path: "clientes/:id", element: <CustomersPage /> },
       { path: "compras/listas", element: <PriceListPage /> },
       { path: "compras/recepcion/:id/costos", element: <ReceiptCostsPage /> },
       { path: "vender/historial", element: <SalesHistoryPage /> },
@@ -59,12 +62,12 @@ export const routes: RouteObject[] = [
       { path: "productos/vencimientos", element: <ExpiryPage /> },
       { path: "productos/conteos/:id", element: <CountPage /> },
       { path: "productos/:id", element: <ProductsPage /> },
-      ...MODULES.filter((m) => !["productos", "caja", "vender", "compras"].includes(m.id)).map(
-        (m) => ({
-          path: `${m.path.slice(1)}/*`,
-          element: <ModulePlaceholder />,
-        }),
-      ),
+      ...MODULES.filter(
+        (m) => !["productos", "caja", "vender", "compras", "clientes"].includes(m.id),
+      ).map((m) => ({
+        path: `${m.path.slice(1)}/*`,
+        element: <ModulePlaceholder />,
+      })),
       { path: "mas", element: <MorePage /> },
       { path: "*", element: <Navigate to="/inicio" replace /> },
     ],

@@ -15,6 +15,7 @@ import { authRoutes } from "./routes/auth";
 import { cashRoutes } from "./routes/cash";
 import { catalogRoutes } from "./routes/catalog";
 import { countRoutes } from "./routes/counts";
+import { customerRoutes } from "./routes/customers";
 import { eventRoutes } from "./routes/events";
 import { fileRoutes } from "./routes/files";
 import { importRoutes } from "./routes/import";
@@ -124,6 +125,7 @@ export function createApp(deps: AppDeps) {
   app.route("/api", receiptRoutes);
   app.route("/api", fileRoutes);
   app.route("/api", payableRoutes);
+  app.route("/api", customerRoutes);
   app.route("/api", eventRoutes());
 
   return app;
