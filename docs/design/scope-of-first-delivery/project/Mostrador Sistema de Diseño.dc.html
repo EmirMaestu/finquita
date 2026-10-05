@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#FAF8F5;color:#1F1B16;font-family:Inter,system-ui,sans-serif;font-feature-settings:"tnum";-webkit-font-smoothing:antialiased}
+a{color:#1F6B4F}a:hover{color:#177A48}
+*{box-sizing:border-box}
+</style>
+</helmet>
+<div style="max-width:1320px;margin:0 auto;padding:48px 40px 120px;display:flex;flex-direction:column;gap:72px">
+
+<header style="display:flex;flex-direction:column;gap:16px;max-width:760px">
+  <div style="font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#6B635A">Sistema de diseño · v1 · tema claro</div>
+  <h1 style="margin:0;font-size:48px;font-weight:700;letter-spacing:-.02em;line-height:1.05">Mostrador</h1>
+  <p style="margin:0;font-size:18px;line-height:1.5;color:#6B635A;text-wrap:pretty">Almacén de barrio, pero prolijo. Cálido y práctico, con mucho contraste y números que se leen desde lejos. Bordes antes que sombras, nada de gradientes. Voseo y frases de mostrador.</p>
+  <div style="display:flex;flex-wrap:wrap;gap:8px;font-size:13px">
+    <a href="#color" style="text-decoration:none;padding:6px 12px;border:1px solid #E7E2DA;border-radius:999px;background:#fff">01 Color</a>
+    <a href="#tipo" style="text-decoration:none;padding:6px 12px;border:1px solid #E7E2DA;border-radius:999px;background:#fff">02 Tipografía</a>
+    <a href="#forma" style="text-decoration:none;padding:6px 12px;border:1px solid #E7E2DA;border-radius:999px;background:#fff">03 Forma y espacio</a>
+    <a href="#base" style="text-decoration:none;padding:6px 12px;border:1px solid #E7E2DA;border-radius:999px;background:#fff">04 Botones y campos</a>
+    <a href="#chips" style="text-decoration:none;padding:6px 12px;border:1px solid #E7E2DA;border-radius:999px;background:#fff">05 Chips</a>
+    <a href="#nav" style="text-decoration:none;padding:6px 12px;border:1px solid #E7E2DA;border-radius:999px;background:#fff">06 Navegación</a>
+    <a href="#venta" style="text-decoration:none;padding:6px 12px;border:1px solid #E7E2DA;border-radius:999px;background:#fff">07 Venta</a>
+    <a href="#datos" style="text-decoration:none;padding:6px 12px;border:1px solid #E7E2DA;border-radius:999px;background:#fff">08 Datos</a>
+    <a href="#cont" style="text-decoration:none;padding:6px 12px;border:1px solid #E7E2DA;border-radius:999px;background:#fff">09 Contenedores</a>
+    <a href="#resp" style="text-decoration:none;padding:6px 12px;border:1px solid #E7E2DA;border-radius:999px;background:#fff">10 Respuesta</a>
+    <a href="#chat" style="text-decoration:none;padding:6px 12px;border:1px solid #E7E2DA;border-radius:999px;background:#fff">11 Mensajería</a>
+    <a href="#estados" style="text-decoration:none;padding:6px 12px;border:1px solid #E7E2DA;border-radius:999px;background:#fff">12 Estados y tono</a>
+  </div>
+</header>
+
+<!-- 01 COLOR -->
+<section id="color" style="display:flex;flex-direction:column;gap:24px">
+  <div style="display:flex;flex-direction:column;gap:6px;border-top:1px solid #E7E2DA;padding-top:24px">
+    <div style="font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#6B635A">01 · Color</div>
+    <h2 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-.01em">Verde es plata que entra</h2>
+    <p style="margin:0;font-size:15px;color:#6B635A;max-width:680px;text-wrap:pretty">Primario y éxito son de la misma familia a propósito. El color aparece solo cuando significa algo; el resto es papel, tinta y bordes. El acento siempre lleva texto oscuro.</p>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px">
+    <sc-for list="{{ colores }}" as="c" hint-placeholder-count="11">
+      <div style="background:#fff;border:1px solid #E7E2DA;border-radius:12px;overflow:hidden">
+        <div style="height:72px;background:{{ c.claro }};border-bottom:1px solid #E7E2DA;display:flex;align-items:flex-end;padding:10px;color:{{ c.sobre }};font-size:13px;font-weight:600">{{ c.muestra }}</div>
+        <div style="padding:12px;display:flex;flex-direction:column;gap:3px">
+          <div style="font-size:14px;font-weight:600">{{ c.token }}</div>
+          <div style="font-size:12px;color:#6B635A">claro {{ c.claro }}</div>
+          <sc-if value="{{ tokensOscuros }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px;color:#6B635A">oscuro {{ c.oscuro }}</div></sc-if>
+          <div style="font-size:12px;color:#6B635A;margin-top:4px">{{ c.uso }}</div>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px">
+    <div style="background:#fff;border:1px solid #E7E2DA;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px">
+      <div style="font-size:12px;font-weight:600;color:#6B635A;text-transform:uppercase;letter-spacing:.06em">Fondos suaves (agregados)</div>
+      <p style="margin:0;font-size:13px;color:#6B635A">Un tono por rol para chips, banners y filas marcadas. Texto siempre en el color pleno del rol.</p>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        <sc-for list="{{ suaves }}" as="s" hint-placeholder-count="6">
+          <div style="display:flex;flex-direction:column;gap:4px;align-items:center">
+            <div style="width:72px;height:40px;border-radius:8px;background:{{ s.bg }};border:1px solid #E7E2DA;display:flex;align-items:center;justify-content:center;color:{{ s.fg }};font-size:12px;font-weight:600">Aa</div>
+            <div style="font-size:11px;color:#6B635A">{{ s.token }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    <div style="background:#fff;border:1px solid #E7E2DA;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px">
+      <div style="font-size:12px;font-weight:600;color:#6B635A;text-transform:uppercase;letter-spacing:.06em">Color solo cuando significa algo</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 24px;font-size:15px">
+        <div style="display:flex;justify-content:space-between;gap:12px"><span style="color:#6B635A">Ventas de hoy</span><span style="font-weight:600">$ 412.300</span></div>
+        <div style="display:flex;justify-content:space-between;gap:12px"><span style="color:#6B635A">vs. sábado pasado</span><span style="font-weight:600;color:#177A48">+8 %</span></div>
+        <div style="display:flex;justify-content:space-between;gap:12px"><span style="color:#6B635A">Efectivo contado</span><span style="font-weight:600">$ 120.700</span></div>
+        <div style="display:flex;justify-content:space-between;gap:12px"><span style="color:#6B635A">Diferencia</span><span style="font-weight:600;color:#C2362F">−$ 1.200</span></div>
+        <div style="display:flex;justify-content:space-between;gap:12px"><span style="color:#6B635A">Saldo a favor</span><span style="font-weight:600;color:#177A48">+$ 2.300</span></div>
+        <div style="display:flex;justify-content:space-between;gap:12px"><span style="color:#6B635A">Stock</span><span style="font-weight:600;color:#C2362F">−2 u</span></div>
+      </div>
+      <p style="margin:0;font-size:13px;color:#6B635A">Los montos neutros van en tinta. Verde: sobrante, confirmado, saldo a favor. Rojo: faltante, negativo, pierde plata. Siempre con signo.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 02 TIPOGRAFÍA -->
+<section id="tipo" style="display:flex;flex-direction:column;gap:24px">
+  <div style="display:flex;flex-direction:column;gap:6px;border-top:1px solid #E7E2DA;padding-top:24px">
+    <div style="font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#6B635A">02 · Tipografía</div>
+    <h2 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-.01em">Inter, con cifras tabulares</h2>
+    <p style="margin:0;font-size:15px;color:#6B635A;max-width:680px;text-wrap:pretty">Una sola familia. Todas las cifras llevan <code style="font-family:ui-monospace,monospace;font-size:13px;background:#F3F0EA;padding:1px 6px;border-radius:4px">font-feature-settings: "tnum"</code> para que los montos se alineen en tablas y totales. Pesos con punto de miles y coma decimal.</p>
+  </div>
+  <div style="display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:12px">
+    <div style="background:#fff;border:1px solid #E7E2DA;border-radius:12px;padding:8px 24px;display:flex;flex-direction:column">
+      <sc-for list="{{ tipos }}" as="t" hint-placeholder-count="7">
+        <div style="display:grid;grid-template-columns:180px minmax(0,1fr);gap:24px;align-items:baseline;padding:16px 0;border-bottom:1px solid #E7E2DA">
+          <div style="display:flex;flex-direction:column;gap:2px"><div style="font-size:13px;font-weight:600">{{ t.uso }}</div><div style="font-size:12px;color:#6B635A">{{ t.spec }}</div></div>
+          <div style="font-size:{{ t.px }}px;font-weight:{{ t.peso }};line-height:1.15;letter-spacing:{{ t.ls }};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ t.muestra }}</div>
+        </div>
+      </sc-for>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div style="background:#fff;border:1px solid #E7E2DA;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:10px">
+        <div style="font-size:12px;font-weight:600;color:#6B635A;text-transform:uppercase;letter-spacing:.06em">Cifras tabulares</div>
+        <div style="display:flex;flex-direction:column;font-size:15px">
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #E7E2DA"><span>Fondo inicial</span><span>$ 20.000</span></div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #E7E2DA"><span>Ventas en efectivo</span><span>+ $ 98.400</span></div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #E7E2DA"><span>Cobros de fiado</span><span>+ $ 8.000</span></div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #E7E2DA"><span>Gasto: limpieza</span><span>− $ 4.500</span></div>
+          <div style="display:flex;justify-content:space-between;padding:8px 0;font-weight:600;font-size:17px"><span>Efectivo esperado</span><span>$ 121.900</span></div>
+        </div>
+      </div>
+      <div style="background:#fff;border:1px solid #E7E2DA;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:8px;font-size:14px">
+        <div style="font-size:12px;font-weight:600;color:#6B635A;text-transform:uppercase;letter-spacing:.06em">Formatos argentinos</div>
+        <div style="display:flex;justify-content:space-between"><span style="color:#6B635A">Pesos</span><span>$ 12.345,50</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:#6B635A">Negativo</span><span>−$ 800</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:#6B635A">Fecha</span><span>03/10/2026</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:#6B635A">Hora</span><span>18:40</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:#6B635A">Peso</span><span>0,350 kg</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:#6B635A">Cantidad × precio</span><span>0,750 kg × $ 3.800</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:#6B635A">Porcentaje</span><span>+8 %</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 03 FORMA Y ESPACIO -->
+<section id="forma" style="display:flex;flex-direction:column;gap:24px">
+  <div style="display:flex;flex-direction:column;gap:6px;border-top:1px solid #E7E2DA;padding-top:24px">
+    <div style="font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#6B635A">03 · Forma y espacio</div>
+    <h2 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-.01em">Grilla de 4, bordes antes que sombras</h2>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px">
+    <div style="background:#fff;border:1px solid #E7E2DA;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px">
+      <div style="font-size:12px;font-weight:600;color:#6B635A;text-transform:uppercase;letter-spacing:.06em">Espaciado</div>
+      <div style="display:flex;align-items:flex-end;gap:12px">
+        <sc-for list="{{ espacios }}" as="e" hint-placeholder-count="7">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px"><div style="width:{{ e }}px;height:{{ e }}px;background:#1F6B4F;border-radius:2px"></div><div style="font-size:11px;color:#6B635A">{{ e }}</div></div>
+        </sc-for>
+      </div>
+      <p style="margin:0;font-size:13px;color:#6B635A">4 · 8 · 12 · 16 · 24 · 32 · 48. Padding de tarjeta 16 en celular, 20 en compu.</p>
+    </div>
+    <div style="background:#fff;border:1px solid #E7E2DA;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px">
+      <div style="font-size:12px;font-weight:600;color:#6B635A;text-transform:uppercase;letter-spacing:.06em">Radios y bordes</div>
+      <div style="display:flex;gap:12px;align-items:flex-end">
+        <div style="width:64px;height:48px;border:1px solid #E7E2DA;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#6B635A">8</div>
+        <div style="width:96px;height:64px;border:1px solid #E7E2DA;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#6B635A">12 tarjeta</div>
+        <div style="height:32px;padding:0 14px;border:1px solid #E7E2DA;border-radius:999px;display:flex;align-items:center;font-size:12px;color:#6B635A">chip</div>
+      </div>
+      <p style="margin:0;font-size:13px;color:#6B635A">Borde 1 px #E7E2DA en todo. Sombra solo en lo que flota: hoja, modal, aviso.</p>
+    </div>
+    <div style="background:#fff;border:1px solid #E7E2DA;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px">
+      <div style="font-size:12px;font-weight:600;color:#6B635A;text-transform:uppercase;letter-spacing:.06em">Alturas</div>
+      <div style="display:flex;flex-direction:column;gap:8px;font-size:13px">
+        <div style="display:flex;align-items:center;gap:12px"><div style="width:120px;height:40px;background:#F3F0EA;border-radius:8px"></div><span>40 · fila de tabla y botón compu</span></div>
+        <div style="display:flex;align-items:center;gap:12px"><div style="width:120px;height:44px;background:#F3F0EA;border-radius:8px"></div><span>44 · línea de ticket y campo</span></div>
+        <div style="display:flex;align-items:center;gap:12px"><div style="width:120px;height:48px;background:#F3F0EA;border-radius:8px"></div><span>48 · mínimo tocable en celular</span></div>
+        <div style="display:flex;align-items:center;gap:12px"><div style="width:120px;height:56px;background:#E2EFE9;border-radius:8px"></div><span>56 · cobro, billetes y teclado</span></div>
+      </div>
+    </div>
+    <div style="background:#fff;border:1px solid #E7E2DA;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px">
+      <div style="font-size:12px;font-weight:600;color:#6B635A;text-transform:uppercase;letter-spacing:.06em">Íconos de trazo · 24 px</div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;color:#1F1B16">
+        <sc-for list="{{ iconosMuestra }}" as="i" hint-placeholder-count="10">
+          <span style="width:24px;height:24px;background:currentColor;-webkit-mask:url({{ i }}) center/contain no-repeat;mask:url({{ i }}) center/contain no-repeat"></span>
+        </sc-for>
+      </div>
+      <p style="margin:0;font-size:13px;color:#6B635A">Lucide, trazo 2 px. 20 px dentro de chips y botones; 24 en barras y listas. Nunca emoji.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 04 BOTONES Y CAMPOS -->
+<section id="base" style="display:flex;flex-direction:column;gap:24px">
+  <div style="display:flex;flex-direction:column;gap:6px;border-top:1px solid #E7E2DA;padding-top:24px">
+    <div style="font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#6B635A">04 · Botones y campos</div>
+    <h2 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-.01em">Una acción principal por pantalla</h2>
+  </div>
+  <div style="background:#fff;border:1px solid #E7E2DA;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:16px">
+    <div style="display:grid;grid-template-columns:120px repeat(4,minmax(0,1fr));gap:12px;align-items:center;font-size:12px;color:#6B635A;font-weight:600">
+      <div></div><div>Normal</div><div>Hover</div><div>Foco</div><div>Deshabilitado</div>
+    </div>
+    <div style="display:grid;grid-template-columns:120px repeat(4,minmax(0,1fr));gap:12px;align-items:center">
+      <div style="font-size:13px;font-weight:600">Primario</div>
+      <button style="height:40px;padding:0 16px;border:0;border-radius:8px;background:#1F6B4F;color:#fff;font:600 14px Inter,sans-serif;cursor:pointer" style-hover="background:#185640">Guardar</button>
+      <button style="height:40px;padding:0 16px;border:0;border-radius:8px;background:#185640;color:#fff;font:600 14px Inter,sans-serif">Guardar</button>
+      <button style="height:40px;padding:0 16px;border:0;border-radius:8px;background:#1F6B4F;color:#fff;font:600 14px Inter,sans-serif;outline:2px solid #2F6DB5;outline-offset:2px">Guardar</button>
+      <button style="height:40px;padding:0 16px;border:0;border-radius:8px;background:#EFEBE4;color:#8C847A;font:600 14px Inter,sans-serif;cursor:not-allowed">Guardar</button>
+    </div>
+    <div style="display:grid;grid-template-columns:120px repeat(4,minmax(0,1fr));gap:12px;align-items:center">
+      <div style="font-size:13px;font-weight:600">Secundario</div>
+      <button style="height:40px;padding:0 16px;border:1px solid #E7E2DA;border-radius:8px;background:#fff;color:#1F1B16;font:600 14px Inter,sans-serif;cursor:pointer" style-hover="background:#F3F0EA">Cancelar</button>
+      <button style="height:40px;padding:0 16px;border:1px solid #E7E2DA;border-radius:8px;background:#F3F0EA;color:#1F1B16;font:600 14px Inter,sans-serif">Cancelar</button>
+      <button style="height:40px;padding:0 16px;border:1px solid #E7E2DA;border-radius:8px;background:#fff;color:#1F1B16;font:600 14px Inter,sans-serif;outline:2px solid #2F6DB5;outline-offset:2px">Cancelar</button>
+      <button style="height:40px;padding:0 16px;border:1px solid #EFEBE4;border-radius:8px;background:#fff;color:#8C847A;font:600 14px Inter,sans-serif;cursor:not-allowed">Cancelar</button>
+    </div>
+    <div style="display:grid;grid-template-columns:120px repeat(4,minmax(0,1fr));gap:12px;align-items:center">
+      <div style="font-size:13px;font-weight:600">Fantasma</div>
+      <button style="height:40px;padding:0 12px;border:0;border-radius:8px;background:transparent;color:#1F6B4F;font:600 14px Inter,sans-serif;cursor:pointer" style-hover="background:#E2EFE9">Ver arqueo</button>
+      <button style="height:40px;padding:0 12px;border:0;border-radius:8px;background:#E2EFE9;color:#1F6B4F;font:600 14px Inter,sans-serif">Ver arqueo</button>
+      <button style="height:40px;padding:0 12px;border:0;border-radius:8px;background:transparent;color:#1F6B4F;font:600 14px Inter,sans-serif;outline:2px solid #2F6DB5;outline-offset:2px">Ver arqueo</button>
+      <button style="height:40px;padding:0 12px;border:0;border-radius:8px;background:transparent;color:#8C847A;font:600 14px Inter,sans-serif;cursor:not-allowed">Ver arqueo</button>
+    </div>
+    <div style="display:grid;grid-template-columns:120px repeat(4,minmax(0,1fr));gap:12px;align-items:center">
+      <div style="font-size:13px;font-weight:600">Peligro</div>
+      <button style="height:40px;padding:0 16px;border:0;border-radius:8px;background:#C2362F;color:#fff;font:600 14px Inter,sans-serif;cursor:pointer" style-hover="background:#A62D27">Anular venta</button>
+      <button style="height:40px;padding:0 16px;border:0;border-radius:8px;background:#A62D27;color:#fff;font:600 14px Inter,sans-serif">Anular venta</button>
+      <button style="height:40px;padding:0 16px;border:0;border-radius:8px;background:#C2362F;color:#fff;font:600 14px Inter,sans-serif;outline:2px solid #2F6DB5;outline-offset:2px">Anular venta</button>
+      <button style="height:40px;padding:0 16px;border:0;border-radius:8px;background:#EFEBE4;color:#8C847A;font:600 14px Inter,sans-serif;cursor:not-allowed">Anular venta</button>
+    </div>
+    <div style="display:grid;grid-template-columns:120px repeat(4,minmax(0,1fr));gap:12px;align-items:center">
+      <div style="font-size:13px;font-weight:600">Con PIN</div>
+      <button style="height:40px;padding:0 14px 0 12px;border:1px solid #E7E2DA;border-radius:8px;background:#fff;color:#1F1B16;font:600 14px Inter,sans-serif;display:inline-flex;align-items:center;gap:8px;cursor:pointer" style-hover="background:#F3F0EA"><span style="width:16px;height:16px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/lock.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/lock.svg) center/contain no-repeat"></span>Abrir cajón</button>
+      <div style="grid-column:span 3;font-size:13px;color:#6B635A">Las acciones que piden PIN se muestran con candado, no se esconden. Lo que el rol no puede ver (costos, márgenes) directamente no aparece.</div>
+    </div>
+    <div style="border-top:1px solid #E7E2DA;padding-top:16px;display:grid;grid-template-columns:120px minmax(0,1fr);gap:12px;align-items:center">
+      <div style="font-size:13px;font-weight:600">Tamaños</div>
+      <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center">
+        <button style="height:40px;padding:0 16px;border:0;border-radius:8px;background:#1F6B4F;color:#fff;font:600 14px Inter,sans-serif">40 compu</button>
+        <button style="height:48px;padding:0 20px;border:0;border-radius:8px;background:#1F6B4F;color:#fff;font:600 16px Inter,sans-serif">48 celular</button>
+        <button style="height:56px;padding:0 24px;border:0;border-radius:8px;background:#1F6B4F;color:#fff;font:600 18px Inter,sans-serif;display:inline-flex;align-items:center;gap:14px">Cobrar <span style="font-weight:600;font-size:20px">$ 18.550</span><kbd style="font:600 11px Inter,sans-serif;background:rgba(255,255,255,.18);padding:2px 6px;border-radius:4px">F12</kbd></button>
+        <button style="width:48px;height:48px;border:1px solid #E7E2DA;border-radius:8px;background:#fff;color:#1F1B16;display:inline-flex;align-items:center;justify-content:center;cursor:pointer" style-hover="background:#F3F0EA"><span style="width:24px;height:24px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/printer.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/printer.svg) center/contain no-repeat"></span></button>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px">
+    <div style="background:#fff;border:1px solid #E7E2DA;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:16px">
+      <div style="font-size:12px;font-weight:600;color:#6B635A;text-transform:uppercase;letter-spacing:.06em">Campo de texto · estados</div>
+      <label style="display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600">Nombre y presentación<div style="height:44px;border:1px solid #E7E2DA;border-radius:8px;padding:0 12px;display:flex;align-items:center;font-size:15px;font-weight:400;background:#fff">Yerba Playadito 1 kg</div></label>
+      <label style="display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600">Precio de venta<div style="height:44px;border:2px solid #1F6B4F;border-radius:8px;padding:0 11px;display:flex;align-items:center;justify-content:space-between;font-size:15px;font-weight:400;background:#fff;box-shadow:0 0 0 3px #E2EFE9"><span>$ 6.900</span><span style="width:1px;height:20px;background:#1F1B16"></span></div><span style="font-size:12px;font-weight:400;color:#6B635A">Ganancia 42 % sobre el costo</span></label>
+      <label style="display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600">Efectivo recibido<div style="height:44px;border:2px solid #C2362F;border-radius:8px;padding:0 11px;display:flex;align-items:center;font-size:15px;font-weight:400;background:#fff">$ 17.350</div><span style="font-size:12px;font-weight:600;color:#C2362F;display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/circle-alert.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/circle-alert.svg) center/contain no-repeat"></span>Faltan $ 1.200</span></label>
+      <label style="display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600;color:#8C847A">Costo<div style="height:44px;border:1px solid #EFEBE4;border-radius:8px;padding:0 12px;display:flex;align-items:center;font-size:15px;font-weight:400;background:#FAF8F5;color:#8C847A">Solo el dueño</div></label>
+    </div>
+    <div style="background:#fff;border:1px solid #E7E2DA;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:16px">
+      <div style="font-size:12px;font-weight:600;color:#6B635A;text-transform:uppercase;letter-spacing:.06em">Selección</div>
+      <label style="display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600">Motivo<div style="height:44px;border:1px solid #E7E2DA;border-radius:8px;padding:0 12px;display:flex;align-items:center;justify-content:space-between;font-size:15px;font-weight:400;background:#fff">Vencido<span style="width:20px;height:20px;background:#6B635A;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/chevron-down.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/chevron-down.svg) center/contain no-repeat"></span></div></label>
+      <div style="display:flex;flex-direction:column;gap:12px;font-size:15px">
+        <div style="display:flex;align-items:center;gap:12px;min-height:32px"><span style="width:22px;height:22px;border-radius:6px;background:#1F6B4F;display:inline-flex;align-items:center;justify-content:center"><span style="width:16px;height:16px;background:#fff;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/check.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/check.svg) center/contain no-repeat"></span></span>Verificada en el banco</div>
+        <div style="display:flex;align-items:center;gap:12px;min-height:32px"><span style="width:22px;height:22px;border-radius:6px;border:1.5px solid #6B635A;background:#fff"></span>Vuelve a la góndola</div>
+        <div style="display:flex;align-items:center;gap:12px;min-height:32px"><span style="width:22px;height:22px;border-radius:50%;border:6px solid #1F6B4F;background:#fff"></span>Las más viejas primero</div>
+        <div style="display:flex;align-items:center;gap:12px;min-height:32px"><span style="width:22px;height:22px;border-radius:50%;border:1.5px solid #6B635A;background:#fff"></span>Tickets elegidos</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:32px">Promociones<span style="width:44px;height:26px;border-radius:999px;background:#1F6B4F;position:relative;display:inline-block"><span style="position:absolute;top:3px;left:21px;width:20px;height:20px;border-radius:50%;background:#fff"></span></span></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:32px">Varias cajas<span style="width:44px;height:26px;border-radius:999px;background:#E7E2DA;position:relative;display:inline-block"><span style="position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff"></span></span></div>
+      </div>
+    </div>
+    <div style="background:#fff;border:1px solid #E7E2DA;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:16px">
+      <div style="font-size:12px;font-weight:600;color:#6B635A;text-transform:uppercase;letter-spacing:.06em">Buscador con escáner</div>
+      <div style="display:flex;flex-direction:column;gap:6px"><div style="font-size:12px;color:#6B635A">Compu · la pistola escanea sin tocarlo</div>
+        <div style="height:44px;border:1px solid #E7E2DA;border-radius:8px;padding:0 12px;display:flex;align-items:center;gap:10px;font-size:15px;color:#6B635A;background:#fff"><span style="width:22px;height:22px;background:#1F6B4F;flex:none;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/scan-barcode.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/scan-barcode.svg) center/contain no-repeat"></span><span style="flex:1">Escaneá o buscá por nombre</span><kbd style="font:600 11px Inter,sans-serif;border:1px solid #E7E2DA;padding:2px 6px;border-radius:4px;color:#6B635A">F2</kbd></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px"><div style="font-size:12px;color:#6B635A">Celular · botón de cámara de 48</div>
+        <div style="display:flex;gap:8px"><div style="flex:1;height:48px;border:1px solid #E7E2DA;border-radius:8px;padding:0 12px;display:flex;align-items:center;gap:10px;font-size:16px;color:#6B635A;background:#fff"><span style="width:22px;height:22px;background:currentColor;flex:none;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/search.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/search.svg) center/contain no-repeat"></span>Buscar producto</div><button style="width:48px;height:48px;border:0;border-radius:8px;background:#1F6B4F;color:#fff;display:inline-flex;align-items:center;justify-content:center"><span style="width:24px;height:24px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/camera.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/camera.svg) center/contain no-repeat"></span></button></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px"><div style="font-size:12px;color:#6B635A">Búsqueda global · Ctrl+K</div>
+        <div style="height:40px;border:1px solid #E7E2DA;border-radius:8px;padding:0 12px;display:flex;align-items:center;gap:10px;font-size:14px;color:#6B635A;background:#FAF8F5"><span style="width:18px;height:18px;background:currentColor;flex:none;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/search.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/search.svg) center/contain no-repeat"></span><span style="flex:1">Productos, clientes, ventas o acciones</span><kbd style="font:600 11px Inter,sans-serif;border:1px solid #E7E2DA;padding:2px 6px;border-radius:4px">Ctrl K</kbd></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 05 CHIPS -->
+<section id="chips" style="display:flex;flex-direction:column;gap:24px">
+  <div style="display:flex;flex-direction:column;gap:6px;border-top:1px solid #E7E2DA;padding-top:24px">
+    <div style="font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#6B635A">05 · Chips de estado</div>
+    <h2 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-.01em">Siempre ícono y palabra, nunca solo color</h2>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px">
+    <sc-for list="{{ gruposChips }}" as="g" hint-placeholder-count="4">
+      <div style="background:#fff;border:1px solid #E7E2DA;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px">
+        <div style="font-size:12px;font-weight:600;color:#6B635A;text-transform:uppercase;letter-spacing:.06em">{{ g.titulo }}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          <sc-for list="{{ g.items }}" as="c" hint-placeholder-count="5">
+            <span style="display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px 0 8px;border-radius:999px;background:{{ c.bg }};color:{{ c.fg }};font-size:13px;font-weight:600;white-space:nowrap"><span style="width:14px;height:14px;background:currentColor;-webkit-mask:url({{ c.icon }}) center/contain no-repeat;mask:url({{ c.icon }}) center/contain no-repeat"></span>{{ c.label }}</span>
+          </sc-for>
+        </div>
+        <p style="margin:0;font-size:13px;color:#6B635A">{{ g.nota }}</p>
+      </div>
+    </sc-for>
+  </div>
+  <div style="background:#fff;border:1px solid #E7E2DA;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px">
+    <div style="font-size:12px;font-weight:600;color:#6B635A;text-transform:uppercase;letter-spacing:.06em">Chip de caja y de conexión · barra superior</div>
+    <div style="display:flex;flex-wrap:wrap;gap:10px">
+      <span style="display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 12px;border-radius:999px;border:1px solid #E7E2DA;background:#fff;font-size:13px;font-weight:500"><span style="width:8px;height:8px;border-radius:50%;background:#177A48"></span>Caja abierta · Tomás · desde 14:00</span>
+      <span style="display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 12px;border-radius:999px;border:1px solid #E7E2DA;background:#fff;font-size:13px;font-weight:500;color:#6B635A"><span style="width:8px;height:8px;border-radius:50%;background:#A8A096"></span>Caja cerrada</span>
+      <span style="display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 12px;border-radius:999px;background:#FBEEDB;color:#9A5B00;font-size:13px;font-weight:600"><span style="width:16px;height:16px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/wifi-off.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/wifi-off.svg) center/contain no-repeat"></span>Sin conexión · 3 ventas por sincronizar</span>
+      <span style="display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 12px;border-radius:999px;background:#E3EDF9;color:#2F6DB5;font-size:13px;font-weight:600"><span style="width:16px;height:16px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/refresh-cw.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/refresh-cw.svg) center/contain no-repeat"></span>Sincronizando 3 ventas</span>
+      <span style="display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 12px;border-radius:999px;background:#E3F2E9;color:#177A48;font-size:13px;font-weight:600"><span style="width:16px;height:16px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/check.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/check.svg) center/contain no-repeat"></span>Todo sincronizado</span>
+    </div>
+  </div>
+</section>
+
+<!-- 06 NAVEGACIÓN -->
+<section id="nav" style="display:flex;flex-direction:column;gap:24px">
+  <div style="display:flex;flex-direction:column;gap:6px;border-top:1px solid #E7E2DA;padding-top:24px">
+    <div style="font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#6B635A">06 · Navegación</div>
+    <h2 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-.01em">Nueve módulos, tres grupos</h2>
+    <p style="margin:0;font-size:15px;color:#6B635A;max-width:680px">Barra lateral en compu, barra inferior de cinco lugares en celular, riel de íconos en tablet. Escanear vive fijo arriba en celular.</p>
+  </div>
+  <sc-if value="{{ verCompu }}" hint-placeholder-val="{{ true }}">
+  <div style="background:#fff;border:1px solid #E7E2DA;border-radius:12px;overflow:hidden">
+    <div style="padding:10px 16px;font-size:12px;color:#6B635A;border-bottom:1px solid #E7E2DA">Compu · barra superior + barra lateral (240) + riel colapsado (64)</div>
+    <div style="height:56px;border-bottom:1px solid #E7E2DA;display:flex;align-items:center;gap:16px;padding:0 16px">
+      <div style="display:flex;align-items:center;gap:10px;width:208px"><span style="width:28px;height:28px;border-radius:8px;background:#1F6B4F;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:14px">M</span><span style="font-weight:600;font-size:14px">Almacén La Esquina</span></div>
+      <div style="flex:1;max-width:420px;height:36px;border:1px solid #E7E2DA;border-radius:8px;padding:0 10px;display:flex;align-items:center;gap:8px;font-size:13px;color:#6B635A;background:#FAF8F5"><span style="width:16px;height:16px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/search.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/search.svg) center/contain no-repeat"></span><span style="flex:1">Buscar</span><kbd style="font:600 11px Inter,sans-serif;border:1px solid #E7E2DA;padding:1px 5px;border-radius:4px">Ctrl K</kbd></div>
+      <div style="flex:1"></div>
+      <span style="display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 12px;border-radius:999px;border:1px solid #E7E2DA;font-size:13px;font-weight:500"><span style="width:8px;height:8px;border-radius:50%;background:#177A48"></span>Caja abierta · Tomás · desde 14:00</span>
+      <span style="display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 10px;border-radius:999px;background:#E3F2E9;color:#177A48;font-size:12px;font-weight:600"><span style="width:14px;height:14px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/wifi.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/wifi.svg) center/contain no-repeat"></span>En línea</span>
+      <span style="position:relative;width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;border-radius:8px"><span style="width:22px;height:22px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/bell.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/bell.svg) center/contain no-repeat"></span><span style="position:absolute;top:8px;right:8px;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:#C2362F;color:#fff;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center">6</span></span>
+      <span style="width:36px;height:36px;border-radius:50%;background:#FDF1D6;color:#1F1B16;display:inline-flex;align-items:center;justify-content:center;font-weight:600;font-size:14px">T</span>
+    </div>
+    <div style="display:grid;grid-template-columns:240px 64px minmax(0,1fr);min-height:420px">
+      <nav style="border-right:1px solid #E7E2DA;padding:12px;display:flex;flex-direction:column;gap:4px;font-size:14px">
+        <sc-for list="{{ sidebar }}" as="m" hint-placeholder-count="12">
+          <sc-if value="{{ m.grupo }}" hint-placeholder-val="{{ false }}"><div style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#6B635A;padding:12px 12px 4px">{{ m.label }}</div></sc-if>
+          <sc-if value="{{ m.item }}" hint-placeholder-val="{{ true }}"><div style="height:40px;padding:0 12px;border-radius:8px;display:flex;align-items:center;gap:12px;background:{{ m.bg }};color:{{ m.fg }};font-weight:{{ m.peso }};cursor:pointer" style-hover="background:#F3F0EA"><span style="width:22px;height:22px;flex:none;background:currentColor;-webkit-mask:url({{ m.icon }}) center/contain no-repeat;mask:url({{ m.icon }}) center/contain no-repeat"></span><span style="flex:1">{{ m.label }}</span><span style="font-size:12px;color:#6B635A;font-weight:500">{{ m.badge }}</span></div></sc-if>
+        </sc-for>
+      </nav>
+      <nav style="border-right:1px solid #E7E2DA;padding:12px 8px;display:flex;flex-direction:column;gap:4px;align-items:center">
+        <sc-for list="{{ riel }}" as="r" hint-placeholder-count="9">
+          <div style="width:48px;height:44px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:{{ r.bg }};color:{{ r.fg }}" title="{{ r.label }}"><span style="width:24px;height:24px;background:currentColor;-webkit-mask:url({{ r.icon }}) center/contain no-repeat;mask:url({{ r.icon }}) center/contain no-repeat"></span></div>
+        </sc-for>
+      </nav>
+      <div style="padding:24px;display:flex;flex-direction:column;gap:12px;color:#6B635A;font-size:13px">
+        <div style="font-size:22px;font-weight:600;color:#1F1B16">Vender</div>
+        <div style="height:120px;border:1px dashed #E7E2DA;border-radius:12px;display:flex;align-items:center;justify-content:center">contenido del módulo</div>
+        <p style="margin:0;max-width:520px">La barra lateral se colapsa al riel de 64 (también el diseño de tablet vertical). En modo mostrador, Vender ocupa toda la pantalla sin barra lateral.</p>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+  <sc-if value="{{ verCel }}" hint-placeholder-val="{{ true }}">
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:12px">
+    <div style="background:#fff;border:1px solid #E7E2DA;border-radius:12px;overflow:hidden">
+      <div style="padding:10px 16px;font-size:12px;color:#6B635A;border-bottom:1px solid #E7E2DA">Celular · barra superior</div>
+      <div style="width:100%;max-width:393px;margin:16px auto;border:1px solid #E7E2DA;border-radius:12px;overflow:hidden;background:#FAF8F5">
+        <div style="height:56px;background:#fff;border-bottom:1px solid #E7E2DA;display:flex;align-items:center;gap:8px;padding:0 8px 0 16px">
+          <span style="font-size:20px;font-weight:600;flex:1">Inicio</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;border-radius:999px;border:1px solid #E7E2DA;font-size:12px;font-weight:500;white-space:nowrap"><span style="width:8px;height:8px;border-radius:50%;background:#177A48"></span>Caja abierta</span>
+          <span style="position:relative;width:48px;height:48px;display:inline-flex;align-items:center;justify-content:center"><span style="width:24px;height:24px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/bell.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/bell.svg) center/contain no-repeat"></span><span style="position:absolute;top:10px;right:10px;width:8px;height:8px;border-radius:50%;background:#C2362F"></span></span>
+          <span style="width:48px;height:48px;display:inline-flex;align-items:center;justify-content:center;color:#1F6B4F"><span style="width:26px;height:26px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/scan-barcode.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/scan-barcode.svg) center/contain no-repeat"></span></span>
+        </div>
+        <div style="height:120px;display:flex;align-items:center;justify-content:center;color:#6B635A;font-size:13px">contenido</div>
+      </div>
+      <p style="margin:0;padding:0 16px 16px;font-size:13px;color:#6B635A">Escanear actúa según dónde estés: agrega a la venta, abre el producto o marca la recepción.</p>
+    </div>
+    <div style="background:#fff;border:1px solid #E7E2DA;border-radius:12px;overflow:hidden">
+      <div style="padding:10px 16px;font-size:12px;color:#6B635A;border-bottom:1px solid #E7E2DA">Celular · barra inferior de cinco lugares</div>
+      <div style="width:100%;max-width:393px;margin:16px auto;border:1px solid #E7E2DA;border-radius:12px;overflow:hidden;background:#FAF8F5">
+        <div style="height:120px;display:flex;align-items:center;justify-content:center;color:#6B635A;font-size:13px">contenido</div>
+        <div style="height:76px;background:#fff;border-top:1px solid #E7E2DA;display:grid;grid-template-columns:repeat(5,1fr);padding:6px 4px 18px">
+          <sc-for list="{{ bottomBar }}" as="b" hint-placeholder-count="5">
+            <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:{{ b.fg }};font-size:11px;font-weight:{{ b.peso }}"><span style="width:26px;height:26px;background:currentColor;-webkit-mask:url({{ b.icon }}) center/contain no-repeat;mask:url({{ b.icon }}) center/contain no-repeat"></span>{{ b.label }}</div>
+          </sc-for>
+        </div>
+      </div>
+      <p style="margin:0;padding:0 16px 16px;font-size:13px;color:#6B635A">Vender no aparece si el rol no vende. Más agrupa Caja, Clientes, WhatsApp, Reportes y Ajustes.</p>
+    </div>
+  </div>
+  </sc-if>
+</section>
+
+<!-- 07 VENTA -->
+<section id="venta" style="display:flex;flex-direction:column;gap:24px">
+  <div style="display:flex;flex-direction:column;gap:6px;border-top:1px solid #E7E2DA;padding-top:24px">
+    <div style="font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#6B635A">07 · Venta</div>
+    <h2 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-.01em">Escanear, cobrar y seguir en menos de cinco segundos</h2>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px">
+    <div style="background:#fff;border:1px solid #E7E2DA;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px">
+      <div style="font-size:12px;font-weight:600;color:#6B635A;text-transform:uppercase;letter-spacing:.06em">Botón rápido de producto · lo que no tiene código</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+        <sc-for list="{{ rapidos }}" as="r" hint-placeholder-count="6">
+          <button style="display:flex;flex-direction:column;align-items:stretch;gap:0;padding:0;border:1px solid #E7E2DA;border-radius:12px;background:#fff;overflow:hidden;text-align:left;cursor:pointer;font-family:Inter,sans-serif;color:#1F1B16" style-hover="border-color:#1F6B4F">
+            <div style="height:56px;background:repeating-linear-gradient(135deg,#F3F0EA 0 6px,#EDE8E0 6px 12px);display:flex;align-items:flex-end;justify-content:flex-end;padding:6px"><span style="font-size:10px;font-weight:600;padding:2px 6px;border-radius:999px;background:{{ r.tagBg }};color:{{ r.tagFg }}">{{ r.tag }}</span></div>
+            <div style="padding:8px 10px;display:flex;flex-direction:column;gap:2px"><div style="font-size:13px;font-weight:600;line-height:1.2">{{ r.nombre }}</div><div style="font-size:12px;color:#6B635A">{{ r.precio }}</div></div>
+          </button>
+        </sc-for>
+      </div>
+      <p style="margin:0;font-size:13px;color:#6B635A">Foto a rayas = lugar para la foto real. Compu: 4 a 6 columnas; celular: una fila deslizable. Mínimo 88 px de alto.</p>
+    </div>
+
+    <div style="background:#fff;border:1px solid #E7E2DA;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px">
+      <div style="font-size:12px;font-weight:600;color:#6B635A;text-transform:uppercase;letter-spacing:.06em">Línea de ticket · celular (stepper) y compu (fila 44)</div>
+      <sc-if value="{{ verCel }}" hint-placeholder-val="{{ true }}">
+      <div style="border:1px solid #E7E2DA;border-radius:12px;overflow:hidden">
+        <div style="display:flex;align-items:center;gap:12px;padding:0 12px;min-height:64px;border-bottom:1px solid #E7E2DA">
+          <div style="flex:1;display:flex;flex-direction:column;gap:2px"><div style="font-size:16px;font-weight:600">Pan francés</div><div style="font-size:13px;color:#6B635A">0,750 kg × $ 3.800</div></div>
+          <div style="font-size:16px;font-weight:600">$ 2.850</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;padding:0 12px;min-height:64px;border-bottom:1px solid #E7E2DA;background:#E2EFE9">
+          <div style="flex:1;display:flex;flex-direction:column;gap:2px"><div style="font-size:16px;font-weight:600">Coca-Cola 2,25 L</div><div style="font-size:13px;color:#6B635A">2 × $ 4.600</div></div>
+          <div style="display:inline-flex;align-items:center;border:1px solid #E7E2DA;border-radius:8px;background:#fff;overflow:hidden"><button style="width:44px;height:44px;border:0;background:#fff;color:#1F1B16;display:inline-flex;align-items:center;justify-content:center;cursor:pointer" style-hover="background:#F3F0EA"><span style="width:18px;height:18px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/minus.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/minus.svg) center/contain no-repeat"></span></button><span style="width:36px;text-align:center;font-size:16px;font-weight:600">2</span><button style="width:44px;height:44px;border:0;background:#fff;color:#1F1B16;display:inline-flex;align-items:center;justify-content:center;cursor:pointer" style-hover="background:#F3F0EA"><span style="width:18px;height:18px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/plus.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/plus.svg) center/contain no-repeat"></span></button></div>
+          <div style="font-size:16px;font-weight:600;min-width:72px;text-align:right">$ 9.200</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;padding:0 12px;min-height:48px;color:#1F1B16;background:#FDF1D6">
+          <span style="width:18px;height:18px;flex:none;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/tag.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/tag.svg) center/contain no-repeat"></span>
+          <div style="flex:1;font-size:14px;font-weight:600">Promo 2×1 Coca-Cola 2,25 L</div>
+          <div style="font-size:15px;font-weight:600">−$ 4.600</div>
+        </div>
+      </div>
+      </sc-if>
+      <sc-if value="{{ verCompu }}" hint-placeholder-val="{{ true }}">
+      <div style="border:1px solid #E7E2DA;border-radius:8px;overflow:hidden;font-size:14px">
+        <div style="display:grid;grid-template-columns:minmax(0,1fr) 72px 96px 96px;gap:8px;padding:0 12px;height:32px;align-items:center;font-size:12px;font-weight:600;color:#6B635A;background:#FAF8F5;border-bottom:1px solid #E7E2DA"><span>Producto</span><span style="text-align:right">Cant.</span><span style="text-align:right">Unitario</span><span style="text-align:right">Subtotal</span></div>
+        <div style="display:grid;grid-template-columns:minmax(0,1fr) 72px 96px 96px;gap:8px;padding:0 12px;height:44px;align-items:center;border-bottom:1px solid #E7E2DA"><span>Yerba Playadito 1 kg</span><span style="text-align:right">1</span><span style="text-align:right">$ 6.900</span><span style="text-align:right;font-weight:600">$ 6.900</span></div>
+        <div style="display:grid;grid-template-columns:minmax(0,1fr) 72px 96px 96px;gap:8px;padding:0 12px;height:44px;align-items:center;border-bottom:1px solid #E7E2DA;background:#E2EFE9;box-shadow:inset 0 0 0 1px #1F6B4F"><span style="font-weight:600">Jamón cocido</span><span style="text-align:right">0,200 kg</span><span style="text-align:right">$ 21.000</span><span style="text-align:right;font-weight:600">$ 4.200</span></div>
+        <div style="padding:6px 12px;font-size:12px;color:#6B635A;display:flex;gap:12px;flex-wrap:wrap"><span>↑ ↓ elegir línea</span><span>+ − cantidad</span><span>Supr quitar</span><span>3 * y escanear = tres</span></div>
+      </div>
+      </sc-if>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px">
+    <sc-if value="{{ verCompu }}" hint-placeholder-val="{{ true }}">
+    <div style="background:#fff;border:1px solid #E7E2DA;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px">
+      <div style="font-size:12px;font-weight:600;color:#6B635A;text-transform:uppercase;letter-spacing:.06em">Panel de total · compu (35 % derecha)</div>
+      <div style="border:1px solid #E7E2DA;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:14px;background:#FAF8F5">
+        <div style="display:flex;justify-content:space-between;font-size:13px;color:#6B635A"><span>Caja 1 · Tomás</span><span>4 ítems</span></div>
+        <div style="display:flex;flex-direction:column;gap:6px;font-size:14px">
+          <div style="display:flex;justify-content:space-between"><span style="color:#6B635A">Subtotal</span><span>$ 23.150</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:#6B635A">Promo 2×1 Coca-Cola</span><span>−$ 4.600</span></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:2px;padding-top:8px;border-top:1px solid #E7E2DA"><span style="font-size:13px;color:#6B635A">Total</span><span style="font-size:56px;font-weight:600;letter-spacing:-.02em;line-height:1">$ 18.550</span></div>
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #E7E2DA;border-radius:8px;background:#fff;font-size:14px"><span style="width:28px;height:28px;border-radius:50%;background:#FDF1D6;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:600">RG</span><span style="flex:1">Rosa Giménez</span><span style="color:#6B635A;font-size:13px">fiado $ 18.400</span></div>
+        <button style="height:64px;border:0;border-radius:8px;background:#1F6B4F;color:#fff;font:600 20px Inter,sans-serif;display:flex;align-items:center;justify-content:center;gap:14px;cursor:pointer" style-hover="background:#185640">Cobrar <kbd style="font:600 12px Inter,sans-serif;background:rgba(255,255,255,.18);padding:3px 7px;border-radius:4px">F12</kbd></button>
+        <div style="display:flex;gap:8px"><button style="flex:1;height:40px;border:1px solid #E7E2DA;border-radius:8px;background:#fff;font:600 13px Inter,sans-serif;cursor:pointer" style-hover="background:#F3F0EA">Espera · F6</button><button style="flex:1;height:40px;border:1px solid #E7E2DA;border-radius:8px;background:#fff;font:600 13px Inter,sans-serif;cursor:pointer" style-hover="background:#F3F0EA">Descuento · F4</button><button style="flex:1;height:40px;border:1px solid #E7E2DA;border-radius:8px;background:#fff;font:600 13px Inter,sans-serif;cursor:pointer" style-hover="background:#F3F0EA">Más</button></div>
+      </div>
+    </div>
+    </sc-if>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <sc-if value="{{ verCel }}" hint-placeholder-val="{{ true }}">
+      <div style="background:#fff;border:1px solid #E7E2DA;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px">
+        <div style="font-size:12px;font-weight:600;color:#6B635A;text-transform:uppercase;letter-spacing:.06em">Barra de total · celular (fija abajo)</div>
+        <div style="max-width:393px;border:1px solid #E7E2DA;border-radius:12px;padding:12px 12px 24px;display:flex;flex-direction:column;gap:10px;background:#fff">
+          <button style="height:60px;border:0;border-radius:8px;background:#1F6B4F;color:#fff;font:600 18px Inter,sans-serif;display:flex;align-items:center;justify-content:space-between;padding:0 20px;cursor:pointer" style-hover="background:#185640"><span style="font-weight:500;font-size:15px">4 ítems · $ 18.550</span><span>Cobrar</span></button>
+        </div>
+      </div>
+      </sc-if>
+      <div style="background:#fff;border:1px solid #E7E2DA;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px">
+        <div style="font-size:12px;font-weight:600;color:#6B635A;text-transform:uppercase;letter-spacing:.06em">Selector de medio de pago · 56 px</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <sc-for list="{{ medios }}" as="m" hint-placeholder-count="4">
+            <button style="height:60px;border:{{ m.borde }};border-radius:8px;background:{{ m.bg }};color:#1F1B16;font:600 15px Inter,sans-serif;display:flex;align-items:center;gap:10px;padding:0 14px;cursor:pointer" style-hover="background:#F3F0EA"><span style="width:22px;height:22px;flex:none;background:currentColor;-webkit-mask:url({{ m.icon }}) center/contain no-repeat;mask:url({{ m.icon }}) center/contain no-repeat"></span>{{ m.label }}</button>
+          </sc-for>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-radius:8px;background:#FBEEDB;color:#9A5B00;font-size:14px;font-weight:600"><span>$ 10.000 en efectivo</span><span>Falta $ 8.550</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px">
+    <div style="background:#fff;border:1px solid #E7E2DA;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px">
+      <div style="font-size:12px;font-weight:600;color:#6B635A;text-transform:uppercase;letter-spacing:.06em">Billetes rápidos y vuelto</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+        <sc-for list="{{ billetes }}" as="b" hint-placeholder-count="5">
+          <button style="height:56px;border:1px solid #E7E2DA;border-radius:8px;background:#fff;color:#1F1B16;font:600 16px Inter,sans-serif;cursor:pointer" style-hover="background:#F3F0EA">{{ b }}</button>
+        </sc-for>
+        <button style="height:56px;border:1px solid #1F6B4F;border-radius:8px;background:#E2EFE9;color:#1F6B4F;font:600 16px Inter,sans-serif;cursor:pointer">Justo</button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;padding:16px;border-radius:8px;background:#E3F2E9">
+        <div style="display:flex;justify-content:space-between;font-size:14px;color:#6B635A"><span>Recibido $ 20.000</span><span>Total $ 18.550</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:16px;font-weight:600;color:#177A48">Vuelto</span><span style="font-size:40px;font-weight:600;color:#177A48;letter-spacing:-.02em;line-height:1">$ 1.450</span></div>
+      </div>
+    </div>
+    <div style="background:#fff;border:1px solid #E7E2DA;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px;grid-column:span 2">
+      <div style="font-size:12px;font-weight:600;color:#6B635A;text-transform:uppercase;letter-spacing:.06em">Teclado numérico · efectivo, peso, cantidad y PIN</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px">
+        <sc-for list="{{ teclados }}" as="k" hint-placeholder-count="4">
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="font-size:13px;font-weight:600">{{ k.titulo }}</div>
+            <div style="min-height:72px;border:1px solid #E7E2DA;border-radius:8px;padding:10px 14px;display:flex;flex-direction:column;justify-content:center;gap:2px;background:#FAF8F5">
+              <div style="font-size:12px;color:#6B635A">{{ k.ayuda }}</div>
+              <div style="font-size:{{ k.px }}px;font-weight:600;letter-spacing:{{ k.ls }};line-height:1.1">{{ k.display }}</div>
+            </div>
+            <sc-if value="{{ k.atajos }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;gap:6px">
+                <sc-for list="{{ k.atajos }}" as="a" hint-placeholder-count="3">
+                  <button style="flex:1;height:36px;border:1px solid #E7E2DA;border-radius:8px;background:#fff;font:600 13px Inter,sans-serif;cursor:pointer" style-hover="background:#F3F0EA">{{ a }}</button>
+                </sc-for>
+              </div>
+            </sc-if>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
+              <sc-for list="{{ k.teclas }}" as="t" hint-placeholder-count="12">
+                <button style="height:52px;border:1px solid #E7E2DA;border-radius:8px;background:#fff;color:#1F1B16;font:500 20px Inter,sans-serif;cursor:pointer" style-hover="background:#F3F0EA">{{ t }}</button>
+              </sc-for>
+            </div>
+            <button style="height:48px;border:0;border-radius:8px;background:{{ k.okBg }};color:#fff;font:600 15px Inter,sans-serif;cursor:pointer">{{ k.ok }}</button>
+          </div>
+        </sc-for>
+      </div>
+      <p style="margin:0;font-size:13px;color:#6B635A">Teclas de 52 en compu y 56 en celular. En peso, 235 se lee 0,235 kg; el modo Por plata invierte la cuenta: "$ 2.000 de queso" → "Cortá 148 g".</p>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px">
+    <div style="background:#fff;border:1px solid #E7E2DA;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px">
+      <div style="font-size:12px;font-weight:600;color:#6B635A;text-transform:uppercase;letter-spacing:.06em">Ticket · 58 mm (32 caracteres) y 80 mm</div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start">
+        <pre style="margin:0;width:236px;padding:14px 10px;background:#fff;border:1px solid #E7E2DA;border-radius:4px;font:11.5px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;color:#1F1B16;white-space:pre;box-shadow:0 1px 2px rgba(31,27,22,.06)">{{ ticket58 }}</pre>
+        <div style="flex:1;min-width:200px;display:flex;flex-direction:column;gap:8px;font-size:13px;color:#6B635A">
+          <p style="margin:0">Nombre y logo, dirección, fecha y hora, número, cajero, ítems (cantidad × precio y subtotal), promociones, total, medios de pago, vuelto y la leyenda legal.</p>
+          <p style="margin:0">En 80 mm (48 caracteres) la cantidad y el subtotal van en la misma línea que el nombre.</p>
+          <p style="margin:0">Fase 2: la factura B suma el bloque de transparencia fiscal (Ley 27.743, IVA contenido).</p>
+        </div>
+      </div>
+    </div>
+    <sc-if value="{{ verCompu }}" hint-placeholder-val="{{ true }}">
+    <div style="background:#fff;border:1px solid #E7E2DA;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px">
+      <div style="font-size:12px;font-weight:600;color:#6B635A;text-transform:uppercase;letter-spacing:.06em">Franja de atajos · compu, pie de Vender</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px 14px;padding:10px 12px;border:1px solid #E7E2DA;border-radius:8px;background:#FAF8F5;font-size:13px">
+        <sc-for list="{{ atajos }}" as="a" hint-placeholder-count="9">
+          <span style="display:inline-flex;align-items:center;gap:6px;height:28px"><kbd style="font:600 11px Inter,sans-serif;border:1px solid #E7E2DA;background:#fff;padding:2px 6px;border-radius:4px;min-width:28px;text-align:center">{{ a.k }}</kbd><span>{{ a.v }}</span></span>
+        </sc-for>
+      </div>
+      <p style="margin:0;font-size:13px;color:#6B635A">F1 abre la lista completa. Ctrl + Enter también cobra. Esc cancela o cierra.</p>
+    </div>
+    </sc-if>
+  </div>
+</section>
+
+<!-- 08 DATOS -->
+<section id="datos" style="display:flex;flex-direction:column;gap:24px">
+  <div style="display:flex;flex-direction:column;gap:6px;border-top:1px solid #E7E2DA;padding-top:24px">
+    <div style="font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#6B635A">08 · Datos</div>
+    <h2 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-.01em">Arriba la respuesta, debajo el detalle</h2>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px">
+    <sc-for list="{{ tarjetas }}" as="t" hint-placeholder-count="4">
+      <div style="background:#fff;border:1px solid #E7E2DA;border-radius:12px;padding:16px 20px;display:flex;flex-direction:column;gap:6px">
+        <div style="font-size:13px;color:#6B635A">{{ t.label }}</div>
+        <div style="font-size:30px;font-weight:600;letter-spacing:-.02em;line-height:1.1">{{ t.valor }}</div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:{{ t.fg }}"><span style="width:14px;height:14px;background:currentColor;-webkit-mask:url({{ t.icon }}) center/contain no-repeat;mask:url({{ t.icon }}) center/contain no-repeat"></span>{{ t.delta }}</div>
+      </div>
+    </sc-for>
+  </div>
+  <sc-if value="{{ verCompu }}" hint-placeholder-val="{{ true }}">
+  <div style="background:#fff;border:1px solid #E7E2DA;border-radius:12px;overflow:hidden">
+    <div style="padding:10px 16px;font-size:12px;color:#6B635A;border-bottom:1px solid #E7E2DA">Tabla · orden, selección múltiple, edición en línea, filas de 40</div>
+    <div style="padding:12px 16px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;border-bottom:1px solid #E7E2DA">
+      <sc-for list="{{ filtros }}" as="f" hint-placeholder-count="6">
+        <button style="height:32px;padding:0 12px;border:1px solid {{ f.bd }};border-radius:999px;background:{{ f.bg }};color:{{ f.fg }};font:600 13px Inter,sans-serif;cursor:pointer">{{ f.label }}</button>
+      </sc-for>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;padding:8px 16px;background:#E2EFE9;font-size:13px;font-weight:600;color:#1F6B4F;border-bottom:1px solid #E7E2DA"><span>2 seleccionados</span><span style="color:#6B635A;font-weight:400">·</span><a href="#datos" style="font-weight:600">Cambiar precio</a><a href="#datos" style="font-weight:600">Cambiar categoría</a><a href="#datos" style="font-weight:600">Imprimir etiquetas</a><a href="#datos" style="font-weight:600">Sumar al pedido</a></div>
+    <div style="overflow-x:auto">
+    <div style="min-width:max-content">
+      <div style="display:grid;grid-template-columns:36px minmax(200px,2fr) 130px 150px 90px 90px 110px 120px;gap:12px;align-items:center;height:40px;padding:0 16px;font-size:12px;font-weight:600;color:#6B635A;background:#FAF8F5;border-bottom:1px solid #E7E2DA">
+        <span style="width:18px;height:18px;border-radius:4px;border:1.5px solid #6B635A;background:#fff"></span><span>Producto</span><span>Código</span><span>Stock</span><span style="text-align:right">Costo</span><span style="text-align:right">Ganancia</span><span style="text-align:right;display:flex;align-items:center;justify-content:flex-end;gap:4px;color:#1F1B16">Precio <span style="width:14px;height:14px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/arrow-down.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/arrow-down.svg) center/contain no-repeat"></span></span><span>Actualizado</span>
+      </div>
+      <sc-for list="{{ productos }}" as="p" hint-placeholder-count="6">
+        <div style="display:grid;grid-template-columns:36px minmax(200px,2fr) 130px 150px 90px 90px 110px 120px;gap:12px;align-items:center;height:40px;padding:0 16px;font-size:14px;border-bottom:1px solid #E7E2DA;background:{{ p.rowBg }}" style-hover="background:#FAF8F5">
+          <span style="width:18px;height:18px;border-radius:4px;border:1.5px solid {{ p.cbBd }};background:{{ p.cbBg }};display:inline-flex;align-items:center;justify-content:center"><span style="width:12px;height:12px;background:#fff;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/check.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/check.svg) center/contain no-repeat"></span></span>
+          <span style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.nombre }}</span>
+          <span style="color:#6B635A;font-size:13px">{{ p.codigo }}</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 8px 0 6px;border-radius:999px;background:{{ p.chip.bg }};color:{{ p.chip.fg }};font-size:12px;font-weight:600;width:max-content;max-width:100%"><span style="width:12px;height:12px;flex:none;background:currentColor;-webkit-mask:url({{ p.chip.icon }}) center/contain no-repeat;mask:url({{ p.chip.icon }}) center/contain no-repeat"></span>{{ p.chip.label }}</span>
+          <span style="text-align:right">{{ p.costo }}</span>
+          <span style="text-align:right;color:{{ p.ganFg }}">{{ p.ganancia }}</span>
+          <sc-if value="{{ p.editando }}" hint-placeholder-val="{{ false }}"><span style="height:30px;border:2px solid #1F6B4F;border-radius:6px;padding:0 8px;display:flex;align-items:center;justify-content:flex-end;font-weight:600;background:#fff;box-shadow:0 0 0 3px #E2EFE9">{{ p.precio }}</span></sc-if>
+          <sc-if value="{{ p.noEditando }}" hint-placeholder-val="{{ true }}"><span style="text-align:right;font-weight:600">{{ p.precio }}</span></sc-if>
+          <span style="color:#6B635A;font-size:13px">{{ p.fecha }}</span>
+        </div>
+      </sc-for>
+    </div>
+    </div>
+  </div>
+  </sc-if>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px">
+    <div style="background:#fff;border:1px solid #E7E2DA;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px">
+      <div style="font-size:12px;font-weight:600;color:#6B635A;text-transform:uppercase;letter-spacing:.06em">Selector de período</div>
+      <div style="display:inline-flex;border:1px solid #E7E2DA;border-radius:8px;overflow:hidden;font-size:13px;font-weight:600;flex-wrap:wrap">
+        <sc-for list="{{ periodos }}" as="p" hint-placeholder-count="6">
+          <button style="height:36px;padding:0 12px;border:0;border-right:1px solid #E7E2DA;background:{{ p.bg }};color:{{ p.fg }};font:600 13px Inter,sans-serif;cursor:pointer">{{ p.label }}</button>
+        </sc-for>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <div style="height:40px;border:1px solid #E7E2DA;border-radius:8px;padding:0 12px;display:inline-flex;align-items:center;gap:8px;font-size:14px"><span style="width:18px;height:18px;background:#6B635A;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/calendar.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/calendar.svg) center/contain no-repeat"></span>01/10/2026 – 03/10/2026</div>
+        <label style="display:inline-flex;align-items:center;gap:8px;font-size:13px"><span style="width:18px;height:18px;border-radius:4px;background:#1F6B4F;display:inline-flex;align-items:center;justify-content:center"><span style="width:12px;height:12px;background:#fff;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/check.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/check.svg) center/contain no-repeat"></span></span>Comparar con el período anterior</label>
+      </div>
+      <div style="font-size:12px;font-weight:600;color:#6B635A;text-transform:uppercase;letter-spacing:.06em;margin-top:8px">Celular · tarjeta de reporte</div>
+      <div style="max-width:360px;border:1px solid #E7E2DA;border-radius:12px;padding:16px;display:flex;align-items:center;gap:16px">
+        <div style="flex:1;display:flex;flex-direction:column;gap:4px"><div style="font-size:13px;color:#6B635A">¿Cuánta plata tengo en la calle?</div><div style="font-size:28px;font-weight:600;letter-spacing:-.02em">$ 73.800</div><div style="font-size:13px;color:#C2362F;font-weight:600">$ 46.800 vencidos · 3 clientes</div></div>
+        <div style="display:flex;align-items:flex-end;gap:4px;height:48px"><div style="width:14px;height:20px;background:#1F6B4F;border-radius:2px"></div><div style="width:14px;height:12px;background:#C2362F;border-radius:2px"></div><div style="width:14px;height:36px;background:#C2362F;border-radius:2px"></div></div>
+        <span style="width:20px;height:20px;background:#6B635A;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/chevron-right.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/chevron-right.svg) center/contain no-repeat"></span>
+      </div>
+    </div>
+    <div style="background:#fff;border:1px solid #E7E2DA;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px">
+      <div style="font-size:12px;font-weight:600;color:#6B635A;text-transform:uppercase;letter-spacing:.06em">Barras · ventas por hora, hoy contra el promedio</div>
+      <div style="display:flex;align-items:flex-end;gap:6px;height:120px;padding-top:8px">
+        <sc-for list="{{ barras }}" as="b" hint-placeholder-count="15">
+          <div style="flex:1;display:flex;align-items:flex-end;gap:2px;height:100%"><div style="flex:1;height:{{ b.hoy }}%;background:#1F6B4F;border-radius:3px 3px 0 0"></div><div style="flex:1;height:{{ b.prom }}%;background:#E7E2DA;border-radius:3px 3px 0 0"></div></div>
+        </sc-for>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:#6B635A"><span>8</span><span>10</span><span>12</span><span>14</span><span>16</span><span>18</span><span>20</span><span>22</span></div>
+      <div style="display:flex;gap:16px;font-size:12px;color:#6B635A"><span style="display:inline-flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:2px;background:#1F6B4F"></span>Hoy</span><span style="display:inline-flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:2px;background:#E7E2DA"></span>Promedio sábados, 4 semanas</span></div>
+      <div style="font-size:12px;font-weight:600;color:#6B635A;text-transform:uppercase;letter-spacing:.06em;margin-top:8px">Barra apilada · medios de pago del día</div>
+      <div style="display:flex;height:14px;border-radius:999px;overflow:hidden;gap:2px">
+        <sc-for list="{{ mediosDia }}" as="m" hint-placeholder-count="6"><div style="width:{{ m.pct }}%;background:{{ m.color }}"></div></sc-for>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:#6B635A">
+        <sc-for list="{{ mediosDia }}" as="m" hint-placeholder-count="6"><span style="display:inline-flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:2px;background:{{ m.color }}"></span>{{ m.label }} {{ m.pct }} %</span></sc-for>
+      </div>
+    </div>
+    <div style="background:#fff;border:1px solid #E7E2DA;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px">
+      <div style="font-size:12px;font-weight:600;color:#6B635A;text-transform:uppercase;letter-spacing:.06em">Mapa de calor · día × hora</div>
+      <div style="display:grid;grid-template-columns:28px repeat(8,1fr);gap:3px;font-size:11px;color:#6B635A">
+        <sc-for list="{{ calor }}" as="h" hint-placeholder-count="63">
+          <sc-if value="{{ h.label }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;height:22px">{{ h.label }}</div></sc-if>
+          <sc-if value="{{ h.cell }}" hint-placeholder-val="{{ true }}"><div style="height:22px;border-radius:3px;background:rgba(31,107,79,{{ h.a }})"></div></sc-if>
+        </sc-for>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:#6B635A;padding-left:31px"><span>8</span><span>22 h</span></div>
+      <div style="font-size:12px;font-weight:600;color:#6B635A;text-transform:uppercase;letter-spacing:.06em;margin-top:8px">Líneas · costo y precio en el tiempo</div>
+      <svg viewBox="0 0 300 90" style="width:100%;height:90px" preserveAspectRatio="none"><polyline points="0,70 60,66 120,60 180,48 240,44 300,38" fill="none" stroke="#1F6B4F" stroke-width="2"></polyline><polyline points="0,82 60,80 120,74 180,66 240,64 300,56" fill="none" stroke="#A8A096" stroke-width="2" stroke-dasharray="4 3"></polyline></svg>
+      <div style="display:flex;gap:16px;font-size:12px;color:#6B635A"><span style="display:inline-flex;align-items:center;gap:6px"><span style="width:14px;height:2px;background:#1F6B4F"></span>Precio</span><span style="display:inline-flex;align-items:center;gap:6px"><span style="width:14px;height:2px;background:#A8A096"></span>Costo</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 09 CONTENEDORES -->
+<section id="cont" style="display:flex;flex-direction:column;gap:24px">
+  <div style="display:flex;flex-direction:column;gap:6px;border-top:1px solid #E7E2DA;padding-top:24px">
+    <div style="font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#6B635A">09 · Contenedores</div>
+    <h2 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-.01em">Hoja en celular, ventana y panel en compu</h2>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;align-items:start">
+    <sc-if value="{{ verCel }}" hint-placeholder-val="{{ true }}">
+    <div style="background:#fff;border:1px solid #E7E2DA;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px">
+      <div style="font-size:12px;font-weight:600;color:#6B635A;text-transform:uppercase;letter-spacing:.06em">Hoja inferior · celular</div>
+      <div style="max-width:360px;background:rgba(31,27,22,.45);border-radius:12px;padding:80px 0 0;overflow:hidden">
+        <div style="background:#fff;border-radius:16px 16px 0 0;padding:8px 16px 28px;display:flex;flex-direction:column;gap:16px;box-shadow:0 -8px 24px rgba(31,27,22,.15)">
+          <div style="width:40px;height:4px;border-radius:2px;background:#E7E2DA;margin:0 auto"></div>
+          <div style="display:flex;flex-direction:column;gap:2px"><div style="font-size:20px;font-weight:600">Coca-Cola 2,25 L</div><div style="font-size:14px;color:#6B635A">$ 4.600 la unidad · 14 en stock</div></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px"><span style="font-size:15px;font-weight:600">Cantidad</span><div style="display:inline-flex;align-items:center;border:1px solid #E7E2DA;border-radius:8px;overflow:hidden"><button style="width:48px;height:48px;border:0;background:#fff;font:500 22px Inter,sans-serif;cursor:pointer">−</button><span style="width:44px;text-align:center;font-size:18px;font-weight:600">2</span><button style="width:48px;height:48px;border:0;background:#fff;font:500 22px Inter,sans-serif;cursor:pointer">+</button></div></div>
+          <div style="display:flex;flex-direction:column;gap:8px;font-size:15px">
+            <div style="display:flex;justify-content:space-between;min-height:44px;align-items:center;border-top:1px solid #E7E2DA">Descuento por ítem<span style="color:#6B635A">Sin descuento</span></div>
+            <div style="display:flex;justify-content:space-between;min-height:44px;align-items:center;border-top:1px solid #E7E2DA;color:#8C847A"><span style="display:inline-flex;align-items:center;gap:8px"><span style="width:16px;height:16px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/lock.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/lock.svg) center/contain no-repeat"></span>Precio</span><span>$ 4.600</span></div>
+          </div>
+          <div style="display:flex;gap:8px"><button style="flex:1;height:52px;border:1px solid #E7E2DA;border-radius:8px;background:#fff;color:#C2362F;font:600 16px Inter,sans-serif;cursor:pointer">Quitar</button><button style="flex:2;height:52px;border:0;border-radius:8px;background:#1F6B4F;color:#fff;font:600 16px Inter,sans-serif;cursor:pointer">Listo</button></div>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+    <sc-if value="{{ verCompu }}" hint-placeholder-val="{{ true }}">
+    <div style="background:#fff;border:1px solid #E7E2DA;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px">
+      <div style="font-size:12px;font-weight:600;color:#6B635A;text-transform:uppercase;letter-spacing:.06em">Ventana modal · compu</div>
+      <div style="background:rgba(31,27,22,.45);border-radius:12px;padding:32px 24px">
+        <div style="background:#fff;border-radius:12px;padding:24px;display:flex;flex-direction:column;gap:16px;box-shadow:0 16px 40px rgba(31,27,22,.2);max-width:440px;margin:0 auto">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px"><div style="display:flex;flex-direction:column;gap:4px"><div style="font-size:20px;font-weight:600">Anular venta 004187</div><div style="font-size:14px;color:#6B635A">$ 18.550 · Tomás · 18:41. Queda visible como anulada, nunca se borra.</div></div><button style="width:36px;height:36px;border:0;border-radius:8px;background:transparent;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:#6B635A" style-hover="background:#F3F0EA"><span style="width:20px;height:20px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/x.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/x.svg) center/contain no-repeat"></span></button></div>
+          <label style="display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600">Motivo<div style="height:44px;border:1px solid #E7E2DA;border-radius:8px;padding:0 12px;display:flex;align-items:center;justify-content:space-between;font-size:15px;font-weight:400">Error de cobro<span style="width:20px;height:20px;background:#6B635A;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/chevron-down.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/chevron-down.svg) center/contain no-repeat"></span></div></label>
+          <div style="display:flex;justify-content:flex-end;gap:8px"><button style="height:40px;padding:0 16px;border:1px solid #E7E2DA;border-radius:8px;background:#fff;font:600 14px Inter,sans-serif;cursor:pointer" style-hover="background:#F3F0EA">Cancelar · Esc</button><button style="height:40px;padding:0 16px;border:0;border-radius:8px;background:#C2362F;color:#fff;font:600 14px Inter,sans-serif;display:inline-flex;align-items:center;gap:8px;cursor:pointer" style-hover="background:#A62D27"><span style="width:16px;height:16px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/lock.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/lock.svg) center/contain no-repeat"></span>Anular con PIN</button></div>
+        </div>
+      </div>
+    </div>
+    <div style="background:#fff;border:1px solid #E7E2DA;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px">
+      <div style="font-size:12px;font-weight:600;color:#6B635A;text-transform:uppercase;letter-spacing:.06em">Panel lateral · compu, sin perder la lista</div>
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) 260px;border:1px solid #E7E2DA;border-radius:12px;overflow:hidden;min-height:240px;font-size:13px">
+        <div style="padding:8px;display:flex;flex-direction:column;gap:2px;background:#FAF8F5">
+          <div style="height:36px;padding:0 10px;display:flex;align-items:center;justify-content:space-between;border-radius:6px">Coca-Cola 2,25 L<span style="color:#6B635A">$ 4.600</span></div>
+          <div style="height:36px;padding:0 10px;display:flex;align-items:center;justify-content:space-between;border-radius:6px;background:#E2EFE9;font-weight:600">Yerba Playadito 1 kg<span>$ 6.900</span></div>
+          <div style="height:36px;padding:0 10px;display:flex;align-items:center;justify-content:space-between;border-radius:6px">Leche entera 1 L<span style="color:#6B635A">$ 1.950</span></div>
+          <div style="height:36px;padding:0 10px;display:flex;align-items:center;justify-content:space-between;border-radius:6px">Ricota 500 g<span style="color:#6B635A">$ 2.600</span></div>
+        </div>
+        <div style="border-left:1px solid #E7E2DA;background:#fff;display:flex;flex-direction:column">
+          <div style="padding:14px 14px 0;display:flex;flex-direction:column;gap:4px"><div style="font-size:15px;font-weight:600">Yerba Playadito 1 kg</div><div style="color:#6B635A">Almacén › Infusiones</div></div>
+          <div style="display:flex;gap:2px;padding:12px 14px 0;border-bottom:1px solid #E7E2DA;font-size:12px;font-weight:600;color:#6B635A;overflow:hidden"><span style="padding:6px 8px;border-bottom:2px solid #1F6B4F;color:#1F6B4F">General</span><span style="padding:6px 8px">Precio</span><span style="padding:6px 8px">Stock</span><span style="padding:6px 8px">Historial</span></div>
+          <div style="padding:14px;display:flex;flex-direction:column;gap:8px"><div style="display:flex;justify-content:space-between"><span style="color:#6B635A">Precio</span><span style="font-weight:600">$ 6.900</span></div><div style="display:flex;justify-content:space-between"><span style="color:#6B635A">Stock</span><span style="font-weight:600;color:#9A5B00">3 / mín. 8</span></div></div>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+    <div style="background:#fff;border:1px solid #E7E2DA;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px">
+      <div style="font-size:12px;font-weight:600;color:#6B635A;text-transform:uppercase;letter-spacing:.06em">Asistente por pasos · importar desde Excel</div>
+      <div style="display:flex;align-items:center;gap:0;font-size:12px;font-weight:600">
+        <sc-for list="{{ pasos }}" as="s" hint-placeholder-count="4">
+          <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0"><span style="width:26px;height:26px;border-radius:50%;flex:none;display:inline-flex;align-items:center;justify-content:center;background:{{ s.bg }};color:{{ s.fg }};border:1px solid {{ s.bd }}">{{ s.n }}</span><span style="color:{{ s.tfg }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ s.label }}</span><span style="flex:1;height:1px;background:#E7E2DA;min-width:8px"></span></div>
+        </sc-for>
+      </div>
+      <div style="border:1px solid #E7E2DA;border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:10px;font-size:14px">
+        <div style="font-size:15px;font-weight:600">Vista previa · 209 filas</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          <span style="display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:999px;background:#E3F2E9;color:#177A48;font-size:13px;font-weight:600">86 nuevos</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:999px;background:#E3EDF9;color:#2F6DB5;font-size:13px;font-weight:600">120 actualizados</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:999px;background:#FBE5E3;color:#C2362F;font-size:13px;font-weight:600">3 con error</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;gap:8px;padding-top:6px"><button style="height:40px;padding:0 16px;border:1px solid #E7E2DA;border-radius:8px;background:#fff;font:600 14px Inter,sans-serif;cursor:pointer">Atrás</button><button style="height:40px;padding:0 16px;border:0;border-radius:8px;background:#1F6B4F;color:#fff;font:600 14px Inter,sans-serif;cursor:pointer">Confirmar importación</button></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 10 RESPUESTA -->
+<section id="resp" style="display:flex;flex-direction:column;gap:24px">
+  <div style="display:flex;flex-direction:column;gap:6px;border-top:1px solid #E7E2DA;padding-top:24px">
+    <div style="font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#6B635A">10 · Respuesta</div>
+    <h2 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-.01em">El error dice qué hacer</h2>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px;align-items:start">
+    <div style="background:#fff;border:1px solid #E7E2DA;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px">
+      <div style="font-size:12px;font-weight:600;color:#6B635A;text-transform:uppercase;letter-spacing:.06em">Ítem de "Requiere atención"</div>
+      <div style="border:1px solid #E7E2DA;border-radius:12px;overflow:hidden">
+        <sc-for list="{{ atencion }}" as="a" hint-placeholder-count="6">
+          <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid #E7E2DA;min-height:56px">
+            <span style="width:36px;height:36px;border-radius:8px;flex:none;display:inline-flex;align-items:center;justify-content:center;background:{{ a.bg }};color:{{ a.fg }}"><span style="width:20px;height:20px;background:currentColor;-webkit-mask:url({{ a.icon }}) center/contain no-repeat;mask:url({{ a.icon }}) center/contain no-repeat"></span></span>
+            <div style="flex:1;font-size:14px;line-height:1.35;text-wrap:pretty">{{ a.texto }}</div>
+            <button style="height:36px;padding:0 12px;border:1px solid #E7E2DA;border-radius:8px;background:#fff;font:600 13px Inter,sans-serif;white-space:nowrap;cursor:pointer;color:#1F6B4F" style-hover="background:#E2EFE9">{{ a.accion }}</button>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div style="background:#fff;border:1px solid #E7E2DA;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:10px">
+        <div style="font-size:12px;font-weight:600;color:#6B635A;text-transform:uppercase;letter-spacing:.06em">Aviso con Deshacer · flota abajo, 4 segundos</div>
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:8px;background:#1F1B16;color:#F3EFE9;font-size:14px;box-shadow:0 8px 24px rgba(31,27,22,.25)"><span style="width:20px;height:20px;flex:none;background:#4CC38A;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/check.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/check.svg) center/contain no-repeat"></span><span style="flex:1">Agregado: Yerba Playadito 1 kg</span><button style="height:32px;padding:0 10px;border:0;border-radius:6px;background:transparent;color:#F2B33D;font:600 14px Inter,sans-serif;cursor:pointer">Deshacer</button></div>
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:8px;background:#1F1B16;color:#F3EFE9;font-size:14px;box-shadow:0 8px 24px rgba(31,27,22,.25)"><span style="width:20px;height:20px;flex:none;background:#F07167;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/printer.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/printer.svg) center/contain no-repeat"></span><span style="flex:1">No se pudo imprimir. La venta ya está guardada.</span><button style="height:32px;padding:0 10px;border:0;border-radius:6px;background:transparent;color:#F2B33D;font:600 14px Inter,sans-serif;cursor:pointer">Reintentar</button></div>
+      </div>
+      <div style="background:#fff;border:1px solid #E7E2DA;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:10px">
+        <div style="font-size:12px;font-weight:600;color:#6B635A;text-transform:uppercase;letter-spacing:.06em">Banners · fijos arriba del contenido</div>
+        <sc-for list="{{ banners }}" as="b" hint-placeholder-count="4">
+          <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:8px;background:{{ b.bg }};color:{{ b.fg }};font-size:14px;font-weight:500;min-height:44px"><span style="width:20px;height:20px;flex:none;background:currentColor;-webkit-mask:url({{ b.icon }}) center/contain no-repeat;mask:url({{ b.icon }}) center/contain no-repeat"></span><span style="flex:1">{{ b.texto }}</span><sc-if value="{{ b.accion }}" hint-placeholder-val="{{ false }}"><button style="height:32px;padding:0 10px;border:1px solid currentColor;border-radius:6px;background:transparent;color:inherit;font:600 13px Inter,sans-serif;cursor:pointer;white-space:nowrap">{{ b.accion }}</button></sc-if></div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;align-items:start">
+    <div style="background:#fff;border:1px solid #E7E2DA;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px">
+      <div style="font-size:12px;font-weight:600;color:#6B635A;text-transform:uppercase;letter-spacing:.06em">Overlay de PIN</div>
+      <div style="background:rgba(31,27,22,.6);border-radius:12px;padding:24px 16px;display:flex;justify-content:center">
+        <div style="width:100%;max-width:320px;background:#fff;border-radius:16px;padding:24px 20px;display:flex;flex-direction:column;gap:16px;box-shadow:0 16px 40px rgba(31,27,22,.25)">
+          <div style="display:flex;flex-direction:column;gap:6px;align-items:center;text-align:center">
+            <span style="width:44px;height:44px;border-radius:50%;background:#FBEEDB;color:#9A5B00;display:inline-flex;align-items:center;justify-content:center"><span style="width:22px;height:22px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/lock.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/lock.svg) center/contain no-repeat"></span></span>
+            <div style="font-size:20px;font-weight:600">Autorizá con tu PIN</div>
+            <div style="font-size:13px;color:#6B635A;text-wrap:pretty">Descuento del 15 %, sobre el tope del 10 %. Pedido por Tomás.</div>
+          </div>
+          <div style="display:flex;justify-content:center;gap:14px"><span style="width:14px;height:14px;border-radius:50%;background:#1F1B16"></span><span style="width:14px;height:14px;border-radius:50%;background:#1F1B16"></span><span style="width:14px;height:14px;border-radius:50%;border:2px solid #A8A096"></span><span style="width:14px;height:14px;border-radius:50%;border:2px solid #A8A096"></span></div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+            <sc-for list="{{ teclasPin }}" as="t" hint-placeholder-count="12">
+              <button style="height:56px;border:1px solid #E7E2DA;border-radius:8px;background:#fff;color:#1F1B16;font:500 22px Inter,sans-serif;cursor:pointer" style-hover="background:#F3F0EA">{{ t }}</button>
+            </sc-for>
+          </div>
+          <button style="height:44px;border:0;border-radius:8px;background:transparent;color:#6B635A;font:600 14px Inter,sans-serif;cursor:pointer">Cancelar</button>
+        </div>
+      </div>
+      <p style="margin:0;font-size:13px;color:#6B635A">Queda registrado quién pidió y quién autorizó. 5 intentos fallidos bloquean 5 minutos.</p>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div style="background:#fff;border:1px solid #E7E2DA;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px">
+        <div style="font-size:12px;font-weight:600;color:#6B635A;text-transform:uppercase;letter-spacing:.06em">Éxito · venta lista, 2 segundos</div>
+        <div style="border-radius:12px;background:#1F6B4F;color:#fff;padding:28px 24px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center">
+          <span style="width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,.18);display:inline-flex;align-items:center;justify-content:center"><span style="width:28px;height:28px;background:#fff;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/check.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/check.svg) center/contain no-repeat"></span></span>
+          <div style="font-size:14px;opacity:.85">Venta 004187 · $ 18.550</div>
+          <div style="font-size:40px;font-weight:600;letter-spacing:-.02em;line-height:1">Vuelto $ 1.450</div>
+          <div style="font-size:13px;opacity:.85;margin-top:6px">Cualquier tecla para la próxima venta</div>
+        </div>
+      </div>
+      <div style="background:#fff;border:1px solid #E7E2DA;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px">
+        <div style="font-size:12px;font-weight:600;color:#6B635A;text-transform:uppercase;letter-spacing:.06em">Esqueletos · cargando</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div style="border:1px solid #E7E2DA;border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px"><div style="width:60%;height:12px;border-radius:4px;background:#EFEBE4"></div><div style="width:80%;height:26px;border-radius:4px;background:#EFEBE4"></div><div style="width:40%;height:12px;border-radius:4px;background:#EFEBE4"></div></div>
+          <div style="border:1px solid #E7E2DA;border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px"><div style="width:50%;height:12px;border-radius:4px;background:#EFEBE4"></div><div style="width:70%;height:26px;border-radius:4px;background:#EFEBE4"></div><div style="width:45%;height:12px;border-radius:4px;background:#EFEBE4"></div></div>
+        </div>
+        <p style="margin:0;font-size:13px;color:#6B635A">Sin conexión, los números cargados muestran "Actualizado 10:42" en vez de esqueletos.</p>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div style="background:#fff;border:1px solid #E7E2DA;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px">
+        <div style="font-size:12px;font-weight:600;color:#6B635A;text-transform:uppercase;letter-spacing:.06em">Estado vacío · con la primera acción</div>
+        <div style="border:1px dashed #E7E2DA;border-radius:12px;padding:28px 20px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center">
+          <span style="width:48px;height:48px;border-radius:12px;background:#F3F0EA;color:#6B635A;display:inline-flex;align-items:center;justify-content:center"><span style="width:26px;height:26px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/users.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/users.svg) center/contain no-repeat"></span></span>
+          <div style="font-size:16px;font-weight:600;text-wrap:pretty">Cargá a tus clientes para fiarles y llevar su cuenta</div>
+          <button style="height:44px;padding:0 18px;border:0;border-radius:8px;background:#1F6B4F;color:#fff;font:600 15px Inter,sans-serif;cursor:pointer;margin-top:4px">Nuevo cliente</button>
+        </div>
+      </div>
+      <div style="background:#fff;border:1px solid #E7E2DA;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px">
+        <div style="font-size:12px;font-weight:600;color:#6B635A;text-transform:uppercase;letter-spacing:.06em">Error y sin permiso</div>
+        <div style="border:1px solid #E7E2DA;border-radius:12px;padding:16px;display:flex;align-items:center;gap:12px"><span style="width:36px;height:36px;border-radius:8px;flex:none;background:#FBE5E3;color:#C2362F;display:inline-flex;align-items:center;justify-content:center"><span style="width:20px;height:20px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/circle-alert.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/circle-alert.svg) center/contain no-repeat"></span></span><div style="flex:1;font-size:14px"><div style="font-weight:600">No pudimos cargar el reporte</div><div style="color:#6B635A;font-size:13px">Necesita internet. Revisá la conexión.</div></div><button style="height:36px;padding:0 12px;border:1px solid #E7E2DA;border-radius:8px;background:#fff;font:600 13px Inter,sans-serif;cursor:pointer">Reintentar</button></div>
+        <div style="border:1px solid #E7E2DA;border-radius:12px;padding:16px;display:flex;align-items:center;gap:12px"><span style="width:36px;height:36px;border-radius:8px;flex:none;background:#F3F0EA;color:#6B635A;display:inline-flex;align-items:center;justify-content:center"><span style="width:20px;height:20px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/lock.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/lock.svg) center/contain no-repeat"></span></span><div style="flex:1;font-size:14px"><div style="font-weight:600">Solo el dueño o un encargado pueden cambiar precios</div><div style="color:#6B635A;font-size:13px">Pedile a Julián o a Carlos.</div></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 11 MENSAJERÍA -->
+<section id="chat" style="display:flex;flex-direction:column;gap:24px">
+  <div style="display:flex;flex-direction:column;gap:6px;border-top:1px solid #E7E2DA;padding-top:24px">
+    <div style="font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#6B635A">11 · Mensajería</div>
+    <h2 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-.01em">Burbujas, botones bajo el mensaje, listas y eventos</h2>
+    <p style="margin:0;font-size:15px;color:#6B635A;max-width:680px">Estética genérica de mensajería, sin logos de terceros. Hasta 3 botones de 20 caracteres; listas de hasta 10 opciones.</p>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px;align-items:start">
+    <div style="background:#fff;border:1px solid #E7E2DA;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px">
+      <div style="font-size:12px;font-weight:600;color:#6B635A;text-transform:uppercase;letter-spacing:.06em">Chat con el proveedor · pedido 0042</div>
+      <div style="max-width:360px;border:1px solid #E7E2DA;border-radius:16px;background:#F3F0EA;padding:12px;display:flex;flex-direction:column;gap:10px;font-size:14px">
+        <div style="align-self:center;font-size:11px;font-weight:600;color:#6B635A;background:#fff;border:1px solid #E7E2DA;padding:4px 10px;border-radius:999px">Pedido 0042 enviado · mar 6/10 09:02</div>
+        <div style="align-self:flex-end;max-width:88%;display:flex;flex-direction:column;gap:6px">
+          <div style="background:#E2EFE9;border-radius:12px 12px 4px 12px;padding:10px 12px;line-height:1.4">Hola Marcelo, te escribe el asistente de pedidos de Almacén La Esquina. Te mandamos el pedido 0042 para el jueves 8/10: 14 productos, total estimado $ 186.400. Detalle en el PDF.<div style="font-size:11px;color:#6B635A;text-align:right;margin-top:4px">09:02</div></div>
+          <div style="display:flex;flex-direction:column;gap:4px"><button style="height:40px;border:1px solid #E7E2DA;border-radius:8px;background:#fff;color:#1F6B4F;font:600 14px Inter,sans-serif;cursor:pointer">Confirmar</button><button style="height:40px;border:1px solid #E7E2DA;border-radius:8px;background:#fff;color:#1F6B4F;font:600 14px Inter,sans-serif;cursor:pointer">Tengo cambios</button><button style="height:40px;border:1px solid #E7E2DA;border-radius:8px;background:#fff;color:#1F6B4F;font:600 14px Inter,sans-serif;cursor:pointer">Hablar con Carlos</button></div>
+        </div>
+        <div style="align-self:flex-start;max-width:88%;background:#fff;border-radius:12px 12px 12px 4px;padding:10px 12px;line-height:1.4">No tengo ricota hasta el lunes, el resto ok<div style="font-size:11px;color:#6B635A;text-align:right;margin-top:4px">09:40</div></div>
+        <div style="align-self:flex-end;max-width:88%;background:#E2EFE9;border-radius:12px 12px 4px 12px;padding:10px 12px;line-height:1.4">Listo, sacamos la ricota. Pedido 0042 confirmado: 13 productos, $ 179.200, para el jueves 8/10. ¡Gracias!<div style="font-size:11px;color:#6B635A;text-align:right;margin-top:4px">09:52</div></div>
+        <div style="align-self:center;font-size:11px;font-weight:600;color:#177A48;background:#E3F2E9;padding:4px 10px;border-radius:999px">Pedido 0042 confirmado · $ 179.200</div>
+      </div>
+    </div>
+    <div style="background:#fff;border:1px solid #E7E2DA;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px">
+      <div style="font-size:12px;font-weight:600;color:#6B635A;text-transform:uppercase;letter-spacing:.06em">Chat con el dueño · propone, Carlos confirma</div>
+      <div style="max-width:360px;border:1px solid #E7E2DA;border-radius:16px;background:#F3F0EA;padding:12px;display:flex;flex-direction:column;gap:10px;font-size:14px">
+        <div style="align-self:flex-start;max-width:88%;display:flex;flex-direction:column;gap:6px">
+          <div style="background:#fff;border-radius:12px 12px 12px 4px;padding:10px 12px;line-height:1.4">Marcelo dice que no tiene ricota hasta el lunes. ¿La saco del pedido 0042?<div style="font-size:11px;color:#6B635A;text-align:right;margin-top:4px">09:41</div></div>
+          <div style="display:flex;flex-direction:column;gap:4px"><button style="height:40px;border:1px solid #E7E2DA;border-radius:8px;background:#fff;color:#1F6B4F;font:600 14px Inter,sans-serif;cursor:pointer">Sacarla</button><button style="height:40px;border:1px solid #E7E2DA;border-radius:8px;background:#fff;color:#1F6B4F;font:600 14px Inter,sans-serif;cursor:pointer">Dejarla</button><button style="height:40px;border:1px solid #E7E2DA;border-radius:8px;background:#fff;color:#1F6B4F;font:600 14px Inter,sans-serif;cursor:pointer">Responder yo</button></div>
+        </div>
+        <div style="align-self:flex-end;max-width:70%;background:#E2EFE9;border-radius:12px 12px 4px 12px;padding:10px 12px;line-height:1.4">Sacarla<div style="font-size:11px;color:#6B635A;text-align:right;margin-top:4px">09:51</div></div>
+        <div style="align-self:flex-end;max-width:70%;background:#E2EFE9;border-radius:12px 12px 4px 12px;padding:10px 12px;line-height:1.4">faltantes<div style="font-size:11px;color:#6B635A;text-align:right;margin-top:4px">18:12</div></div>
+        <div style="align-self:flex-start;max-width:88%;display:flex;flex-direction:column;gap:6px">
+          <div style="background:#fff;border-radius:12px 12px 12px 4px;padding:10px 12px;line-height:1.4"><div style="font-weight:600;margin-bottom:4px">Debajo del mínimo · 12 productos</div>Distribuidora Andina (5), Lácteos del Sur (4), Fiambres Don Luis (2), Limpieza Cuyo (1)<div style="font-size:11px;color:#6B635A;text-align:right;margin-top:4px">18:12</div></div>
+          <button style="height:40px;border:1px solid #E7E2DA;border-radius:8px;background:#fff;color:#1F6B4F;font:600 14px Inter,sans-serif;cursor:pointer">Armar pedidos</button>
+        </div>
+      </div>
+    </div>
+    <div style="background:#fff;border:1px solid #E7E2DA;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px">
+      <div style="font-size:12px;font-weight:600;color:#6B635A;text-transform:uppercase;letter-spacing:.06em">Lista · cuando el bot no entiende</div>
+      <div style="max-width:360px;border:1px solid #E7E2DA;border-radius:16px;background:#F3F0EA;padding:12px;display:flex;flex-direction:column;gap:10px;font-size:14px">
+        <div style="align-self:flex-end;max-width:70%;background:#E2EFE9;border-radius:12px 12px 4px 12px;padding:10px 12px">cuánto hay de coca</div>
+        <div style="align-self:flex-start;max-width:88%;background:#fff;border-radius:12px 12px 12px 4px;padding:10px 12px;line-height:1.4">No entendí. ¿Qué querés saber?</div>
+        <div style="background:#fff;border-radius:12px;overflow:hidden;border:1px solid #E7E2DA">
+          <sc-for list="{{ listaBot }}" as="o" hint-placeholder-count="7">
+            <div style="height:44px;padding:0 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #E7E2DA;font-size:14px">{{ o }}<span style="width:18px;height:18px;border-radius:50%;border:1.5px solid #A8A096"></span></div>
+          </sc-for>
+        </div>
+        <div style="align-self:flex-start;max-width:88%;background:#FBE5E3;color:#C2362F;border-radius:12px;padding:10px 12px;line-height:1.4;font-weight:500">Este número no está autorizado. Pedile acceso al dueño.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 12 ESTADOS Y TONO -->
+<section id="estados" style="display:flex;flex-direction:column;gap:24px">
+  <div style="display:flex;flex-direction:column;gap:6px;border-top:1px solid #E7E2DA;padding-top:24px">
+    <div style="font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#6B635A">12 · Estados y tono</div>
+    <h2 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-.01em">Toda pantalla trae seis estados diseñados</h2>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px">
+    <div style="background:#fff;border:1px solid #E7E2DA;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:10px;font-size:14px">
+      <div style="font-size:12px;font-weight:600;color:#6B635A;text-transform:uppercase;letter-spacing:.06em">Estados</div>
+      <div style="display:grid;grid-template-columns:120px 1fr;gap:8px 16px;line-height:1.4">
+        <span style="font-weight:600">Cargando</span><span style="color:#6B635A">Esqueletos con la forma del contenido final.</span>
+        <span style="font-weight:600">Vacío</span><span style="color:#6B635A">Una frase y la primera acción. Nunca una lista vacía sola.</span>
+        <span style="font-weight:600">Error</span><span style="color:#6B635A">Qué pasó y qué hacer, con Reintentar.</span>
+        <span style="font-weight:600">Sin conexión</span><span style="color:#6B635A">Se sigue vendiendo; lo que necesita internet se ve deshabilitado y explica por qué.</span>
+        <span style="font-weight:600">Sin permiso</span><span style="color:#6B635A">Dice qué rol puede. Con PIN se muestra con candado.</span>
+        <span style="font-weight:600">Éxito</span><span style="color:#6B635A">Confirmación grande y breve; vuelve sola.</span>
+      </div>
+    </div>
+    <div style="background:#fff;border:1px solid #E7E2DA;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:10px;font-size:14px">
+      <div style="font-size:12px;font-weight:600;color:#6B635A;text-transform:uppercase;letter-spacing:.06em">Tono · voseo y frases de mostrador</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;line-height:1.4">
+        <span style="color:#C2362F;text-decoration:line-through">Caja no inicializada</span><span style="font-weight:600">Abrí la caja para vender</span>
+        <span style="color:#C2362F;text-decoration:line-through">Producto no encontrado (404)</span><span style="font-weight:600">Ese código no está cargado. ¿Lo cargás ahora?</span>
+        <span style="color:#C2362F;text-decoration:line-through">Monto insuficiente</span><span style="font-weight:600">Faltan $ 1.200</span>
+        <span style="color:#C2362F;text-decoration:line-through">Inventario negativo</span><span style="font-weight:600">Sin stock según el sistema. ¿Vender igual?</span>
+        <span style="color:#C2362F;text-decoration:line-through">Sesión expirada</span><span style="font-weight:600">¿Te olvidaste de cerrar?</span>
+      </div>
+      <p style="margin:4px 0 0;font-size:13px;color:#6B635A">Lenguaje de almacén: fiado, faltantes, arqueo, merma, ganancia sobre costo. El sistema propone, la persona confirma.</p>
+    </div>
+    <div style="background:#fff;border:1px solid #E7E2DA;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:10px;font-size:14px">
+      <div style="font-size:12px;font-weight:600;color:#6B635A;text-transform:uppercase;letter-spacing:.06em">Movimiento, sonido y accesibilidad</div>
+      <div style="display:grid;grid-template-columns:120px 1fr;gap:8px 16px;line-height:1.4">
+        <span style="font-weight:600">Transiciones</span><span style="color:#6B635A">150 a 200 ms. Nada demora una venta.</span>
+        <span style="font-weight:600">Sonido</span><span style="color:#6B635A">Pitido corto al escanear bien, otro tono al fallar. Apagables.</span>
+        <span style="font-weight:600">Contraste</span><span style="color:#6B635A">AA, 4,5:1 en texto. Un estado nunca depende solo del color.</span>
+        <span style="font-weight:600">Foco</span><span style="color:#6B635A">Anillo info de 2 px con 2 px de separación. Todo Vender sin mouse.</span>
+        <span style="font-weight:600">Breakpoints</span><span style="color:#6B635A">≤599 celular · 600–1023 tablet (riel) · 1024–1439 compu · ≥1440 grande.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;dispositivo&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;ambos&quot;,&quot;options&quot;:[&quot;ambos&quot;,&quot;celular&quot;,&quot;compu&quot;],&quot;tsType&quot;:&quot;'ambos' | 'celular' | 'compu'&quot;,&quot;section&quot;:&quot;Vista&quot;},&quot;tokensOscuros&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Vista&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const p = this.props;
+    const disp = p.dispositivo ?? 'ambos';
+    const ICON = 'https://unpkg.com/lucide-static@0.468.0/icons/';
+    const ic = n => ICON + n + '.svg';
+    const T = {
+      ok: { bg: '#E3F2E9', fg: '#177A48' }, alerta: { bg: '#FBEEDB', fg: '#9A5B00' }, peligro: { bg: '#FBE5E3', fg: '#C2362F' },
+      info: { bg: '#E3EDF9', fg: '#2F6DB5' }, neutro: { bg: '#F3F0EA', fg: '#6B635A' }, acento: { bg: '#FDF1D6', fg: '#1F1B16' }, primario: { bg: '#E2EFE9', fg: '#1F6B4F' }
+    };
+    const chip = (label, tone, icon) => ({ label, icon: ic(icon), ...T[tone] });
+
+    const colores = [
+      { token: 'fondo', claro: '#FAF8F5', oscuro: '#14120F', uso: 'Fondo de la app, tono papel', sobre: '#1F1B16', muestra: 'Aa' },
+      { token: 'superficie', claro: '#FFFFFF', oscuro: '#1E1B17', uso: 'Tarjetas, paneles y tablas', sobre: '#1F1B16', muestra: 'Aa' },
+      { token: 'borde', claro: '#E7E2DA', oscuro: '#34302A', uso: 'Divisores y bordes', sobre: '#1F1B16', muestra: 'Aa' },
+      { token: 'texto', claro: '#1F1B16', oscuro: '#F3EFE9', uso: 'Texto principal', sobre: '#F3EFE9', muestra: 'Aa' },
+      { token: 'texto-suave', claro: '#6B635A', oscuro: '#A8A096', uso: 'Etiquetas y ayudas', sobre: '#FFFFFF', muestra: 'Aa' },
+      { token: 'primario', claro: '#1F6B4F', oscuro: '#4FB389', uso: 'Cobrar, guardar, acción principal', sobre: '#FFFFFF', muestra: 'Cobrar' },
+      { token: 'acento', claro: '#F2B33D', oscuro: '#F2B33D', uso: 'Promos y destacados, siempre con texto oscuro', sobre: '#1F1B16', muestra: 'Promo 2×1' },
+      { token: 'éxito', claro: '#177A48', oscuro: '#4CC38A', uso: 'Sobrante, confirmado, stock OK', sobre: '#FFFFFF', muestra: '+$ 800' },
+      { token: 'alerta', claro: '#9A5B00', oscuro: '#F0A43A', uso: 'Stock bajo, por vencer, sin respuesta', sobre: '#FFFFFF', muestra: 'Bajo' },
+      { token: 'peligro', claro: '#C2362F', oscuro: '#F07167', uso: 'Faltante, sin stock, anular, pierde plata', sobre: '#FFFFFF', muestra: '−$ 1.200' },
+      { token: 'info', claro: '#2F6DB5', oscuro: '#6EA8F0', uso: 'Sincronización y estados neutros', sobre: '#FFFFFF', muestra: 'Sincronizando' }
+    ];
+    const suaves = [
+      { token: 'primario-suave', ...T.primario }, { token: 'éxito-suave', ...T.ok }, { token: 'alerta-suave', ...T.alerta },
+      { token: 'peligro-suave', ...T.peligro }, { token: 'info-suave', ...T.info }, { token: 'acento-suave', ...T.acento }, { token: 'neutro-suave', ...T.neutro }
+    ];
+    const tipos = [
+      { uso: 'Total en Vender', spec: '56 px · semibold (48 a 64)', px: 56, peso: 600, ls: '-0.02em', muestra: '$ 18.550' },
+      { uso: 'Vuelto', spec: '40 px · semibold', px: 40, peso: 600, ls: '-0.02em', muestra: 'Vuelto $ 1.450' },
+      { uso: 'Número de tarjeta', spec: '30 px · semibold (28 a 32)', px: 30, peso: 600, ls: '-0.02em', muestra: '$ 412.300' },
+      { uso: 'Título de pantalla', spec: '22 px · semibold (20 a 24)', px: 22, peso: 600, ls: '-0.01em', muestra: 'Turno en curso · Caja 1' },
+      { uso: 'Texto celular', spec: '16 px · regular', px: 16, peso: 400, ls: '0', muestra: 'Lucía dejó $ 20.000 de cambio para el turno tarde.' },
+      { uso: 'Texto compu', spec: '14 px · regular (14 a 15)', px: 14, peso: 400, ls: '0', muestra: 'Vendés 3 por día · tiene que alcanzar 11 días · necesitás 33 · tenés 9 → pedí 24, 2 cajas de 12' },
+      { uso: 'Etiquetas y ayudas', spec: '12 px · medium, nunca menos', px: 12, peso: 500, ls: '0', muestra: 'Última venta hace 20 min · Actualizado 10:42' }
+    ];
+    const espacios = [4, 8, 12, 16, 24, 32, 48];
+    const iconosMuestra = ['scan-barcode', 'camera', 'search', 'bell', 'shopping-cart', 'wallet', 'package', 'truck', 'message-circle', 'users', 'chart-column', 'settings', 'lock', 'printer', 'banknote', 'credit-card', 'qr-code', 'hand-coins'].map(ic);
+
+    const gruposChips = [
+      { titulo: 'Stock', nota: 'Negativo y Pierde plata son peligro; Bajo, Vence y Revisar precio son alerta. +18 y Precio fijo son atributos, no estados.', items: [
+        chip('OK', 'ok', 'check'), chip('Bajo · 3 / 8', 'alerta', 'triangle-alert'), chip('Sin stock', 'peligro', 'circle-alert'), chip('Negativo −2', 'peligro', 'circle-alert'),
+        chip('Vence 6/10', 'alerta', 'clock'), chip('Pierde plata', 'peligro', 'trending-down'), chip('Revisar precio', 'alerta', 'tag'), chip('Sin costo', 'neutro', 'circle-help'),
+        chip('+18', 'neutro', 'shield-alert'), chip('Precio fijo', 'neutro', 'lock'), chip('Completar ficha', 'info', 'pencil')
+      ] },
+      { titulo: 'Pedido', nota: 'Sigue la línea de tiempo del pedido: de borrador a cerrado. Sin respuesta y cancelado son salidas laterales.', items: [
+        chip('Borrador', 'neutro', 'file'), chip('Enviado', 'info', 'send'), chip('Leído', 'info', 'check-check'), chip('Confirmado', 'ok', 'check'),
+        chip('Con cambios', 'alerta', 'pencil'), chip('Recibido parcial', 'alerta', 'package-open'), chip('Recibido', 'ok', 'package-check'), chip('Cerrado', 'neutro', 'check'),
+        chip('Sin respuesta · 26 h', 'alerta', 'clock'), chip('Cancelado', 'peligro', 'x')
+      ] },
+      { titulo: 'Pago y fiado', nota: 'Facturas de proveedor y cuentas de clientes comparten vocabulario.', items: [
+        chip('Pendiente', 'neutro', 'clock'), chip('Vence mañana', 'alerta', 'calendar'), chip('Vencida · 38 días', 'peligro', 'circle-alert'), chip('Pagada parcial', 'info', 'circle-dot'),
+        chip('Pagada', 'ok', 'check'), chip('Sobre el límite', 'peligro', 'triangle-alert'), chip('Saldo a favor', 'ok', 'plus')
+      ] },
+      { titulo: 'Caja y movimientos', nota: 'Tipo de movimiento en neutro; el resultado del arqueo en éxito o peligro, siempre con signo.', items: [
+        chip('Venta', 'neutro', 'shopping-cart'), chip('Devolución', 'neutro', 'undo-2'), chip('Retiro', 'neutro', 'arrow-up-right'), chip('Gasto', 'neutro', 'receipt'),
+        chip('Ingreso', 'neutro', 'arrow-down-left'), chip('Cobro de fiado', 'neutro', 'hand-coins'), chip('Pago a proveedor', 'neutro', 'truck'),
+        chip('Sobrante +$ 300', 'ok', 'plus'), chip('Faltante −$ 1.200', 'peligro', 'minus'), chip('Pendiente de aprobar', 'alerta', 'clock')
+      ] }
+    ];
+
+    const mods = [
+      { label: 'Mostrador', grupo: true },
+      { label: 'Inicio', icon: 'house', badge: '' }, { label: 'Vender', icon: 'shopping-cart', badge: '', activo: true }, { label: 'Caja', icon: 'wallet', badge: 'abierta' },
+      { label: 'Mercadería', grupo: true },
+      { label: 'Productos', icon: 'package', badge: '12' }, { label: 'Compras', icon: 'truck', badge: '' }, { label: 'WhatsApp', icon: 'message-circle', badge: '2' },
+      { label: 'Gestión', grupo: true },
+      { label: 'Clientes y fiado', icon: 'hand-coins', badge: '' }, { label: 'Reportes', icon: 'chart-column', badge: '' }, { label: 'Ajustes', icon: 'settings', badge: '' }
+    ];
+    const sidebar = mods.map(m => m.grupo ? { label: m.label, grupo: true, item: false } : {
+      label: m.label, icon: ic(m.icon), badge: m.badge, grupo: false, item: true,
+      bg: m.activo ? '#E2EFE9' : 'transparent', fg: m.activo ? '#1F6B4F' : '#1F1B16', peso: m.activo ? 600 : 500
+    });
+    const riel = mods.filter(m => !m.grupo).map(m => ({ label: m.label, icon: ic(m.icon), bg: m.activo ? '#E2EFE9' : 'transparent', fg: m.activo ? '#1F6B4F' : '#6B635A' }));
+    const bottomBar = [['Inicio', 'house', true], ['Vender', 'shopping-cart'], ['Productos', 'package'], ['Compras', 'truck'], ['Más', 'ellipsis']]
+      .map(([label, icon, a]) => ({ label, icon: ic(icon), fg: a ? '#1F6B4F' : '#6B635A', peso: a ? 600 : 500 }));
+
+    const rapidos = [
+      { nombre: 'Pan francés', precio: '$ 3.800 / kg', tag: 'pesable', tagBg: '#FDF1D6', tagFg: '#1F1B16' },
+      { nombre: 'Jamón cocido', precio: '$ 21.000 / kg', tag: 'pesable', tagBg: '#FDF1D6', tagFg: '#1F1B16' },
+      { nombre: 'Queso cremoso', precio: '$ 13.500 / kg', tag: 'pesable', tagBg: '#FDF1D6', tagFg: '#1F1B16' },
+      { nombre: 'Huevo suelto', precio: '$ 290', tag: 'PLU 3002', tagBg: '#F3F0EA', tagFg: '#6B635A' },
+      { nombre: 'Verdura', precio: 'por plata', tag: 'varios', tagBg: '#F3F0EA', tagFg: '#6B635A' },
+      { nombre: 'Huevos maple × 30', precio: '$ 8.200', tag: 'PLU 3001', tagBg: '#F3F0EA', tagFg: '#6B635A' }
+    ];
+    const medios = [
+      { label: 'Efectivo', icon: ic('banknote'), bg: '#E2EFE9', borde: '2px solid #1F6B4F' },
+      { label: 'Tarjeta', icon: ic('credit-card'), bg: '#fff', borde: '1px solid #E7E2DA' },
+      { label: 'Transferencia o QR', icon: ic('qr-code'), bg: '#fff', borde: '1px solid #E7E2DA' },
+      { label: 'Fiado', icon: ic('hand-coins'), bg: '#fff', borde: '1px solid #E7E2DA' }
+    ];
+    const billetes = ['$ 1.000', '$ 2.000', '$ 10.000', '$ 20.000', 'Exacto'];
+    billetes.pop();
+    const num = ['1', '2', '3', '4', '5', '6', '7', '8', '9', ',', '0', '⌫'];
+    const ent = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', '⌫'];
+    const teclados = [
+      { titulo: 'Efectivo', ayuda: 'Total $ 18.550', display: '$ 20.000', px: 30, ls: '-0.02em', teclas: num, ok: 'Cobrar · vuelto $ 1.450', okBg: '#1F6B4F', atajos: null },
+      { titulo: 'Peso', ayuda: 'Jamón cocido · $ 21.000 / kg · por peso', display: '0,235 kg', px: 30, ls: '-0.02em', teclas: ent, ok: 'Agregar $ 4.935', okBg: '#1F6B4F', atajos: ['100 g', '¼ kg', '½ kg'] },
+      { titulo: 'Por plata', ayuda: 'Queso cremoso · $ 13.500 / kg', display: '$ 2.000 → Cortá 148 g', px: 22, ls: '-0.01em', teclas: num, ok: 'Confirmar peso real', okBg: '#1F6B4F', atajos: ['Por peso', 'Por plata'] },
+      { titulo: 'Cantidad', ayuda: 'Coca-Cola 2,25 L · 14 en stock', display: '× 3', px: 30, ls: '-0.02em', teclas: ent, ok: 'Listo', okBg: '#1F6B4F', atajos: null }
+    ];
+    const teclasPin = ent;
+    const ticket58 = [
+      '      ALMACÉN LA ESQUINA',
+      '  San Martín 1234, Godoy Cruz',
+      '--------------------------------',
+      'Venta 004187    03/10/2026 18:41',
+      'Cajero: Tomás',
+      '--------------------------------',
+      'Coca-Cola 2,25 L',
+      '  1 x $ 4.600            $ 4.600',
+      'Pan francés',
+      '  0,750 kg x $ 3.800     $ 2.850',
+      'Jamón cocido',
+      '  0,200 kg x $ 21.000    $ 4.200',
+      'Yerba Playadito 1 kg',
+      '  1 x $ 6.900            $ 6.900',
+      '--------------------------------',
+      'TOTAL                   $ 18.550',
+      'Efectivo                $ 20.000',
+      'Vuelto                   $ 1.450',
+      '--------------------------------',
+      'Documento no válido como factura',
+      '    ¡Gracias por tu compra!'
+    ].join('\n');
+    const atajos = [['F2', 'Buscar'], ['F3', 'Varios'], ['F4', 'Descuento'], ['F5', 'Cliente / fiado'], ['F6', 'Espera'], ['F9', 'Retiro o gasto'], ['F10', 'Cajón'], ['F12', 'Cobrar'], ['*', 'Multiplicar'], ['Supr', 'Quitar']].map(([k, v]) => ({ k, v }));
+
+    const tarjetas = [
+      { label: 'Ventas de hoy', valor: '$ 412.300', delta: '+8 % vs. sábado pasado', fg: '#177A48', icon: ic('trending-up') },
+      { label: 'Tickets', valor: '186', delta: 'Promedio $ 2.217', fg: '#6B635A', icon: ic('receipt') },
+      { label: 'Efectivo en caja', valor: '$ 121.900', delta: 'Turno tarde · Tomás', fg: '#6B635A', icon: ic('wallet') },
+      { label: 'Margen bruto estimado', valor: '31 %', delta: 'Solo dueño', fg: '#6B635A', icon: ic('lock') }
+    ];
+    const filtros = [['Todos'], ['Stock bajo', true], ['Sin stock'], ['Por vencer'], ['Sin tocar 30 días'], ['Inactivos']]
+      .map(([label, a]) => ({ label, bg: a ? '#1F1B16' : '#fff', fg: a ? '#fff' : '#1F1B16', bd: a ? '#1F1B16' : '#E7E2DA' }));
+    const prod = (nombre, codigo, chipv, costo, ganancia, precio, fecha, o = {}) => ({
+      nombre, codigo, chip: chipv, costo, ganancia, precio, fecha,
+      ganFg: o.pierde ? '#C2362F' : '#1F1B16', rowBg: o.sel ? '#E2EFE9' : '#fff',
+      cbBd: o.sel ? '#1F6B4F' : '#6B635A', cbBg: o.sel ? '#1F6B4F' : '#fff', editando: !!o.edit, noEditando: !o.edit
+    });
+    const productos = [
+      prod('Coca-Cola 2,25 L', '7790000001017', chip('OK · 14', 'ok', 'check'), '$ 3.300', '39 %', '$ 4.600', 'hoy 09:12'),
+      prod('Yerba Playadito 1 kg', '7791234000012', chip('Bajo · 3 / 8', 'alerta', 'triangle-alert'), '$ 4.850', '42 %', '$ 6.900', '28/09', { sel: true }),
+      prod('Leche entera 1 L sachet', '7790000002014', chip('Sin stock', 'peligro', 'circle-alert'), '$ 1.350', '44 %', '$ 1.950', '01/10', { sel: true, edit: true }),
+      prod('Jamón cocido', 'PLU 2001', chip('Vence 6/10', 'alerta', 'clock'), '$ 14.500 /kg', '45 %', '$ 21.000 /kg', '02/10'),
+      prod('Cerveza rubia lata 473 ml', '7790000005015', chip('OK · 48 · +18', 'ok', 'check'), '$ 1.650', '39 %', '$ 2.300', '22/09'),
+      prod('Cigarrillos atado × 20', '7790000005022', chip('Precio fijo · +18', 'neutro', 'lock'), '$ 4.150', '13 %', '$ 4.700', '15/09'),
+      prod('Lavandina 1 L', '7790000004018', chip('Sin stock', 'peligro', 'circle-alert'), '$ 850', '53 %', '$ 1.300', '30/08')
+    ];
+    const periodos = [['Hoy'], ['Ayer'], ['7 días'], ['Este mes', true], ['Mes anterior'], ['A medida']]
+      .map(([label, a]) => ({ label, bg: a ? '#1F1B16' : '#fff', fg: a ? '#fff' : '#1F1B16' }));
+    const hoyV = [12, 22, 38, 55, 48, 30, 26, 34, 52, 70, 92, 100, 84, 60, 36];
+    const barras = hoyV.map((h, i) => ({ hoy: h, prom: Math.round(h * (0.75 + ((i * 7) % 5) * 0.08)) }));
+    const mediosDia = [
+      { label: 'Efectivo', pct: 38, color: '#1F6B4F' }, { label: 'Débito', pct: 24, color: '#4FB389' }, { label: 'QR o billetera', pct: 21, color: '#2F6DB5' },
+      { label: 'Transferencia', pct: 9, color: '#6EA8F0' }, { label: 'Crédito', pct: 5, color: '#F2B33D' }, { label: 'Fiado', pct: 3, color: '#A8A096' }
+    ];
+    const dias = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+    const base = [[1, 2, 3, 2, 1, 2, 4, 3], [1, 2, 3, 2, 1, 2, 4, 3], [1, 2, 3, 2, 1, 3, 4, 3], [1, 2, 3, 3, 2, 3, 5, 3], [2, 3, 4, 3, 2, 4, 6, 4], [3, 5, 6, 4, 3, 5, 7, 5], [2, 3, 4, 2, 1, 2, 3, 2]];
+    const calor = [];
+    dias.forEach((d, i) => { calor.push({ label: d, cell: false }); base[i].forEach(v => calor.push({ label: '', cell: true, a: (0.12 + v * 0.12).toFixed(2) })); });
+
+    const pasos = [['Subir archivo', 'done'], ['Relacionar columnas', 'done'], ['Vista previa', 'cur'], ['Confirmar', 'next']].map(([label, s], i) => ({
+      n: s === 'done' ? '✓' : String(i + 1), label,
+      bg: s === 'done' ? '#1F6B4F' : s === 'cur' ? '#fff' : '#fff', fg: s === 'done' ? '#fff' : s === 'cur' ? '#1F6B4F' : '#A8A096',
+      bd: s === 'next' ? '#E7E2DA' : '#1F6B4F', tfg: s === 'next' ? '#A8A096' : '#1F1B16'
+    }));
+    const atencion = [
+      { texto: '12 productos debajo del mínimo', accion: 'Armar pedidos', icon: ic('package'), ...T.alerta },
+      { texto: '5 productos vencen en 7 días', accion: 'Ver', icon: ic('clock'), ...T.alerta },
+      { texto: 'Pedido a Distribuidora Andina sin respuesta hace 26 h', accion: 'Recordar', icon: ic('message-circle'), ...T.alerta },
+      { texto: 'Factura de Lácteos del Sur vence mañana, $ 184.500', accion: 'Registrar pago', icon: ic('receipt'), ...T.info },
+      { texto: 'Cierre de ayer con diferencia de −$ 800', accion: 'Ver arqueo', icon: ic('wallet'), ...T.peligro },
+      { texto: '3 clientes con fiado vencido, $ 46.800', accion: 'Ver', icon: ic('hand-coins'), ...T.peligro }
+    ];
+    const banners = [
+      { texto: 'Sin conexión · 3 ventas por sincronizar. Podés seguir vendiendo.', icon: ic('wifi-off'), accion: null, ...T.alerta },
+      { texto: 'Turno abierto hace más de 14 h. ¿Te olvidaste de cerrar?', icon: ic('clock'), accion: 'Cerrar turno', ...T.alerta },
+      { texto: 'WhatsApp desconectado. Los pedidos quedan en borrador.', icon: ic('message-circle'), accion: 'Reconectar', ...T.peligro },
+      { texto: 'Todo sincronizado · 18:40', icon: ic('check'), accion: null, ...T.ok }
+    ];
+    const listaBot = ['Stock de un producto', 'Ventas de hoy', 'Faltantes', 'Vencimientos', 'Caja', 'Pedidos', 'Ayuda'];
+
+    return {
+      tokensOscuros: p.tokensOscuros ?? true,
+      verCel: disp !== 'compu', verCompu: disp !== 'celular',
+      colores, suaves, tipos, espacios, iconosMuestra, gruposChips, sidebar, riel, bottomBar, rapidos, medios, billetes, teclados, teclasPin, ticket58, atajos,
+      tarjetas, filtros, productos, periodos, barras, mediosDia, calor, pasos, atencion, banners, listaBot
+    };
+  }
+}
+</script>
+</body>
+</html>

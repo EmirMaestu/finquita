@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#FAF8F5;color:#1F1B16;font-family:Inter,system-ui,sans-serif;font-feature-settings:"tnum";-webkit-font-smoothing:antialiased}
+a{color:#1F6B4F}a:hover{color:#177A48}
+*{box-sizing:border-box}
+</style>
+</helmet>
+<div style="max-width:960px;margin:0 auto;padding:56px 40px 120px;display:flex;flex-direction:column;gap:40px">
+  <header style="display:flex;flex-direction:column;gap:12px;max-width:720px">
+    <div style="font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#6B635A">Mostrador · diseño completo · v1</div>
+    <h1 style="margin:0;font-size:44px;font-weight:700;letter-spacing:-.02em;line-height:1.05">Almacén de barrio, pero prolijo</h1>
+    <p style="margin:0;font-size:17px;line-height:1.5;color:#6B635A;text-wrap:pretty">Sistema de diseño, nueve módulos en iPhone 393 × 852 y Mac 1280 × 800, y tres prototipos navegables. Un solo escenario: Almacén La Esquina, Godoy Cruz, sábado 3/10/2026.</p>
+  </header>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px">
+    <sc-for list="{{ etapas }}" as="e" hint-placeholder-count="8">
+      <a href="{{ e.href }}" style="text-decoration:none;color:inherit;background:#fff;border:1px solid #E7E2DA;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:10px;min-height:150px" style-hover="border-color:#1F6B4F">
+        <div style="display:flex;align-items:center;gap:10px"><span style="width:36px;height:36px;border-radius:8px;background:#E2EFE9;color:#1F6B4F;display:inline-flex;align-items:center;justify-content:center;flex:none"><span style="width:20px;height:20px;background:currentColor;-webkit-mask:url({{ e.icon }}) center/contain no-repeat;mask:url({{ e.icon }}) center/contain no-repeat"></span></span><span style="font-size:12px;font-weight:600;color:#6B635A;text-transform:uppercase;letter-spacing:.06em">{{ e.etapa }}</span></div>
+        <div style="font-size:18px;font-weight:600;letter-spacing:-.01em">{{ e.titulo }}</div>
+        <div style="font-size:13px;color:#6B635A;line-height:1.45;text-wrap:pretty">{{ e.desc }}</div>
+        <div style="margin-top:auto;font-size:13px;font-weight:600;color:#1F6B4F">Abrir →</div>
+      </a>
+    </sc-for>
+  </div>
+  <div style="background:#fff;border:1px solid #E7E2DA;border-radius:12px;padding:20px 24px;display:flex;flex-direction:column;gap:10px;font-size:14px;line-height:1.5">
+    <div style="font-weight:600">Decisiones tomadas sobre el spec</div>
+    <ul style="margin:0;padding-left:18px;color:#6B635A;display:flex;flex-direction:column;gap:4px">
+      <li>Tipografía Inter con cifras tabulares; tema claro en todos los mockups (los valores oscuros están en el sistema de diseño).</li>
+      <li>Siete fondos "suaves" agregados a los tokens para chips, banners y filas marcadas.</li>
+      <li>Íconos Lucide de trazo. Las fotos de productos van como placeholder a rayas.</li>
+      <li>Chats con estética genérica de mensajería, sin logos de terceros.</li>
+      <li>Factura electrónica solo como lugar reservado y pantalla "Próximamente".</li>
+    </ul>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const ic = n => 'https://unpkg.com/lucide-static@0.468.0/icons/' + n + '.svg';
+    const etapas = [
+      ['Etapa 1', 'Sistema de diseño', 'Tokens, tipografía, forma y espacio, componentes con estados, chips, teclado numérico, overlay de PIN y mensajería.', 'Mostrador Sistema de Diseño.dc.html', 'palette'],
+      ['Etapa 2', 'Vender', 'Modo mostrador en Mac, cobro con pago combinado, venta lista, código desconocido, peso por plata, historial, devolución, estados y ticket 58 mm.', '02 Vender.dc.html', 'shopping-cart'],
+      ['Etapa 3', 'Caja', 'Abrir turno, turno en curso con la cuenta del efectivo, gasto con PIN, arqueo ciego, diferencia −$ 1.200 e historial de cierres.', '03 Caja.dc.html', 'wallet'],
+      ['Etapa 4', 'Productos y stock', 'Lista con selección múltiple, ficha, cambio masivo, importar Excel, etiquetas, conteo, vencimientos, promociones, categorías, modo carga y ajuste.', '04 Productos.dc.html', 'package'],
+      ['Etapa 5', 'Compras y WhatsApp', 'Pedido sugerido con la cuenta, pedidos y detalle 0042, proveedores y facturas, bandeja en tres columnas, recepción y chats de ejemplo.', '05 Compras y WhatsApp.dc.html', 'message-circle'],
+      ['Etapa 6', 'Inicio, Clientes y Reportes', 'Panel del día, avisos, primeros pasos, variante repositor, clientes y fiado con cobro, las siete preguntas de reportes.', '06 Inicio Clientes Reportes.dc.html', 'house'],
+      ['Etapa 7a', 'Ajustes', 'Usuarios con permisos finos, matriz de avisos, facturación "Próximamente", actividad, funciones y pantallas de celular.', '07 Ajustes.dc.html', 'settings'],
+      ['Etapa 7b', 'Prototipos navegables', 'Venta rápida con lector, cierre de turno con diferencia y ciclo de reposición del faltante a la recepción.', '08 Prototipos.dc.html', 'play']
+    ].map(([etapa, titulo, desc, href, i]) => ({ etapa, titulo, desc, href, icon: ic(i) }));
+    return { etapas };
+  }
+}
+</script>
+</body>
+</html>

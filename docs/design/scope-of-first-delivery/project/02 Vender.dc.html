@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#EDE9E2;color:#1F1B16;font-family:Inter,system-ui,sans-serif;font-feature-settings:"tnum";-webkit-font-smoothing:antialiased}
+a{color:#1F6B4F}a:hover{color:#177A48}
+*{box-sizing:border-box}
+</style>
+</helmet>
+<div style="padding:48px;display:flex;flex-direction:column;gap:56px;width:max-content">
+<header style="display:flex;flex-direction:column;gap:6px">
+  <div style="font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#6B635A">Mostrador · Etapa 2</div>
+  <h1 style="margin:0;font-size:32px;font-weight:700;letter-spacing:-.02em">Vender</h1>
+  <p style="margin:0;font-size:15px;color:#6B635A;max-width:720px">Mac 1280 × 800 en modo mostrador y iPhone 393 × 852. Escenario: Almacén La Esquina, sábado 3/10/2026 18:40, Tomás en Caja 1.</p>
+</header>
+
+<!-- FILA 1: MAC -->
+<div style="display:flex;gap:48px;align-items:flex-start">
+
+<!-- V1 Venta modo mostrador -->
+<div style="display:flex;flex-direction:column;gap:10px" data-screen-label="V1 Venta Mac">
+  <div style="font-size:13px;font-weight:600;color:#6B635A">V1 · Venta, modo mostrador · Mac</div>
+  <div style="width:1280px;height:800px;background:#FAF8F5;border:1px solid #E7E2DA;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;flex:none;font-size:14px;position:relative">
+    <div style="height:56px;background:#fff;border-bottom:1px solid #E7E2DA;display:flex;align-items:center;gap:16px;padding:0 16px;flex:none">
+      <div style="display:flex;align-items:center;gap:10px"><span style="width:28px;height:28px;border-radius:8px;background:#1F6B4F;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:700">M</span><span style="font-weight:600">Almacén La Esquina</span><span style="color:#6B635A">· Vender</span></div>
+      <div style="flex:1"></div>
+      <span style="display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 12px;border-radius:999px;border:1px solid #E7E2DA;font-size:13px;font-weight:500"><span style="width:8px;height:8px;border-radius:50%;background:#177A48"></span>Caja 1 abierta · Tomás · desde 14:00</span>
+      <span style="display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 10px;border-radius:999px;background:#E3F2E9;color:#177A48;font-size:12px;font-weight:600"><span style="width:14px;height:14px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/wifi.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/wifi.svg) center/contain no-repeat"></span>En línea</span>
+      <button style="height:36px;padding:0 12px;border:1px solid #E7E2DA;border-radius:8px;background:#fff;font:600 13px Inter,sans-serif;display:inline-flex;align-items:center;gap:8px;cursor:pointer"><span style="width:16px;height:16px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/pause.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/pause.svg) center/contain no-repeat"></span>En espera <span style="background:#FDF1D6;padding:1px 6px;border-radius:999px;font-size:11px">2</span></button>
+      <span style="width:36px;height:36px;border-radius:50%;background:#FDF1D6;display:inline-flex;align-items:center;justify-content:center;font-weight:600">T</span>
+    </div>
+    <div style="flex:1;display:grid;grid-template-columns:65fr 35fr;min-height:0">
+      <div style="display:flex;flex-direction:column;border-right:1px solid #E7E2DA;min-height:0">
+        <div style="padding:16px 20px 12px;display:flex;gap:10px;align-items:center;flex:none">
+          <div style="flex:1;height:48px;border:2px solid #1F6B4F;border-radius:8px;padding:0 14px;display:flex;align-items:center;gap:12px;font-size:16px;color:#6B635A;background:#fff;box-shadow:0 0 0 3px #E2EFE9"><span style="width:24px;height:24px;background:#1F6B4F;flex:none;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/scan-barcode.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/scan-barcode.svg) center/contain no-repeat"></span><span style="flex:1">Escaneá o buscá por nombre</span><kbd style="font:600 11px Inter,sans-serif;border:1px solid #E7E2DA;padding:2px 6px;border-radius:4px">F2</kbd></div>
+          <button style="height:48px;padding:0 16px;border:1px solid #E7E2DA;border-radius:8px;background:#fff;font:600 14px Inter,sans-serif;cursor:pointer">Varios · F3</button>
+        </div>
+        <div style="margin:0 20px;border:1px solid #E7E2DA;border-radius:8px;background:#fff;overflow:hidden;flex:none">
+          <div style="display:grid;grid-template-columns:minmax(0,1fr) 110px 110px 110px;gap:8px;padding:0 14px;height:32px;align-items:center;font-size:12px;font-weight:600;color:#6B635A;background:#FAF8F5;border-bottom:1px solid #E7E2DA"><span>Producto</span><span style="text-align:right">Cantidad</span><span style="text-align:right">Unitario</span><span style="text-align:right">Subtotal</span></div>
+          <sc-for list="{{ lineas }}" as="l" hint-placeholder-count="4">
+            <div style="display:grid;grid-template-columns:minmax(0,1fr) 110px 110px 110px;gap:8px;padding:0 14px;height:44px;align-items:center;border-bottom:1px solid #E7E2DA;background:{{ l.bg }};box-shadow:{{ l.ring }};font-size:15px"><span style="font-weight:{{ l.peso }}">{{ l.n }}</span><span style="text-align:right">{{ l.c }}</span><span style="text-align:right;color:#6B635A">{{ l.u }}</span><span style="text-align:right;font-weight:600">{{ l.s }}</span></div>
+          </sc-for>
+          <div style="padding:8px 14px;font-size:12px;color:#6B635A;display:flex;gap:16px"><span>↑ ↓ elegir línea</span><span>+ − cantidad</span><span>Supr quitar</span><span>Enter abre la línea</span></div>
+        </div>
+        <div style="padding:16px 20px 8px;font-size:12px;font-weight:600;color:#6B635A;text-transform:uppercase;letter-spacing:.06em;flex:none">Sin código · pesables y sueltos</div>
+        <div style="padding:0 20px;display:grid;grid-template-columns:repeat(6,1fr);gap:8px;flex:none">
+          <sc-for list="{{ rapidos }}" as="r" hint-placeholder-count="12">
+            <button style="display:flex;flex-direction:column;align-items:stretch;padding:0;border:1px solid #E7E2DA;border-radius:12px;background:#fff;overflow:hidden;text-align:left;cursor:pointer;font-family:Inter,sans-serif;color:#1F1B16" style-hover="border-color:#1F6B4F">
+              <div style="height:48px;background:repeating-linear-gradient(135deg,#F3F0EA 0 6px,#EDE8E0 6px 12px)"></div>
+              <div style="padding:8px 10px;display:flex;flex-direction:column;gap:2px"><div style="font-size:13px;font-weight:600;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.n }}</div><div style="font-size:12px;color:#6B635A">{{ r.p }}</div></div>
+            </button>
+          </sc-for>
+        </div>
+        <div style="flex:1"></div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px 16px;padding:10px 20px;border-top:1px solid #E7E2DA;background:#fff;font-size:13px;flex:none">
+          <sc-for list="{{ atajos }}" as="a" hint-placeholder-count="10">
+            <span style="display:inline-flex;align-items:center;gap:6px;height:24px"><kbd style="font:600 11px Inter,sans-serif;border:1px solid #E7E2DA;background:#FAF8F5;padding:2px 6px;border-radius:4px;min-width:28px;text-align:center">{{ a.k }}</kbd><span style="color:#6B635A">{{ a.v }}</span></span>
+          </sc-for>
+          <span style="flex:1"></span><span style="color:#6B635A">F1 todos los atajos</span>
+        </div>
+      </div>
+      <div style="padding:20px;display:flex;flex-direction:column;gap:14px;background:#fff">
+        <div style="display:flex;justify-content:space-between;font-size:13px;color:#6B635A"><span>Venta en curso</span><span>4 ítems</span></div>
+        <div style="display:flex;flex-direction:column;gap:6px;font-size:14px">
+          <div style="display:flex;justify-content:space-between"><span style="color:#6B635A">Subtotal</span><span>$ 18.550</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:#6B635A">Promociones</span><span style="color:#6B635A">Ninguna</span></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:2px;padding-top:12px;border-top:1px solid #E7E2DA"><span style="font-size:13px;color:#6B635A">Total</span><span style="font-size:64px;font-weight:600;letter-spacing:-.02em;line-height:1">$ 18.550</span></div>
+        <button style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px dashed #E7E2DA;border-radius:8px;background:#fff;font:500 14px Inter,sans-serif;color:#6B635A;cursor:pointer;text-align:left"><span style="width:20px;height:20px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/user.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/user.svg) center/contain no-repeat"></span><span style="flex:1">Asignar cliente o fiado</span><kbd style="font:600 11px Inter,sans-serif;border:1px solid #E7E2DA;padding:2px 6px;border-radius:4px">F5</kbd></button>
+        <div style="flex:1"></div>
+        <button style="height:72px;border:0;border-radius:8px;background:#1F6B4F;color:#fff;font:600 22px Inter,sans-serif;display:flex;align-items:center;justify-content:center;gap:14px;cursor:pointer" style-hover="background:#185640">Cobrar <kbd style="font:600 12px Inter,sans-serif;background:rgba(255,255,255,.18);padding:3px 7px;border-radius:4px">F12</kbd></button>
+        <div style="display:flex;gap:8px"><button style="flex:1;height:44px;border:1px solid #E7E2DA;border-radius:8px;background:#fff;font:600 13px Inter,sans-serif;cursor:pointer">Espera · F6</button><button style="flex:1;height:44px;border:1px solid #E7E2DA;border-radius:8px;background:#fff;font:600 13px Inter,sans-serif;cursor:pointer">Descuento · F4</button><button style="flex:1;height:44px;border:1px solid #E7E2DA;border-radius:8px;background:#fff;font:600 13px Inter,sans-serif;cursor:pointer">Más</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- V2 Cobro -->
+<div style="display:flex;flex-direction:column;gap:10px" data-screen-label="V2 Cobro Mac">
+  <div style="font-size:13px;font-weight:600;color:#6B635A">V2 · Cobro (F12) · ventana · efectivo con pago combinado</div>
+  <div style="width:1280px;height:800px;background:#8F8A82;border:1px solid #E7E2DA;border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center;flex:none;font-size:14px;position:relative">
+    <div style="width:960px;background:#fff;border-radius:12px;box-shadow:0 24px 60px rgba(31,27,22,.3);display:grid;grid-template-columns:400px 1fr;overflow:hidden">
+      <div style="padding:28px;background:#FAF8F5;border-right:1px solid #E7E2DA;display:flex;flex-direction:column;gap:16px">
+        <div style="font-size:13px;color:#6B635A">Venta 004187 · 4 ítems</div>
+        <div style="font-size:56px;font-weight:600;letter-spacing:-.02em;line-height:1">$ 18.550</div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
+          <div style="font-size:12px;font-weight:600;color:#6B635A;text-transform:uppercase;letter-spacing:.06em">Pagos</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border:1px solid #E7E2DA;border-radius:8px;background:#fff"><span style="display:inline-flex;align-items:center;gap:8px"><span style="width:18px;height:18px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/banknote.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/banknote.svg) center/contain no-repeat"></span>Efectivo</span><span style="font-weight:600">$ 10.000</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border:2px solid #1F6B4F;border-radius:8px;background:#fff"><span style="display:inline-flex;align-items:center;gap:8px"><span style="width:18px;height:18px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/credit-card.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/credit-card.svg) center/contain no-repeat"></span>Débito</span><span style="font-weight:600">$ 8.550</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-radius:8px;background:#E3F2E9;color:#177A48;font-weight:600"><span>Falta</span><span>$ 0</span></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:auto">
+          <div style="font-size:12px;font-weight:600;color:#6B635A;text-transform:uppercase;letter-spacing:.06em">Comprobante</div>
+          <div style="display:flex;gap:8px"><span style="flex:1;height:40px;border:2px solid #1F6B4F;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px;background:#fff">Ticket no fiscal</span><span style="flex:1;height:40px;border:1px solid #EFEBE4;border-radius:8px;display:flex;align-items:center;justify-content:center;gap:6px;font-weight:600;font-size:13px;color:#8C847A;background:#FAF8F5">Factura <span style="font-size:10px;padding:1px 6px;border-radius:999px;background:#EFEBE4">Próximamente</span></span></div>
+          <div style="display:flex;gap:8px"><span style="flex:1;height:36px;border:1px solid #E7E2DA;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;background:#E2EFE9;color:#1F6B4F">Imprimir</span><span style="flex:1;height:36px;border:1px solid #E7E2DA;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;background:#fff">Compartir</span><span style="flex:1;height:36px;border:1px solid #E7E2DA;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;background:#fff">Sin ticket</span></div>
+        </div>
+      </div>
+      <div style="padding:28px;display:flex;flex-direction:column;gap:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:20px;font-weight:600">Cobrar</span><span style="font-size:13px;color:#6B635A">Esc vuelve a la venta</span></div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+          <sc-for list="{{ medios }}" as="m" hint-placeholder-count="4">
+            <button style="height:60px;border:{{ m.borde }};border-radius:8px;background:{{ m.bg }};color:#1F1B16;font:600 14px Inter,sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer"><span style="width:20px;height:20px;flex:none;background:currentColor;-webkit-mask:url({{ m.icon }}) center/contain no-repeat;mask:url({{ m.icon }}) center/contain no-repeat"></span>{{ m.label }}</button>
+          </sc-for>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;padding:10px 12px;border-radius:8px;background:#F3F0EA;font-size:13px"><span style="font-weight:600">Tarjeta:</span><span style="height:28px;padding:0 10px;border-radius:999px;background:#1F1B16;color:#fff;display:inline-flex;align-items:center;font-weight:600;font-size:12px">Débito</span><span style="height:28px;padding:0 10px;border-radius:999px;border:1px solid #E7E2DA;display:inline-flex;align-items:center;font-weight:600;font-size:12px;background:#fff">Crédito +10 %</span><span style="color:#6B635A;margin-left:auto">El cobro en el posnet se confirma a mano</span></div>
+        <div style="display:grid;grid-template-columns:1fr 240px;gap:16px;flex:1">
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="min-height:72px;border:1px solid #E7E2DA;border-radius:8px;padding:10px 14px;display:flex;flex-direction:column;justify-content:center;background:#FAF8F5"><div style="font-size:12px;color:#6B635A">Monto con débito</div><div style="font-size:32px;font-weight:600;letter-spacing:-.02em">$ 8.550</div></div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
+              <sc-for list="{{ teclas }}" as="t" hint-placeholder-count="12"><button style="height:52px;border:1px solid #E7E2DA;border-radius:8px;background:#fff;font:500 20px Inter,sans-serif;cursor:pointer">{{ t }}</button></sc-for>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="font-size:12px;font-weight:600;color:#6B635A;text-transform:uppercase;letter-spacing:.06em">Efectivo rápido</div>
+            <sc-for list="{{ billetes }}" as="b" hint-placeholder-count="4"><button style="height:48px;border:1px solid #E7E2DA;border-radius:8px;background:#fff;font:600 15px Inter,sans-serif;cursor:pointer">{{ b }}</button></sc-for>
+            <button style="height:48px;border:1px solid #1F6B4F;border-radius:8px;background:#E2EFE9;color:#1F6B4F;font:600 15px Inter,sans-serif;cursor:pointer">Justo</button>
+            <div style="margin-top:auto;padding:12px;border-radius:8px;background:#E3F2E9;color:#177A48;display:flex;flex-direction:column;gap:2px"><span style="font-size:12px;font-weight:600">Vuelto</span><span style="font-size:32px;font-weight:600;letter-spacing:-.02em;line-height:1">$ 0</span></div>
+          </div>
+        </div>
+        <button style="height:64px;border:0;border-radius:8px;background:#1F6B4F;color:#fff;font:600 20px Inter,sans-serif;display:flex;align-items:center;justify-content:center;gap:14px;cursor:pointer">Confirmar cobro <kbd style="font:600 12px Inter,sans-serif;background:rgba(255,255,255,.18);padding:3px 7px;border-radius:4px">Ctrl ⏎</kbd></button>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- FILA 2: MAC -->
+<div style="display:flex;gap:48px;align-items:flex-start">
+
+<!-- V3 Venta lista -->
+<div style="display:flex;flex-direction:column;gap:10px" data-screen-label="V3 Venta lista Mac">
+  <div style="font-size:13px;font-weight:600;color:#6B635A">V3 · Venta lista · 2 segundos y vuelve sola</div>
+  <div style="width:1280px;height:800px;background:#1F6B4F;border:1px solid #E7E2DA;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;flex:none;color:#fff;text-align:center">
+    <span style="width:88px;height:88px;border-radius:50%;background:rgba(255,255,255,.18);display:inline-flex;align-items:center;justify-content:center"><span style="width:48px;height:48px;background:#fff;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/check.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/check.svg) center/contain no-repeat"></span></span>
+    <div style="font-size:22px;opacity:.9">Venta 004187 · $ 18.550 · efectivo</div>
+    <div style="font-size:96px;font-weight:600;letter-spacing:-.03em;line-height:1">Vuelto $ 1.450</div>
+    <div style="display:flex;gap:24px;font-size:15px;opacity:.85;margin-top:8px"><span style="display:inline-flex;align-items:center;gap:8px"><span style="width:18px;height:18px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/printer.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/printer.svg) center/contain no-repeat"></span>Ticket impreso</span><span style="display:inline-flex;align-items:center;gap:8px"><span style="width:18px;height:18px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/archive.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/archive.svg) center/contain no-repeat"></span>Cajón abierto</span></div>
+    <div style="margin-top:40px;font-size:14px;opacity:.75">Cualquier tecla para la próxima venta</div>
+  </div>
+</div>
+
+<!-- V4 Código desconocido -->
+<div style="display:flex;flex-direction:column;gap:10px" data-screen-label="V4 Codigo desconocido Mac">
+  <div style="font-size:13px;font-weight:600;color:#6B635A">V4 · Código desconocido → alta rápida</div>
+  <div style="width:1280px;height:800px;background:#8F8A82;border:1px solid #E7E2DA;border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center;flex:none;font-size:14px">
+    <div style="width:560px;background:#fff;border-radius:12px;box-shadow:0 24px 60px rgba(31,27,22,.3);padding:28px;display:flex;flex-direction:column;gap:18px">
+      <div style="display:flex;align-items:flex-start;gap:12px"><span style="width:40px;height:40px;border-radius:8px;flex:none;background:#FBEEDB;color:#9A5B00;display:inline-flex;align-items:center;justify-content:center"><span style="width:22px;height:22px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/scan-barcode.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/scan-barcode.svg) center/contain no-repeat"></span></span><div style="display:flex;flex-direction:column;gap:4px"><div style="font-size:20px;font-weight:600">El código 7790895000782 no está cargado</div><div style="color:#6B635A">Cargalo en diez segundos y seguí la venta. Después completás costo y proveedor.</div></div></div>
+      <div style="display:flex;gap:8px"><span style="flex:1;height:40px;border:2px solid #1F6B4F;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px">Crear producto rápido</span><span style="flex:1;height:40px;border:1px solid #E7E2DA;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px">Vender como varios · F3</span></div>
+      <label style="display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600">Nombre y presentación<div style="height:44px;border:2px solid #1F6B4F;border-radius:8px;padding:0 11px;display:flex;align-items:center;justify-content:space-between;font-size:15px;font-weight:400;box-shadow:0 0 0 3px #E2EFE9"><span>Galletitas Criollitas 300 g</span><span style="width:1px;height:20px;background:#1F1B16"></span></div><span style="font-size:12px;font-weight:400;color:#2F6DB5;display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/sparkles.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/sparkles.svg) center/contain no-repeat"></span>Nombre sugerido por el catálogo abierto. Podés corregirlo.</span></label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <label style="display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600">Precio de venta<div style="height:44px;border:1px solid #E7E2DA;border-radius:8px;padding:0 12px;display:flex;align-items:center;font-size:15px;font-weight:400">$ 1.900</div></label>
+        <label style="display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600">Categoría<div style="height:44px;border:1px solid #E7E2DA;border-radius:8px;padding:0 12px;display:flex;align-items:center;justify-content:space-between;font-size:15px;font-weight:400">Almacén › Galletitas<span style="width:18px;height:18px;background:#6B635A;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/chevron-down.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/chevron-down.svg) center/contain no-repeat"></span></div></label>
+        <label style="display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600">Stock inicial <span style="font-weight:400;color:#6B635A">opcional</span><div style="height:44px;border:1px solid #E7E2DA;border-radius:8px;padding:0 12px;display:flex;align-items:center;font-size:15px;font-weight:400;color:#6B635A">0</div></label>
+        <label style="display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600">Unidad de venta<div style="height:44px;border:1px solid #E7E2DA;border-radius:8px;padding:0 12px;display:flex;align-items:center;justify-content:space-between;font-size:15px;font-weight:400">Unidad<span style="width:18px;height:18px;background:#6B635A;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/chevron-down.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/chevron-down.svg) center/contain no-repeat"></span></div></label>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:8px;background:#E3EDF9;color:#2F6DB5;font-size:13px;font-weight:500"><span style="width:16px;height:16px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/pencil.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/pencil.svg) center/contain no-repeat"></span>Queda marcado "Completar ficha" para Carlos: sin costo ni proveedor.</div>
+      <div style="display:flex;justify-content:flex-end;gap:8px"><button style="height:44px;padding:0 16px;border:1px solid #E7E2DA;border-radius:8px;background:#fff;font:600 14px Inter,sans-serif;cursor:pointer">Cancelar · Esc</button><button style="height:44px;padding:0 20px;border:0;border-radius:8px;background:#1F6B4F;color:#fff;font:600 14px Inter,sans-serif;cursor:pointer">Crear y sumar a la venta · ⏎</button></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- FILA 3: MAC -->
+<div style="display:flex;gap:48px;align-items:flex-start">
+
+<!-- V5 Peso por plata -->
+<div style="display:flex;flex-direction:column;gap:10px" data-screen-label="V5 Peso por plata Mac">
+  <div style="font-size:13px;font-weight:600;color:#6B635A">V5 · Pesable, modo por plata · "$ 2.000 de queso"</div>
+  <div style="width:1280px;height:800px;background:#8F8A82;border:1px solid #E7E2DA;border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center;flex:none;font-size:14px">
+    <div style="width:720px;background:#fff;border-radius:12px;box-shadow:0 24px 60px rgba(31,27,22,.3);padding:28px;display:grid;grid-template-columns:1fr 300px;gap:24px">
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div style="display:flex;align-items:center;gap:12px"><div style="width:56px;height:56px;border-radius:8px;background:repeating-linear-gradient(135deg,#F3F0EA 0 6px,#EDE8E0 6px 12px)"></div><div style="display:flex;flex-direction:column;gap:2px"><div style="font-size:20px;font-weight:600">Queso cremoso</div><div style="color:#6B635A">$ 13.500 / kg · PLU 2010 · 1,800 kg en stock</div></div></div>
+        <div style="display:inline-flex;border:1px solid #E7E2DA;border-radius:8px;overflow:hidden;width:max-content;font-size:13px;font-weight:600"><span style="height:36px;padding:0 16px;display:flex;align-items:center;background:#fff">Por peso</span><span style="height:36px;padding:0 16px;display:flex;align-items:center;background:#1F1B16;color:#fff">Por plata</span></div>
+        <div style="border:1px solid #E7E2DA;border-radius:8px;padding:14px 16px;background:#FAF8F5;display:flex;flex-direction:column;gap:4px"><div style="font-size:12px;color:#6B635A">Plata pedida</div><div style="font-size:40px;font-weight:600;letter-spacing:-.02em;line-height:1">$ 2.000</div></div>
+        <div style="border-radius:8px;padding:16px;background:#FDF1D6;display:flex;flex-direction:column;gap:4px"><div style="font-size:12px;font-weight:600;color:#6B635A">Para el fiambrero</div><div style="font-size:40px;font-weight:600;letter-spacing:-.02em;line-height:1">Cortá 148 g</div></div>
+        <div style="display:flex;flex-direction:column;gap:6px"><div style="font-size:13px;font-weight:600">Peso real que marca la balanza</div><div style="height:48px;border:2px solid #1F6B4F;border-radius:8px;padding:0 12px;display:flex;align-items:center;justify-content:space-between;font-size:18px;box-shadow:0 0 0 3px #E2EFE9"><span>0,152 kg</span><span style="font-weight:600">$ 2.052</span></div><div style="font-size:12px;color:#6B635A">Se cobra el peso real, no la plata pedida.</div></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;gap:6px"><button style="flex:1;height:36px;border:1px solid #E7E2DA;border-radius:8px;background:#fff;font:600 13px Inter,sans-serif">100 g</button><button style="flex:1;height:36px;border:1px solid #E7E2DA;border-radius:8px;background:#fff;font:600 13px Inter,sans-serif">¼ kg</button><button style="flex:1;height:36px;border:1px solid #E7E2DA;border-radius:8px;background:#fff;font:600 13px Inter,sans-serif">½ kg</button></div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
+          <sc-for list="{{ teclas }}" as="t" hint-placeholder-count="12"><button style="height:56px;border:1px solid #E7E2DA;border-radius:8px;background:#fff;font:500 22px Inter,sans-serif;cursor:pointer">{{ t }}</button></sc-for>
+        </div>
+        <button style="height:56px;border:0;border-radius:8px;background:#1F6B4F;color:#fff;font:600 16px Inter,sans-serif;cursor:pointer;margin-top:auto">Agregar $ 2.052 · ⏎</button>
+        <button style="height:40px;border:0;border-radius:8px;background:transparent;color:#6B635A;font:600 13px Inter,sans-serif;cursor:pointer">Cancelar · Esc</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- V6 Historial -->
+<div style="display:flex;flex-direction:column;gap:10px" data-screen-label="V6 Historial Mac">
+  <div style="font-size:13px;font-weight:600;color:#6B635A">V6 · Historial de ventas · detalle en panel derecho</div>
+  <div style="width:1280px;height:800px;background:#FAF8F5;border:1px solid #E7E2DA;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;flex:none;font-size:14px">
+    <div style="height:56px;background:#fff;border-bottom:1px solid #E7E2DA;display:flex;align-items:center;gap:16px;padding:0 16px;flex:none">
+      <div style="display:flex;align-items:center;gap:10px;width:208px"><span style="width:28px;height:28px;border-radius:8px;background:#1F6B4F;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:700">M</span><span style="font-weight:600">Almacén La Esquina</span></div>
+      <div style="flex:1;max-width:420px;height:36px;border:1px solid #E7E2DA;border-radius:8px;padding:0 10px;display:flex;align-items:center;gap:8px;font-size:13px;color:#6B635A;background:#FAF8F5"><span style="width:16px;height:16px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/search.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/search.svg) center/contain no-repeat"></span><span style="flex:1">Buscar</span><kbd style="font:600 11px Inter,sans-serif;border:1px solid #E7E2DA;padding:1px 5px;border-radius:4px">Ctrl K</kbd></div>
+      <div style="flex:1"></div>
+      <span style="display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 12px;border-radius:999px;border:1px solid #E7E2DA;font-size:13px;font-weight:500"><span style="width:8px;height:8px;border-radius:50%;background:#177A48"></span>Caja abierta · Tomás · desde 14:00</span>
+      <span style="position:relative;width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center"><span style="width:22px;height:22px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/bell.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/bell.svg) center/contain no-repeat"></span><span style="position:absolute;top:8px;right:8px;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:#C2362F;color:#fff;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center">6</span></span>
+      <span style="width:36px;height:36px;border-radius:50%;background:#FDF1D6;display:inline-flex;align-items:center;justify-content:center;font-weight:600">J</span>
+    </div>
+    <div style="flex:1;display:flex;min-height:0">
+      <nav style="width:240px;border-right:1px solid #E7E2DA;padding:12px;display:flex;flex-direction:column;gap:4px;background:#fff;flex:none">
+        <sc-for list="{{ navVender }}" as="m" hint-placeholder-count="12">
+          <sc-if value="{{ m.grupo }}" hint-placeholder-val="{{ false }}"><div style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#6B635A;padding:12px 12px 4px">{{ m.label }}</div></sc-if>
+          <sc-if value="{{ m.item }}" hint-placeholder-val="{{ true }}"><div style="height:40px;padding:0 12px;border-radius:8px;display:flex;align-items:center;gap:12px;background:{{ m.bg }};color:{{ m.fg }};font-weight:{{ m.peso }}"><span style="width:22px;height:22px;flex:none;background:currentColor;-webkit-mask:url({{ m.icon }}) center/contain no-repeat;mask:url({{ m.icon }}) center/contain no-repeat"></span>{{ m.label }}</div></sc-if>
+        </sc-for>
+      </nav>
+      <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+        <div style="padding:20px 24px 0;display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;align-items:center;gap:12px"><span style="font-size:22px;font-weight:600">Ventas</span><div style="display:inline-flex;border:1px solid #E7E2DA;border-radius:8px;overflow:hidden;font-size:13px;font-weight:600"><span style="height:32px;padding:0 12px;display:flex;align-items:center;background:#fff">Venta</span><span style="height:32px;padding:0 12px;display:flex;align-items:center;background:#1F1B16;color:#fff">Historial</span><span style="height:32px;padding:0 12px;display:flex;align-items:center;background:#fff">En espera · 2</span></div><span style="flex:1"></span><div style="height:36px;border:1px solid #E7E2DA;border-radius:8px;padding:0 10px;display:flex;align-items:center;gap:8px;font-size:13px;color:#6B635A;background:#fff;width:200px"><span style="width:16px;height:16px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/search.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/search.svg) center/contain no-repeat"></span>N° de venta</div></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <sc-for list="{{ filtrosHist }}" as="f" hint-placeholder-count="6"><span style="height:32px;padding:0 12px;border:1px solid {{ f.bd }};border-radius:999px;background:{{ f.bg }};color:{{ f.fg }};font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px">{{ f.label }}</span></sc-for>
+          </div>
+        </div>
+        <div style="flex:1;display:grid;grid-template-columns:minmax(0,1fr) 400px;min-height:0;padding:16px 24px 24px;gap:16px">
+          <div style="border:1px solid #E7E2DA;border-radius:12px;background:#fff;overflow:hidden;align-self:start">
+            <div style="display:grid;grid-template-columns:90px 70px minmax(0,1fr) 110px 110px 100px;gap:8px;padding:0 14px;height:36px;align-items:center;font-size:12px;font-weight:600;color:#6B635A;background:#FAF8F5;border-bottom:1px solid #E7E2DA"><span>N°</span><span>Hora</span><span>Cajero · cliente</span><span>Medio</span><span style="text-align:right">Total</span><span>Estado</span></div>
+            <sc-for list="{{ ventas }}" as="v" hint-placeholder-count="8">
+              <div style="display:grid;grid-template-columns:90px 70px minmax(0,1fr) 110px 110px 100px;gap:8px;padding:0 14px;height:40px;align-items:center;border-bottom:1px solid #E7E2DA;background:{{ v.bg }}"><span style="font-weight:600">{{ v.n }}</span><span style="color:#6B635A">{{ v.h }}</span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ v.q }}</span><span style="color:#6B635A">{{ v.m }}</span><span style="text-align:right;font-weight:600;color:{{ v.tfg }}">{{ v.t }}</span><span style="display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 8px;border-radius:999px;background:{{ v.cbg }};color:{{ v.cfg }};font-size:12px;font-weight:600;width:max-content">{{ v.e }}</span></div>
+            </sc-for>
+          </div>
+          <div style="border:1px solid #E7E2DA;border-radius:12px;background:#fff;display:flex;flex-direction:column;overflow:hidden">
+            <div style="padding:16px 18px;border-bottom:1px solid #E7E2DA;display:flex;flex-direction:column;gap:4px"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:18px;font-weight:600">Venta 004187</span><span style="display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 8px;border-radius:999px;background:#E3F2E9;color:#177A48;font-size:12px;font-weight:600">Cobrada</span></div><div style="font-size:13px;color:#6B635A">03/10/2026 18:41 · Tomás · Caja 1 · sin cliente</div></div>
+            <div style="padding:12px 18px;display:flex;flex-direction:column;gap:8px;font-size:13px;border-bottom:1px solid #E7E2DA">
+              <sc-for list="{{ lineas }}" as="l" hint-placeholder-count="4"><div style="display:flex;justify-content:space-between;gap:8px"><span>{{ l.n }} <span style="color:#6B635A">· {{ l.c }} × {{ l.u }}</span></span><span style="font-weight:600">{{ l.s }}</span></div></sc-for>
+              <div style="display:flex;justify-content:space-between;padding-top:8px;border-top:1px solid #E7E2DA;font-size:15px;font-weight:600"><span>Total</span><span>$ 18.550</span></div>
+              <div style="display:flex;justify-content:space-between;color:#6B635A"><span>Efectivo $ 20.000</span><span>Vuelto $ 1.450</span></div>
+            </div>
+            <div style="padding:12px 18px;font-size:12px;color:#6B635A;display:flex;flex-direction:column;gap:4px;border-bottom:1px solid #E7E2DA"><div style="font-weight:600;text-transform:uppercase;letter-spacing:.06em">Historial</div><div>18:41 · Cobrada por Tomás · Mac mostrador</div><div>18:41 · Ticket impreso</div></div>
+            <div style="margin-top:auto;padding:14px 18px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              <button style="height:40px;border:1px solid #E7E2DA;border-radius:8px;background:#fff;font:600 13px Inter,sans-serif;cursor:pointer">Reimprimir</button>
+              <button style="height:40px;border:1px solid #E7E2DA;border-radius:8px;background:#fff;font:600 13px Inter,sans-serif;cursor:pointer">Compartir</button>
+              <button style="height:40px;border:1px solid #E7E2DA;border-radius:8px;background:#fff;font:600 13px Inter,sans-serif;cursor:pointer">Devolver</button>
+              <button style="height:40px;border:1px solid #E7E2DA;border-radius:8px;background:#fff;color:#C2362F;font:600 13px Inter,sans-serif;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px"><span style="width:14px;height:14px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/lock.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/lock.svg) center/contain no-repeat"></span>Anular</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- FILA 4: MAC -->
+<div style="display:flex;gap:48px;align-items:flex-start">
+
+<!-- V7 Devolución -->
+<div style="display:flex;flex-direction:column;gap:10px" data-screen-label="V7 Devolucion Mac">
+  <div style="font-size:13px;font-weight:600;color:#6B635A">V7 · Devolución desde el ticket</div>
+  <div style="width:1280px;height:800px;background:#8F8A82;border:1px solid #E7E2DA;border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center;flex:none;font-size:14px">
+    <div style="width:680px;background:#fff;border-radius:12px;box-shadow:0 24px 60px rgba(31,27,22,.3);padding:28px;display:flex;flex-direction:column;gap:18px">
+      <div style="display:flex;flex-direction:column;gap:4px"><div style="font-size:20px;font-weight:600">Devolver de la venta 004187</div><div style="color:#6B635A">Elegí qué vuelve y cómo se devuelve la plata. Queda registrado quién lo hizo.</div></div>
+      <div style="border:1px solid #E7E2DA;border-radius:8px;overflow:hidden">
+        <sc-for list="{{ devol }}" as="d" hint-placeholder-count="4">
+          <div style="display:grid;grid-template-columns:24px minmax(0,1fr) 120px 90px;gap:12px;align-items:center;height:48px;padding:0 14px;border-bottom:1px solid #E7E2DA;background:{{ d.bg }}"><span style="width:20px;height:20px;border-radius:5px;border:1.5px solid {{ d.cbd }};background:{{ d.cbg }};display:inline-flex;align-items:center;justify-content:center"><span style="width:14px;height:14px;background:#fff;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/check.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/check.svg) center/contain no-repeat"></span></span><span style="font-weight:{{ d.peso }}">{{ d.n }}</span><span style="display:inline-flex;align-items:center;justify-content:center;gap:10px;color:{{ d.qfg }}"><span style="width:28px;height:28px;border:1px solid #E7E2DA;border-radius:6px;display:inline-flex;align-items:center;justify-content:center">−</span><span style="font-weight:600">{{ d.q }}</span><span style="width:28px;height:28px;border:1px solid #E7E2DA;border-radius:6px;display:inline-flex;align-items:center;justify-content:center">+</span></span><span style="text-align:right;font-weight:600;color:{{ d.qfg }}">{{ d.s }}</span></div>
+        </sc-for>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <label style="display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600">Motivo<div style="height:44px;border:1px solid #E7E2DA;border-radius:8px;padding:0 12px;display:flex;align-items:center;justify-content:space-between;font-size:15px;font-weight:400">Vencido<span style="width:18px;height:18px;background:#6B635A;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/chevron-down.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/chevron-down.svg) center/contain no-repeat"></span></div></label>
+        <label style="display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600">Devolver con<div style="height:44px;border:1px solid #E7E2DA;border-radius:8px;padding:0 12px;display:flex;align-items:center;justify-content:space-between;font-size:15px;font-weight:400">Efectivo (mismo medio)<span style="width:18px;height:18px;background:#6B635A;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/chevron-down.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/chevron-down.svg) center/contain no-repeat"></span></div></label>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px"><div style="font-size:13px;font-weight:600">¿Qué pasa con el producto?</div><div style="display:flex;gap:8px"><span style="flex:1;height:44px;border:1px solid #E7E2DA;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px">Vuelve a la góndola</span><span style="flex:1;height:44px;border:2px solid #C2362F;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px;color:#C2362F;background:#FBE5E3">Va a merma</span></div></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px solid #E7E2DA"><div style="display:flex;flex-direction:column"><span style="font-size:12px;color:#6B635A">Se devuelve en efectivo de la caja</span><span style="font-size:28px;font-weight:600;letter-spacing:-.02em">$ 4.600</span></div><div style="display:flex;gap:8px"><button style="height:44px;padding:0 16px;border:1px solid #E7E2DA;border-radius:8px;background:#fff;font:600 14px Inter,sans-serif;cursor:pointer">Cancelar</button><button style="height:44px;padding:0 20px;border:0;border-radius:8px;background:#1F6B4F;color:#fff;font:600 14px Inter,sans-serif;cursor:pointer;display:inline-flex;align-items:center;gap:8px"><span style="width:16px;height:16px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/lock.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/lock.svg) center/contain no-repeat"></span>Confirmar con PIN</button></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- V8 Estados -->
+<div style="display:flex;flex-direction:column;gap:10px" data-screen-label="V8 Estados Mac">
+  <div style="font-size:13px;font-weight:600;color:#6B635A">V8 · Estados · sin conexión e impresora desconectada</div>
+  <div style="width:1280px;height:800px;background:#FAF8F5;border:1px solid #E7E2DA;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;flex:none;font-size:14px;position:relative">
+    <div style="height:56px;background:#fff;border-bottom:1px solid #E7E2DA;display:flex;align-items:center;gap:16px;padding:0 16px;flex:none">
+      <div style="display:flex;align-items:center;gap:10px"><span style="width:28px;height:28px;border-radius:8px;background:#1F6B4F;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:700">M</span><span style="font-weight:600">Almacén La Esquina</span><span style="color:#6B635A">· Vender</span></div>
+      <div style="flex:1"></div>
+      <span style="display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 12px;border-radius:999px;border:1px solid #E7E2DA;font-size:13px;font-weight:500"><span style="width:8px;height:8px;border-radius:50%;background:#177A48"></span>Caja 1 abierta · Tomás · desde 14:00</span>
+      <span style="display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 12px;border-radius:999px;background:#FBEEDB;color:#9A5B00;font-size:13px;font-weight:600"><span style="width:16px;height:16px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/wifi-off.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/wifi-off.svg) center/contain no-repeat"></span>Sin conexión · 3 ventas por sincronizar</span>
+      <span style="width:36px;height:36px;border-radius:50%;background:#FDF1D6;display:inline-flex;align-items:center;justify-content:center;font-weight:600">T</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;padding:10px 20px;background:#FBEEDB;color:#9A5B00;font-weight:500;flex:none"><span style="width:20px;height:20px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/wifi-off.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/wifi-off.svg) center/contain no-repeat"></span><span style="flex:1">Sin internet desde las 18:12. Podés seguir vendiendo: las ventas se guardan acá y se sincronizan solas al volver. Mandar pedidos y el bot quedan en pausa.</span></div>
+    <div style="flex:1;display:grid;grid-template-columns:65fr 35fr;min-height:0">
+      <div style="display:flex;flex-direction:column;border-right:1px solid #E7E2DA">
+        <div style="padding:16px 20px 12px;display:flex;gap:10px"><div style="flex:1;height:48px;border:1px solid #E7E2DA;border-radius:8px;padding:0 14px;display:flex;align-items:center;gap:12px;font-size:16px;color:#6B635A;background:#fff"><span style="width:24px;height:24px;background:#1F6B4F;flex:none;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/scan-barcode.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/scan-barcode.svg) center/contain no-repeat"></span>Escaneá o buscá por nombre</div></div>
+        <div style="margin:0 20px;border:1px solid #E7E2DA;border-radius:8px;background:#fff;overflow:hidden">
+          <div style="display:grid;grid-template-columns:minmax(0,1fr) 110px 110px 110px;gap:8px;padding:0 14px;height:44px;align-items:center;border-bottom:1px solid #E7E2DA;font-size:15px"><span>Leche entera 1 L sachet</span><span style="text-align:right">1</span><span style="text-align:right;color:#6B635A">$ 1.950</span><span style="text-align:right;font-weight:600">$ 1.950</span></div>
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:#FBE5E3;color:#C2362F;font-size:13px;font-weight:500"><span style="width:16px;height:16px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/circle-alert.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/circle-alert.svg) center/contain no-repeat"></span><span style="flex:1">Sin stock según el sistema. ¿Vender igual? El stock queda en −1 y se avisa.</span><span style="height:28px;padding:0 10px;border:1px solid currentColor;border-radius:6px;display:inline-flex;align-items:center;font-weight:600">Vender igual</span><span style="height:28px;padding:0 10px;display:inline-flex;align-items:center;font-weight:600">Quitar</span></div>
+        </div>
+        <div style="margin:12px 20px;display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px;background:#FBEEDB;color:#9A5B00;font-size:13px;font-weight:500"><span style="width:16px;height:16px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/shield-alert.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/shield-alert.svg) center/contain no-repeat"></span>Cerveza rubia 473 ml es para mayores de 18. Pedí documento si hace falta.</div>
+      </div>
+      <div style="padding:20px;display:flex;flex-direction:column;gap:14px;background:#fff">
+        <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:13px;color:#6B635A">Total</span><span style="font-size:64px;font-weight:600;letter-spacing:-.02em;line-height:1">$ 4.250</span></div>
+        <div style="flex:1"></div>
+        <button style="height:72px;border:0;border-radius:8px;background:#1F6B4F;color:#fff;font:600 22px Inter,sans-serif;cursor:pointer">Cobrar · F12</button>
+      </div>
+    </div>
+    <div style="position:absolute;left:32.5%;bottom:28px;transform:translateX(-50%);display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:8px;background:#1F1B16;color:#F3EFE9;font-size:14px;box-shadow:0 8px 24px rgba(31,27,22,.25);width:520px"><span style="width:20px;height:20px;flex:none;background:#F07167;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/printer.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/printer.svg) center/contain no-repeat"></span><span style="flex:1">Impresora desconectada. La venta 004186 ya está guardada.</span><button style="height:32px;padding:0 10px;border:0;border-radius:6px;background:transparent;color:#F2B33D;font:600 14px Inter,sans-serif;cursor:pointer">Reintentar</button><button style="height:32px;padding:0 10px;border:0;border-radius:6px;background:transparent;color:#F3EFE9;font:600 14px Inter,sans-serif;cursor:pointer">Compartir</button></div>
+  </div>
+</div>
+</div>
+
+<!-- FILA 5: MAC caja cerrada + iPhones -->
+<div style="display:flex;gap:48px;align-items:flex-start">
+
+<!-- V9 Caja cerrada -->
+<div style="display:flex;flex-direction:column;gap:10px" data-screen-label="V9 Caja cerrada Mac">
+  <div style="font-size:13px;font-weight:600;color:#6B635A">V9 · Estado: caja cerrada bloquea la venta</div>
+  <div style="width:1280px;height:800px;background:#FAF8F5;border:1px solid #E7E2DA;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;flex:none;font-size:14px;position:relative">
+    <div style="height:56px;background:#fff;border-bottom:1px solid #E7E2DA;display:flex;align-items:center;gap:16px;padding:0 16px;flex:none">
+      <div style="display:flex;align-items:center;gap:10px"><span style="width:28px;height:28px;border-radius:8px;background:#1F6B4F;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:700">M</span><span style="font-weight:600">Almacén La Esquina</span><span style="color:#6B635A">· Vender</span></div>
+      <div style="flex:1"></div>
+      <span style="display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 12px;border-radius:999px;border:1px solid #E7E2DA;font-size:13px;font-weight:500;color:#6B635A"><span style="width:8px;height:8px;border-radius:50%;background:#A8A096"></span>Caja cerrada</span>
+      <span style="width:36px;height:36px;border-radius:50%;background:#FDF1D6;display:inline-flex;align-items:center;justify-content:center;font-weight:600">L</span>
+    </div>
+    <div style="flex:1;display:grid;grid-template-columns:65fr 35fr;opacity:.35;filter:grayscale(.4)">
+      <div style="padding:16px 20px"><div style="height:48px;border:1px solid #E7E2DA;border-radius:8px;background:#fff"></div><div style="margin-top:12px;height:180px;border:1px solid #E7E2DA;border-radius:8px;background:#fff"></div></div>
+      <div style="padding:20px;background:#fff;border-left:1px solid #E7E2DA"><div style="font-size:64px;font-weight:600;letter-spacing:-.02em">$ 0</div></div>
+    </div>
+    <div style="position:absolute;inset:56px 0 0;display:flex;align-items:center;justify-content:center">
+      <div style="width:480px;background:#fff;border:1px solid #E7E2DA;border-radius:12px;padding:28px;display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;box-shadow:0 16px 40px rgba(31,27,22,.15)">
+        <span style="width:56px;height:56px;border-radius:50%;background:#F3F0EA;color:#6B635A;display:inline-flex;align-items:center;justify-content:center"><span style="width:28px;height:28px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/wallet.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/wallet.svg) center/contain no-repeat"></span></span>
+        <div style="font-size:22px;font-weight:600">Abrí la caja para vender</div>
+        <div style="color:#6B635A;text-wrap:pretty">Lucía cerró el turno mañana a las 13:58 y dejó $ 20.000 de cambio. Contá el fondo y arrancá el turno tarde.</div>
+        <button style="height:52px;padding:0 24px;border:0;border-radius:8px;background:#1F6B4F;color:#fff;font:600 16px Inter,sans-serif;cursor:pointer;margin-top:8px;width:100%">Abrir turno en Caja 1</button>
+        <span style="font-size:13px;color:#6B635A">Sos Lucía · cambiar de usuario</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- P1 iPhone venta -->
+<div style="display:flex;flex-direction:column;gap:10px" data-screen-label="P1 Venta iPhone">
+  <div style="font-size:13px;font-weight:600;color:#6B635A">P1 · Venta · iPhone</div>
+  <div style="width:393px;height:852px;background:#FAF8F5;border:1px solid #E7E2DA;border-radius:44px;overflow:hidden;display:flex;flex-direction:column;flex:none;font-size:16px;position:relative">
+    <div style="height:54px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 28px 8px;font-size:15px;font-weight:600;background:#fff"><span>18:40</span><span style="display:inline-flex;align-items:center;gap:6px"><span style="width:16px;height:16px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/signal.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/signal.svg) center/contain no-repeat"></span><span style="width:18px;height:18px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/battery-full.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/battery-full.svg) center/contain no-repeat"></span></span></div>
+    <div style="background:#fff;border-bottom:1px solid #E7E2DA;padding:6px 16px 12px;display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;align-items:center;gap:8px"><span style="font-size:20px;font-weight:600;flex:1">Vender</span><span style="display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;border-radius:999px;border:1px solid #E7E2DA;font-size:12px;font-weight:500"><span style="width:8px;height:8px;border-radius:50%;background:#177A48"></span>Caja 1</span><span style="width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center"><span style="width:24px;height:24px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/ellipsis-vertical.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/ellipsis-vertical.svg) center/contain no-repeat"></span></span></div>
+      <div style="display:flex;gap:8px"><div style="flex:1;height:48px;border:1px solid #E7E2DA;border-radius:8px;padding:0 12px;display:flex;align-items:center;gap:10px;color:#6B635A;background:#FAF8F5"><span style="width:22px;height:22px;background:currentColor;flex:none;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/search.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/search.svg) center/contain no-repeat"></span>Buscar producto</div><button style="width:48px;height:48px;border:0;border-radius:8px;background:#1F6B4F;color:#fff;display:inline-flex;align-items:center;justify-content:center"><span style="width:24px;height:24px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/camera.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/camera.svg) center/contain no-repeat"></span></button></div>
+    </div>
+    <div style="flex:1;overflow:hidden;display:flex;flex-direction:column">
+      <div style="background:#fff">
+        <sc-for list="{{ lineasCel }}" as="l" hint-placeholder-count="4">
+          <div style="display:flex;align-items:center;gap:10px;padding:0 16px;min-height:64px;border-bottom:1px solid #E7E2DA;background:{{ l.bg }}">
+            <div style="flex:1;display:flex;flex-direction:column;gap:2px;min-width:0"><div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ l.n }}</div><div style="font-size:13px;color:#6B635A">{{ l.d }}</div></div>
+            <sc-if value="{{ l.stepper }}" hint-placeholder-val="{{ false }}"><div style="display:inline-flex;align-items:center;border:1px solid #E7E2DA;border-radius:8px;background:#fff;overflow:hidden"><span style="width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;font-size:22px">−</span><span style="width:28px;text-align:center;font-weight:600">{{ l.q }}</span><span style="width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;font-size:22px">+</span></div></sc-if>
+            <div style="font-weight:600;min-width:64px;text-align:right">{{ l.s }}</div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="padding:14px 16px 6px;font-size:12px;font-weight:600;color:#6B635A;text-transform:uppercase;letter-spacing:.06em">Sin código</div>
+      <div style="display:flex;gap:8px;padding:0 16px;overflow:hidden">
+        <sc-for list="{{ rapidosCel }}" as="r" hint-placeholder-count="4">
+          <div style="width:104px;flex:none;border:1px solid #E7E2DA;border-radius:12px;background:#fff;overflow:hidden"><div style="height:44px;background:repeating-linear-gradient(135deg,#F3F0EA 0 6px,#EDE8E0 6px 12px)"></div><div style="padding:8px 10px"><div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.n }}</div><div style="font-size:12px;color:#6B635A">{{ r.p }}</div></div></div>
+        </sc-for>
+      </div>
+      <div style="padding:14px 16px 0;font-size:13px;color:#6B635A">Deslizá una línea para quitarla. Tocala para cantidad, descuento o nota.</div>
+    </div>
+    <div style="background:#fff;border-top:1px solid #E7E2DA;padding:12px 16px 34px;display:flex;flex-direction:column;gap:10px">
+      <button style="height:60px;border:0;border-radius:8px;background:#1F6B4F;color:#fff;font:600 18px Inter,sans-serif;display:flex;align-items:center;justify-content:space-between;padding:0 20px"><span style="font-weight:500;font-size:15px">4 ítems · $ 18.550</span><span>Cobrar</span></button>
+    </div>
+    <div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:#1F1B16"></div>
+  </div>
+</div>
+
+<!-- P2 Cobro QR -->
+<div style="display:flex;flex-direction:column;gap:10px" data-screen-label="P2 Cobro QR iPhone">
+  <div style="font-size:13px;font-weight:600;color:#6B635A">P2 · Cobro con QR · hoja</div>
+  <div style="width:393px;height:852px;background:#6B665E;border:1px solid #E7E2DA;border-radius:44px;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;flex:none;font-size:16px;position:relative">
+    <div style="background:#fff;border-radius:20px 20px 0 0;padding:8px 16px 34px;display:flex;flex-direction:column;gap:14px;box-shadow:0 -8px 24px rgba(31,27,22,.2)">
+      <div style="width:40px;height:4px;border-radius:2px;background:#E7E2DA;margin:0 auto"></div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:20px;font-weight:600">Cobrar</span><span style="font-size:32px;font-weight:600;letter-spacing:-.02em">$ 18.550</span></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <sc-for list="{{ mediosQR }}" as="m" hint-placeholder-count="4">
+          <span style="height:56px;border:{{ m.borde }};border-radius:8px;background:{{ m.bg }};font-weight:600;font-size:14px;display:flex;align-items:center;justify-content:center;gap:8px"><span style="width:20px;height:20px;flex:none;background:currentColor;-webkit-mask:url({{ m.icon }}) center/contain no-repeat;mask:url({{ m.icon }}) center/contain no-repeat"></span>{{ m.label }}</span>
+        </sc-for>
+      </div>
+      <div style="display:flex;gap:14px;align-items:center;padding:14px;border:1px solid #E7E2DA;border-radius:12px">
+        <div style="width:112px;height:112px;flex:none;border-radius:8px;background:repeating-linear-gradient(90deg,#1F1B16 0 4px,#fff 4px 8px),repeating-linear-gradient(0deg,#1F1B16 0 4px,#fff 4px 8px);background-blend-mode:multiply;border:6px solid #fff;outline:1px solid #E7E2DA"></div>
+        <div style="display:flex;flex-direction:column;gap:6px;font-size:14px;min-width:0"><div style="font-size:12px;color:#6B635A">QR fijo del local</div><div style="font-weight:600">la.esquina.mp</div><div style="color:#6B635A;font-size:13px;word-break:break-all">CVU 0000003100012345678901</div><div style="font-size:13px;color:#1F6B4F;font-weight:600">Copiar alias</div></div>
+      </div>
+      <label style="display:flex;align-items:center;gap:12px;min-height:48px;padding:0 4px"><span style="width:26px;height:26px;border-radius:6px;background:#1F6B4F;display:inline-flex;align-items:center;justify-content:center;flex:none"><span style="width:18px;height:18px;background:#fff;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/check.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/check.svg) center/contain no-repeat"></span></span><span style="font-size:15px">Verificada en el banco <span style="color:#6B635A;display:block;font-size:13px">No entregues contra una captura.</span></span></label>
+      <div style="display:flex;gap:8px"><span style="flex:1;height:44px;border:2px solid #1F6B4F;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px">Ticket no fiscal</span><span style="flex:1;height:44px;border:1px solid #EFEBE4;border-radius:8px;display:flex;align-items:center;justify-content:center;gap:6px;font-weight:600;font-size:13px;color:#8C847A;background:#FAF8F5">Factura · próximamente</span></div>
+      <button style="height:60px;border:0;border-radius:8px;background:#1F6B4F;color:#fff;font:600 18px Inter,sans-serif">Confirmar cobro</button>
+    </div>
+    <div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:#fff"></div>
+  </div>
+</div>
+
+<!-- P3 Ventas en espera -->
+<div style="display:flex;flex-direction:column;gap:10px" data-screen-label="P3 En espera iPhone">
+  <div style="font-size:13px;font-weight:600;color:#6B635A">P3 · Ventas en espera + sin conexión</div>
+  <div style="width:393px;height:852px;background:#FAF8F5;border:1px solid #E7E2DA;border-radius:44px;overflow:hidden;display:flex;flex-direction:column;flex:none;font-size:16px;position:relative">
+    <div style="height:54px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 28px 8px;font-size:15px;font-weight:600;background:#fff"><span>18:40</span><span style="display:inline-flex;align-items:center;gap:6px"><span style="width:16px;height:16px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/signal.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/signal.svg) center/contain no-repeat"></span><span style="width:18px;height:18px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/battery-full.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/battery-full.svg) center/contain no-repeat"></span></span></div>
+    <div style="background:#fff;border-bottom:1px solid #E7E2DA;padding:6px 16px 12px;display:flex;align-items:center;gap:8px"><span style="width:44px;height:44px;margin-left:-12px;display:inline-flex;align-items:center;justify-content:center"><span style="width:24px;height:24px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/chevron-left.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/chevron-left.svg) center/contain no-repeat"></span></span><span style="font-size:20px;font-weight:600;flex:1">En espera</span><span style="display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;border-radius:999px;background:#FBEEDB;color:#9A5B00;font-size:12px;font-weight:600"><span style="width:14px;height:14px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/wifi-off.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/wifi-off.svg) center/contain no-repeat"></span>3 por sincronizar</span></div>
+    <div style="padding:16px;display:flex;flex-direction:column;gap:10px">
+      <sc-for list="{{ espera }}" as="e" hint-placeholder-count="3">
+        <div style="background:#fff;border:1px solid #E7E2DA;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px"><div style="flex:1;display:flex;flex-direction:column;gap:2px"><div style="font-weight:600">{{ e.t }}</div><div style="font-size:13px;color:#6B635A">{{ e.d }}</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px"><span style="font-weight:600">{{ e.m }}</span><span style="height:32px;padding:0 12px;border-radius:8px;background:#E2EFE9;color:#1F6B4F;font-size:13px;font-weight:600;display:inline-flex;align-items:center">Recuperar</span></div></div>
+      </sc-for>
+      <div style="font-size:13px;color:#6B635A;padding:4px 2px">Las ventas en espera se guardan en este dispositivo hasta cerrar el turno.</div>
+    </div>
+    <div style="margin-top:auto;background:#fff;border-top:1px solid #E7E2DA;height:76px;display:grid;grid-template-columns:repeat(5,1fr);padding:6px 4px 18px">
+      <sc-for list="{{ tabsVender }}" as="b" hint-placeholder-count="5"><div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:{{ b.fg }};font-size:11px;font-weight:{{ b.peso }}"><span style="width:26px;height:26px;background:currentColor;-webkit-mask:url({{ b.icon }}) center/contain no-repeat;mask:url({{ b.icon }}) center/contain no-repeat"></span>{{ b.label }}</div></sc-for>
+    </div>
+    <div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:#1F1B16"></div>
+  </div>
+</div>
+
+<!-- P4 Ticket -->
+<div style="display:flex;flex-direction:column;gap:10px" data-screen-label="P4 Ticket iPhone">
+  <div style="font-size:13px;font-weight:600;color:#6B635A">P4 · Venta lista y ticket 58 mm para compartir</div>
+  <div style="width:393px;height:852px;background:#FAF8F5;border:1px solid #E7E2DA;border-radius:44px;overflow:hidden;display:flex;flex-direction:column;flex:none;font-size:16px;position:relative">
+    <div style="height:54px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 28px 8px;font-size:15px;font-weight:600;background:#1F6B4F;color:#fff"><span>18:41</span><span style="display:inline-flex;align-items:center;gap:6px"><span style="width:16px;height:16px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/signal.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/signal.svg) center/contain no-repeat"></span><span style="width:18px;height:18px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/battery-full.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/battery-full.svg) center/contain no-repeat"></span></span></div>
+    <div style="background:#1F6B4F;color:#fff;padding:12px 20px 24px;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center"><span style="width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,.18);display:inline-flex;align-items:center;justify-content:center"><span style="width:28px;height:28px;background:#fff;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/check.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/check.svg) center/contain no-repeat"></span></span><div style="font-size:14px;opacity:.85">Venta 004187 · QR</div><div style="font-size:36px;font-weight:600;letter-spacing:-.02em;line-height:1">$ 18.550</div></div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;padding:20px 16px;gap:16px;overflow:hidden">
+      <pre style="margin:0;width:236px;padding:14px 10px;background:#fff;border:1px solid #E7E2DA;border-radius:4px;font:11.5px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;color:#1F1B16;white-space:pre;box-shadow:0 1px 2px rgba(31,27,22,.06)">{{ ticket58 }}</pre>
+    </div>
+    <div style="background:#fff;border-top:1px solid #E7E2DA;padding:12px 16px 34px;display:flex;flex-direction:column;gap:8px">
+      <div style="display:flex;gap:8px"><button style="flex:1;height:52px;border:1px solid #E7E2DA;border-radius:8px;background:#fff;font:600 15px Inter,sans-serif;display:inline-flex;align-items:center;justify-content:center;gap:8px"><span style="width:18px;height:18px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static@0.468.0/icons/share-2.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static@0.468.0/icons/share-2.svg) center/contain no-repeat"></span>Compartir PDF</button><button style="flex:1;height:52px;border:1px solid #E7E2DA;border-radius:8px;background:#fff;font:600 15px Inter,sans-serif">Sin ticket</button></div>
+      <button style="height:56px;border:0;border-radius:8px;background:#1F6B4F;color:#fff;font:600 17px Inter,sans-serif">Nueva venta</button>
+    </div>
+    <div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:#1F1B16"></div>
+  </div>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const ICON = 'https://unpkg.com/lucide-static@0.468.0/icons/';
+    const ic = n => ICON + n + '.svg';
+    const MODS = [['Mostrador'], ['Inicio', 'house'], ['Vender', 'shopping-cart'], ['Caja', 'wallet'], ['Mercadería'], ['Productos', 'package'], ['Compras', 'truck'], ['WhatsApp', 'message-circle'], ['Gestión'], ['Clientes y fiado', 'hand-coins'], ['Reportes', 'chart-column'], ['Ajustes', 'settings']];
+    const nav = act => MODS.map(([l, i]) => i ? { label: l, icon: ic(i), item: true, grupo: false, bg: l === act ? '#E2EFE9' : 'transparent', fg: l === act ? '#1F6B4F' : '#1F1B16', peso: l === act ? 600 : 500 } : { label: l, grupo: true, item: false });
+    const tabs = act => [['Inicio', 'house'], ['Vender', 'shopping-cart'], ['Productos', 'package'], ['Compras', 'truck'], ['Más', 'ellipsis']].map(([l, i]) => ({ label: l, icon: ic(i), fg: l === act ? '#1F6B4F' : '#6B635A', peso: l === act ? 600 : 500 }));
+    const lineas = [
+      { n: 'Coca-Cola 2,25 L', c: '1', u: '$ 4.600', s: '$ 4.600', bg: '#fff', ring: 'none', peso: 500 },
+      { n: 'Pan francés', c: '0,750 kg', u: '$ 3.800', s: '$ 2.850', bg: '#fff', ring: 'none', peso: 500 },
+      { n: 'Jamón cocido', c: '0,200 kg', u: '$ 21.000', s: '$ 4.200', bg: '#fff', ring: 'none', peso: 500 },
+      { n: 'Yerba Playadito 1 kg', c: '1', u: '$ 6.900', s: '$ 6.900', bg: '#E2EFE9', ring: 'inset 0 0 0 1px #1F6B4F', peso: 600 }
+    ];
+    const lineasCel = [
+      { n: 'Coca-Cola 2,25 L', d: '1 × $ 4.600', s: '$ 4.600', stepper: false, bg: '#fff' },
+      { n: 'Pan francés', d: '0,750 kg × $ 3.800', s: '$ 2.850', stepper: false, bg: '#fff' },
+      { n: 'Jamón cocido', d: '0,200 kg × $ 21.000', s: '$ 4.200', stepper: false, bg: '#fff' },
+      { n: 'Yerba Playadito 1 kg', d: '$ 6.900 c/u', s: '$ 6.900', stepper: true, q: '1', bg: '#E2EFE9' }
+    ];
+    const rapidos = [['Pan francés', '$ 3.800 / kg'], ['Jamón cocido', '$ 21.000 / kg'], ['Queso cremoso', '$ 13.500 / kg'], ['Salame', '$ 18.900 / kg'], ['Huevo suelto', '$ 290'], ['Huevos maple × 30', '$ 8.200'], ['Tomate', '$ 2.400 / kg'], ['Papa', '$ 900 / kg'], ['Cebolla', '$ 1.100 / kg'], ['Banana', '$ 1.900 / kg'], ['Facturas', '$ 450'], ['Verdura por plata', 'varios']].map(([n, p]) => ({ n, p }));
+    const rapidosCel = rapidos.slice(0, 4);
+    const atajos = [['F2', 'Buscar'], ['F3', 'Varios'], ['F4', 'Descuento'], ['F5', 'Cliente'], ['F6', 'Espera'], ['F9', 'Retiro/gasto'], ['F10', 'Cajón'], ['F12', 'Cobrar'], ['*', 'Multiplicar'], ['Esc', 'Cancelar']].map(([k, v]) => ({ k, v }));
+    const medio = (label, icon, sel) => ({ label, icon: ic(icon), bg: sel ? '#E2EFE9' : '#fff', borde: sel ? '2px solid #1F6B4F' : '1px solid #E7E2DA' });
+    const medios = [medio('Efectivo', 'banknote', false), medio('Tarjeta', 'credit-card', true), medio('Transf. o QR', 'qr-code', false), medio('Fiado', 'hand-coins', false)];
+    const mediosQR = [medio('Efectivo', 'banknote', false), medio('Tarjeta', 'credit-card', false), medio('Transf. o QR', 'qr-code', true), medio('Fiado', 'hand-coins', false)];
+    const teclas = ['1', '2', '3', '4', '5', '6', '7', '8', '9', ',', '0', '⌫'];
+    const billetes = ['$ 1.000', '$ 2.000', '$ 10.000', '$ 20.000'];
+    const filtrosHist = [['Hoy', true], ['Cajero: todos'], ['Medio: todos'], ['Estado: todas'], ['Con cliente']].map(([label, a]) => ({ label, bg: a ? '#1F1B16' : '#fff', fg: a ? '#fff' : '#1F1B16', bd: a ? '#1F1B16' : '#E7E2DA' }));
+    const est = { ok: ['#E3F2E9', '#177A48'], an: ['#FBE5E3', '#C2362F'], dev: ['#FBEEDB', '#9A5B00'] };
+    const V = (n, h, q, m, t, e, sel) => ({ n, h, q, m, t, e: e === 'ok' ? 'Cobrada' : e === 'an' ? 'Anulada' : 'Con devolución', cbg: est[e][0], cfg: est[e][1], bg: sel ? '#E2EFE9' : '#fff', tfg: e === 'an' ? '#6B635A' : '#1F1B16' });
+    const ventas = [V('004187', '18:41', 'Tomás', 'Efectivo', '$ 18.550', 'ok', true), V('004186', '18:37', 'Tomás · Rosa Giménez', 'Fiado', '$ 6.700', 'ok'), V('004185', '18:30', 'Tomás', 'QR', '$ 3.250', 'ok'), V('004184', '18:22', 'Tomás', 'Débito', '$ 12.900', 'dev'), V('004183', '18:15', 'Tomás', 'Efectivo', '$ 1.950', 'an'), V('004182', '18:09', 'Tomás', 'Efectivo', '$ 7.400', 'ok'), V('004181', '18:02', 'Tomás', 'Transferencia', '$ 24.300', 'ok'), V('004180', '17:55', 'Tomás', 'Efectivo', '$ 2.300', 'ok'), V('004179', '17:48', 'Tomás · El Tano (obra)', 'Fiado', '$ 15.800', 'ok'), V('004178', '17:40', 'Tomás', 'Crédito', '$ 9.100', 'ok')];
+    const devol = [
+      { n: 'Coca-Cola 2,25 L', q: '1', s: '$ 4.600', bg: '#E2EFE9', cbd: '#1F6B4F', cbg: '#1F6B4F', peso: 600, qfg: '#1F1B16' },
+      { n: 'Pan francés · 0,750 kg', q: '0', s: '$ 0', bg: '#fff', cbd: '#6B635A', cbg: '#fff', peso: 400, qfg: '#A8A096' },
+      { n: 'Jamón cocido · 0,200 kg', q: '0', s: '$ 0', bg: '#fff', cbd: '#6B635A', cbg: '#fff', peso: 400, qfg: '#A8A096' },
+      { n: 'Yerba Playadito 1 kg', q: '0', s: '$ 0', bg: '#fff', cbd: '#6B635A', cbg: '#fff', peso: 400, qfg: '#A8A096' }
+    ];
+    const espera = [{ t: 'Señora del perro', d: '18:32 · 3 ítems', m: '$ 5.450' }, { t: 'Venta 2', d: '18:36 · 7 ítems', m: '$ 21.300' }, { t: 'Chico de la moto', d: '18:38 · 1 ítem', m: '$ 2.300' }];
+    const ticket58 = ['      ALMACÉN LA ESQUINA', '  San Martín 1234, Godoy Cruz', '--------------------------------', 'Venta 004187    03/10/2026 18:41', 'Cajero: Tomás', '--------------------------------', 'Coca-Cola 2,25 L', '  1 x $ 4.600            $ 4.600', 'Pan francés', '  0,750 kg x $ 3.800     $ 2.850', 'Jamón cocido', '  0,200 kg x $ 21.000    $ 4.200', 'Yerba Playadito 1 kg', '  1 x $ 6.900            $ 6.900', '--------------------------------', 'TOTAL                   $ 18.550', 'QR                      $ 18.550', '--------------------------------', 'Documento no válido como factura', '    ¡Gracias por tu compra!'].join('\n');
+    return { navVender: nav('Vender'), tabsVender: tabs('Vender'), lineas, lineasCel, rapidos, rapidosCel, atajos, medios, mediosQR, teclas, billetes, filtrosHist, ventas, devol, espera, ticket58 };
+  }
+}
+</script>
+</body>
+</html>
