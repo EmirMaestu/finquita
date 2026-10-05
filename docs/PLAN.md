@@ -9,7 +9,7 @@ Cada tarea dice qué secciones del spec leer (§) y cuándo está lista. Las tar
   Listo cuando: `bun install` y `bun run check` salen con 0, con un test de ejemplo en cada paquete.
 - [x] T02 · **Base de datos y migraciones.** Drizzle con PostgreSQL vía `DATABASE_URL`; carpeta de migraciones; `docker-compose.dev.yml` con Postgres 16 para desarrollar fuera del contenedor. §Arquitectura técnica.
   Listo cuando: `bun run db:migrate` funciona sobre una base vacía y un test de integración se conecta.
-- [ ] T03 · **API base.** Hono en Bun: `/api/health`, manejo de errores, logs JSON, validación con Zod. §Arquitectura técnica.
+- [x] T03 · **API base.** Hono en Bun: `/api/health`, manejo de errores, logs JSON, validación con Zod. §Arquitectura técnica.
   Listo cuando: el test de `/api/health` pasa.
 - [ ] T04 · **App base.** React, Vite, Tailwind; tokens del sistema de diseño como variables CSS con tema claro y oscuro; React Router; barra inferior en iPhone y barra lateral en Mac; proxy de `/api` en desarrollo. §Sistema de diseño · §Navegación.
   Listo cuando: el build no tiene errores y hay un test de render del layout en los dos tamaños.
