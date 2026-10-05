@@ -1,0 +1,26 @@
+{
+  "name": "mostrador",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "bun run --filter '@mostrador/api' --filter '@mostrador/web' dev",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "typecheck": "bun run --filter '*' typecheck",
+    "test": "vitest run",
+    "check": "biome check . && bun run typecheck && vitest run",
+    "e2e": "playwright test",
+    "db:migrate": "bun run --filter '@mostrador/api' db:migrate",
+    "db:seed": "bun run --filter '@mostrador/api' db:seed"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.15",
+    "@types/bun": "^1.4.2",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.3"
+  }
+}

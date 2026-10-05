@@ -1,0 +1,16 @@
+{
+  "name": "@mostrador/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun --watch src/main.ts",
+    "start": "bun src/main.ts",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@mostrador/shared": "workspace:*",
+    "hono": "^4.13.13",
+    "zod": "^4.6.5"
+  }
+}
