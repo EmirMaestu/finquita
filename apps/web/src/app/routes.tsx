@@ -7,10 +7,12 @@ import { MorePage } from "../pages/MorePage";
 import { BulkPricePage } from "../pages/products/BulkPricePage";
 import { CodeSheetPage } from "../pages/products/CodeSheetPage";
 import { CountPage, CountsPage } from "../pages/products/CountsPage";
+import { ExpiryPage } from "../pages/products/ExpiryPage";
 import { ImportPage } from "../pages/products/ImportPage";
 import { LoadModePage } from "../pages/products/LoadModePage";
 import { MovementsPage } from "../pages/products/MovementsPage";
 import { ProductsPage } from "../pages/products/ProductsPage";
+import { PromotionsPage } from "../pages/products/PromotionsPage";
 import { ShelfLabelsPage } from "../pages/products/ShelfLabelsPage";
 import { SalesHistoryPage } from "../pages/sell/SalesHistoryPage";
 import { SellPage } from "../pages/sell/SellPage";
@@ -37,6 +39,8 @@ export const routes: RouteObject[] = [
       { path: "productos/movimientos", element: <MovementsPage /> },
       { path: "productos/precios", element: <BulkPricePage /> },
       { path: "productos/conteos", element: <CountsPage /> },
+      { path: "productos/promociones", element: <PromotionsPage /> },
+      { path: "productos/vencimientos", element: <ExpiryPage /> },
       { path: "productos/conteos/:id", element: <CountPage /> },
       { path: "productos/:id", element: <ProductsPage /> },
       ...MODULES.filter((m) => !["productos", "caja", "vender"].includes(m.id)).map((m) => ({

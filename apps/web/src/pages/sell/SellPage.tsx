@@ -1,6 +1,7 @@
 import {
   addMisc,
   addProduct,
+  applyPromotions,
   bumpQty,
   cartTotals,
   creditNeedsPin,
@@ -10,6 +11,7 @@ import {
   overDiscountCap,
   parseMoney,
   removeLine,
+  todayAR,
 } from "@mostrador/shared";
 import { Lock, Menu as MenuIcon, Pause, ShieldAlert, User } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -23,6 +25,7 @@ import { localStock } from "../../data/catalog";
 import { localBalance } from "../../data/customers";
 import { localDb } from "../../data/db";
 import { useLive } from "../../data/live";
+import { useLocalPromotions } from "../../data/promotions";
 import { useSettings } from "../../data/settings";
 import type { LocalProduct } from "../../data/types";
 import { beep } from "../../scan/beep";
@@ -143,6 +146,23 @@ export function SellPage() {
   const search = useRef<HTMLInputElement>(null);
   const totals = cartTotals(cart);
   const creditGrant = useGrant("credit_over_limit");
+  // Promociones (si están prendidas): se aplican solas y se ven como línea propia.
+  const promos = useLocalPromotions(settings.features.promotions);
+  const lineKey = cart.lines
+    .filter((l) => l.kind !== "promo")
+    .map((l) => `${l.id}:${l.qty}:${l.unitPriceCents}`)
+    .join("|");
+  // biome-ignore lint/correctness/useExhaustiveDependencies: se recalcula cuando cambian las líneas o las promos
+  useEffect(() => {
+    const current = sale.get().cart;
+    const next = applyPromotions(current, promos, todayAR());
+    const sig = (c: typeof current) =>
+      c.lines
+        .filter((l) => l.kind === "promo")
+        .map((l) => `${l.promotionId}:${l.unitPriceCents}`)
+        .join("|");
+    if (sig(next) !== sig(current)) sale.setCart(next, sale.get().selected);
+  }, [lineKey, promos]);
   const customer = useLive(
     async () => {
       if (!cart.customerId) return null;
@@ -440,6 +460,9 @@ export function SellPage() {
     reg.shift,
   ]);
 
+  const promoTotal = -cart.lines
+    .filter((l) => l.kind === "promo")
+    .reduce((a, l) => a + l.unitPriceCents * l.qty, 0);
   const heldList = useMemo(
     () => held.map((h) => ({ ...h, totalCents: cartTotals(h.cart).totalCents })),
     [held],
@@ -750,6 +773,12 @@ export function SellPage() {
           <div className="flex justify-between">
             <span className="text-texto-suave">Subtotal</span>
             <span className="tnum">{formatMoney(totals.subtotalCents)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-texto-suave">Promociones</span>
+            <span className={cx("tnum", promoTotal ? "text-exito" : "text-texto-suave")}>
+              {promoTotal ? `−${formatMoney(promoTotal)}` : "Ninguna"}
+            </span>
           </div>
           <div className="flex justify-between">
             <span className="text-texto-suave">Descuento</span>

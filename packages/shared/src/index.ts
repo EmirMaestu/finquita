@@ -11,6 +11,7 @@ export * from "./importing";
 export * from "./money";
 export * from "./permissions";
 export * from "./pricing";
+export * from "./promotions";
 export * from "./qty";
 export * from "./settings";
 export * from "./sync";

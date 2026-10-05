@@ -234,6 +234,16 @@ export function ProductsPage() {
             onSelect: () => navigate("/productos/conteos"),
             hidden: !features.counts,
           },
+          {
+            label: "Promociones",
+            onSelect: () => navigate("/productos/promociones"),
+            hidden: !features.promotions || !canEdit,
+          },
+          {
+            label: "Vencimientos",
+            onSelect: () => navigate("/productos/vencimientos"),
+            hidden: !features.lots,
+          },
         ]}
       />
       {canEdit && (

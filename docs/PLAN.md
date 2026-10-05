@@ -86,7 +86,7 @@ Cada tarea dice qué secciones del spec leer (§) y cuándo está lista. Las tar
   Listo cuando: un test aplica +7 % a una categoría.
 - [x] T33 · **Conteo de inventario:** modo iPhone ciego y revisión en Mac.
   Listo cuando: un e2e completa un conteo chico.
-- [ ] T34 · **Vencimientos, lotes y promociones** (2×1, 3×2, enésima unidad, combo, % por categoría, día de la semana). Arrancan apagados (modo simple).
+- [x] T34 · **Vencimientos, lotes y promociones** (2×1, 3×2, enésima unidad, combo, % por categoría, día de la semana). Arrancan apagados (modo simple).
   Listo cuando: cada tipo de promoción tiene su test en el carrito.
 
 ## Hito 6 · Compras
