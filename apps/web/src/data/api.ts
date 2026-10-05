@@ -101,3 +101,32 @@ function safeJson(text: string): unknown {
     return text;
   }
 }
+
+/** Baja un archivo (PDF) con las mismas credenciales que `api`. */
+export async function apiBlob(path: string): Promise<Blob> {
+  const { deviceToken, pinToken } = credentials.get();
+  const headers: Record<string, string> = {};
+  if (deviceToken) headers["x-device-token"] = deviceToken;
+  if (pinToken) headers.authorization = `Bearer ${pinToken}`;
+  let res: Response;
+  try {
+    res = await fetch(path, { headers, credentials: "same-origin" });
+  } catch {
+    throw new OfflineError();
+  }
+  if (!res.ok) throw new ApiError(res.status, "error", "No se pudo bajar el archivo.");
+  return res.blob();
+}
+
+/** Guarda el archivo en el dispositivo (en iPhone lo abre para compartir). */
+export async function downloadFile(path: string, filename: string): Promise<void> {
+  const blob = await apiBlob(path);
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
+}

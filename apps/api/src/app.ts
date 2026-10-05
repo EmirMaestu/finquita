@@ -19,6 +19,7 @@ import { eventRoutes } from "./routes/events";
 import { importRoutes } from "./routes/import";
 import { labelRoutes } from "./routes/labels";
 import { offRoutes } from "./routes/off";
+import { orderRoutes } from "./routes/orders";
 import { priceRoutes } from "./routes/prices";
 import { promotionRoutes } from "./routes/promotions";
 import { purchasingRoutes } from "./routes/purchasing";
@@ -116,6 +117,7 @@ export function createApp(deps: AppDeps) {
   app.route("/api", promotionRoutes);
   app.route("/api", supplierRoutes);
   app.route("/api", purchasingRoutes);
+  app.route("/api", orderRoutes);
   app.route("/api", eventRoutes());
 
   return app;

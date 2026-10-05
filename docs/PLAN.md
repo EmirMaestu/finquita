@@ -95,7 +95,7 @@ Cada tarea dice qué secciones del spec leer (§) y cuándo está lista. Las tar
   Listo cuando: el CRUD tiene tests.
 - [x] T36 · **Pedido sugerido** con la fórmula del spec y su explicación en palabras.
   Listo cuando: el test da 24 unidades (2 cajas de 12) para 3 por día, 11 días a cubrir y stock 9.
-- [ ] T37 · **Pedidos:** estados marcados a mano, PDF del pedido con pdf-lib, botón "Enviar por WhatsApp" (enlace wa.me con el pedido escrito) y pedido fijo. El bot es fase 2.
+- [x] T37 · **Pedidos:** estados marcados a mano, PDF del pedido con pdf-lib, botón "Enviar por WhatsApp" (enlace wa.me con el pedido escrito) y pedido fijo. El bot es fase 2.
   Listo cuando: hay tests del texto del mensaje y del enlace.
 - [ ] T38 · **Recepción en iPhone,** con o sin pedido: faltantes, lotes, foto del remito y aviso de costo que cambió (el repositor no ve costos).
   Listo cuando: un e2e recibe el pedido 0042.

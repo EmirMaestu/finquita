@@ -1,4 +1,11 @@
-import { addDays, arDateTime, type DateStr, DEFAULT_SETTINGS, todayAR } from "@mostrador/shared";
+import {
+  addDays,
+  arDateTime,
+  type DateStr,
+  DEFAULT_SETTINGS,
+  nextDeliveryAfter,
+  todayAR,
+} from "@mostrador/shared";
 import type { Db } from "../db/client";
 import {
   barcodes,
@@ -273,7 +280,8 @@ export async function seed(db: Db, opts: SeedOptions = {}) {
         number: 42,
         supplierId: seedId("supplier:lacteos"),
         status: "draft",
-        expectedOn: addDays(today, 5),
+        // El próximo jueves, día de entrega de Lácteos del Sur.
+        expectedOn: nextDeliveryAfter(today, [4]) ?? addDays(today, 5),
         totalCents: total,
         timeline: [{ at: at(0, "18:30").toISOString(), status: "draft" }],
       })

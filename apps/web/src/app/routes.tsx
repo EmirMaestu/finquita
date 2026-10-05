@@ -14,7 +14,8 @@ import { MovementsPage } from "../pages/products/MovementsPage";
 import { ProductsPage } from "../pages/products/ProductsPage";
 import { PromotionsPage } from "../pages/products/PromotionsPage";
 import { ShelfLabelsPage } from "../pages/products/ShelfLabelsPage";
-import { SuggestedPage } from "../pages/purchases/SuggestedPage";
+import { OrdersPage } from "../pages/purchases/OrdersPage";
+import { SuggestedFlow } from "../pages/purchases/SuggestedFlow";
 import { SuppliersPage } from "../pages/purchases/SuppliersPage";
 import { SalesHistoryPage } from "../pages/sell/SalesHistoryPage";
 import { SellPage } from "../pages/sell/SellPage";
@@ -33,7 +34,9 @@ export const routes: RouteObject[] = [
       { path: "vender", element: <SellPage /> },
       { path: "compras", element: <Navigate to="/compras/pedidos" replace /> },
       { path: "compras/proveedores", element: <SuppliersPage /> },
-      { path: "compras/sugerido", element: <SuggestedPage /> },
+      { path: "compras/sugerido", element: <SuggestedFlow /> },
+      { path: "compras/pedidos", element: <OrdersPage /> },
+      { path: "compras/pedidos/:id", element: <OrdersPage /> },
       { path: "vender/historial", element: <SalesHistoryPage /> },
       { path: "vender/historial/:id", element: <SalesHistoryPage /> },
       { path: "productos", element: <ProductsPage /> },
