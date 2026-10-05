@@ -18,7 +18,7 @@ Cada tarea dice qué secciones del spec leer (§) y cuándo está lista. Las tar
 
 ## Hito 1 · Datos, usuarios y permisos
 
-- [ ] T06 · **Esquema núcleo.** Negocio, usuarios, roles y permisos, dispositivos, categorías, productos, códigos de barras, presentaciones vinculadas, proveedores y sus productos, movimientos de stock, lotes, cajas, turnos, movimientos de caja, ventas, líneas, pagos, clientes, cuenta corriente, pedidos y líneas, recepciones, facturas y pagos a proveedores, promociones, avisos, ajustes, auditoría y operaciones de sincronización. Plata en centavos, cantidades `numeric(12,3)`, IDs UUIDv7. §Productos y stock · §Caja · §Clientes y fiado · §Proveedores y compras · §Ventas sin conexión.
+- [x] T06 · **Esquema núcleo.** Negocio, usuarios, roles y permisos, dispositivos, categorías, productos, códigos de barras, presentaciones vinculadas, proveedores y sus productos, movimientos de stock, lotes, cajas, turnos, movimientos de caja, ventas, líneas, pagos, clientes, cuenta corriente, pedidos y líneas, recepciones, facturas y pagos a proveedores, promociones, avisos, ajustes, auditoría y operaciones de sincronización. Plata en centavos, cantidades `numeric(12,3)`, IDs UUIDv7. §Productos y stock · §Caja · §Clientes y fiado · §Proveedores y compras · §Ventas sin conexión.
   Listo cuando: la migración se aplica y hay tests de las restricciones clave (código de barras único, `op_id` único).
 - [ ] T07 · **Datos de ejemplo.** `db:seed` carga el escenario de §Datos de ejemplo: Almacén La Esquina, equipo, productos con costo y precio, proveedores, clientes con fiado y pedido 0042.
   Listo cuando: el seed corre dos veces sin duplicar y un test verifica saldos de fiado ($ 73.800 en la calle, $ 46.800 vencidos) y el total del pedido 0042 ($ 186.400).
