@@ -71,7 +71,7 @@ Cada tarea dice qué secciones del spec leer (§) y cuándo está lista. Las tar
   Listo cuando: un e2e reproduce el flujo 1 de §Flujos clave (total $ 18.550, vuelto $ 1.450).
 - [x] T27 · **Ticket** de 58 y 80 mm con la impresión del navegador, y Compartir como PDF. §Vender · §Datos de ejemplo.
   Listo cuando: hay un snapshot del ticket de ejemplo.
-- [ ] T28 · **Historial, devoluciones y anulaciones** con PIN; lo devuelto vuelve a la góndola o va a merma. §Vender.
+- [x] T28 · **Historial, devoluciones y anulaciones** con PIN; lo devuelto vuelve a la góndola o va a merma. §Vender.
   Listo cuando: hay tests de las dos salidas del stock.
 - [ ] T29 · **Venta sin conexión de punta a punta.** e2e con Playwright: cortar la red, vender 3 veces, reconectar.
   Listo cuando: las 3 ventas quedan en el servidor una sola vez.

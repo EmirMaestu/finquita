@@ -826,14 +826,23 @@ export function SellPage() {
             Cajón
           </Button>
         </div>
-        <button
-          type="button"
-          className="text-left text-xs text-texto-suave"
-          onClick={() => navigate("/inicio")}
-        >
-          <Lock size={12} className="mr-1 inline" aria-hidden />
-          Salir del modo mostrador
-        </button>
+        <div className="flex justify-between gap-2 text-xs text-texto-suave">
+          <button
+            type="button"
+            className="font-semibold text-primario"
+            onClick={() => navigate("/vender/historial")}
+          >
+            Historial de ventas
+          </button>
+          <button
+            type="button"
+            className="text-left text-xs text-texto-suave"
+            onClick={() => navigate("/inicio")}
+          >
+            <Lock size={12} className="mr-1 inline" aria-hidden />
+            Salir del modo mostrador
+          </button>
+        </div>
       </aside>
       {dialogs}
     </div>

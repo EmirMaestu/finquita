@@ -66,7 +66,7 @@ export function AppShell() {
   }
 
   // Modo mostrador: Vender ocupa toda la pantalla, sin barra lateral.
-  if (location.pathname.startsWith("/vender")) {
+  if (location.pathname === "/vender") {
     return (
       <div className="flex h-full flex-col bg-fondo" data-layout={layout} data-mode="counter">
         <CounterTopBar />

@@ -7,6 +7,7 @@ import { ImportPage } from "../pages/products/ImportPage";
 import { LoadModePage } from "../pages/products/LoadModePage";
 import { ProductsPage } from "../pages/products/ProductsPage";
 import { ShelfLabelsPage } from "../pages/products/ShelfLabelsPage";
+import { SalesHistoryPage } from "../pages/sell/SalesHistoryPage";
 import { SellPage } from "../pages/sell/SellPage";
 import { AppShell } from "./layout/AppShell";
 import { MODULES } from "./modules";
@@ -19,6 +20,8 @@ export const routes: RouteObject[] = [
       { index: true, element: <Navigate to="/inicio" replace /> },
       { path: "caja", element: <CashPage /> },
       { path: "vender", element: <SellPage /> },
+      { path: "vender/historial", element: <SalesHistoryPage /> },
+      { path: "vender/historial/:id", element: <SalesHistoryPage /> },
       { path: "productos", element: <ProductsPage /> },
       { path: "productos/carga", element: <LoadModePage /> },
       { path: "productos/importar", element: <ImportPage /> },
