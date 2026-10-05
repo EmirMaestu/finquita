@@ -3,6 +3,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { type Actor, type Device, resolveActor } from "./auth/actor";
 import { type Auth, type AuthConfig, authConfigFromEnv, createAuth } from "./auth/better-auth";
+import type { Authorization } from "./auth/permissions";
 import type { Db } from "./db/client";
 import { ApiError, notFound } from "./lib/errors";
 import { log } from "./lib/log";
@@ -18,6 +19,7 @@ export type AppEnv = {
     requestId: string;
     device: Device | null;
     actor: Actor | null;
+    authz: Authorization;
   };
 };
 

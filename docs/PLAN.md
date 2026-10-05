@@ -24,7 +24,7 @@ Cada tarea dice qué secciones del spec leer (§) y cuándo está lista. Las tar
   Listo cuando: el seed corre dos veces sin duplicar y un test verifica saldos de fiado ($ 73.800 en la calle, $ 46.800 vencidos) y el total del pedido 0042 ($ 186.400).
 - [x] T08 · **Autenticación.** Better Auth con email y contraseña para dueño y encargado; PIN de 4 a 6 dígitos con argon2 y bloqueo de 5 minutos tras 5 intentos; dispositivos habilitados por el dueño; cambio rápido de usuario con PIN. §Usuarios y permisos.
   Listo cuando: hay tests de login, PIN correcto, PIN incorrecto y bloqueo.
-- [ ] T09 · **Permisos en la API.** Middleware que aplica la matriz, con autorización por PIN para las acciones marcadas así y ajustes por persona. §Usuarios y permisos.
+- [x] T09 · **Permisos en la API.** Middleware que aplica la matriz, con autorización por PIN para las acciones marcadas así y ajustes por persona. §Usuarios y permisos.
   Listo cuando: hay tests por rol de al menos 8 acciones de la matriz.
 - [ ] T10 · **Auditoría.** Registro de cambios sensibles (quién, dispositivo, cuándo, valor anterior y nuevo) y endpoint de lectura con filtros. §Requisitos transversales.
   Listo cuando: el helper y el endpoint tienen tests.

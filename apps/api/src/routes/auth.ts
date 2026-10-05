@@ -1,9 +1,10 @@
-import { formatTime, newId } from "@mostrador/shared";
+import { effectiveGrants, formatTime, newId } from "@mostrador/shared";
 import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import type { AppEnv } from "../app";
 import { actorOf, requireActor } from "../auth/actor";
+import { loadOverrides } from "../auth/permissions";
 import { hashPin, PIN_RE, verifyMemberPin } from "../auth/pin";
 import { devices, members, pinSessions } from "../db/schema/index";
 import { ApiError, forbidden, notFound } from "../lib/errors";
@@ -15,10 +16,12 @@ const PIN_SESSION_MS = 12 * 60 * 60_000;
 export const authRoutes = new Hono<AppEnv>();
 
 /** Quién soy. */
-authRoutes.get("/me", requireActor(), (c) => {
+authRoutes.get("/me", requireActor(), async (c) => {
   const { member, device, via } = actorOf(c);
+  const overrides = await loadOverrides(c.get("db"), member.id);
   return c.json({
     member: { id: member.id, name: member.name, role: member.role, email: member.email },
+    permissions: effectiveGrants(member.role, overrides),
     device: device ? { id: device.id, name: device.name, registerId: device.registerId } : null,
     via,
   });
