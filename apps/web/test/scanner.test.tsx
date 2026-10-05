@@ -80,6 +80,31 @@ describe("detector de pistola por velocidad de tipeo", () => {
     expect(onScan).not.toHaveBeenCalled();
   });
 
+  it("las letras nunca se frenan (un nombre tipeado rápido llega entero)", () => {
+    const clock = { t: 0 };
+    const onScan = vi.fn();
+    const d = createScanDetector({ onScan, now: () => clock.t });
+    const used = typeOn(d, clock, "Galletitas", 5);
+    expect(used.every((u) => !u)).toBe(true);
+  });
+
+  it("si la ráfaga no termina en un código, devuelve lo que frenó", () => {
+    const clock = { t: 0 };
+    const onScan = vi.fn();
+    const onRelease = vi.fn();
+    const d = createScanDetector({ onScan, onRelease, now: () => clock.t, minLength: 4 });
+    // "150" tipeado muy rápido en el precio y después Enter.
+    typeOn(d, clock, "150", 5);
+    clock.t += 5;
+    expect(d.keydown({ key: "Enter", ctrlKey: false, metaKey: false, altKey: false })).toBe(false);
+    expect(onScan).not.toHaveBeenCalled();
+    expect(onRelease).toHaveBeenCalledWith("50");
+    // Y si se corta por una letra, también.
+    typeOn(d, clock, "12", 5);
+    d.keydown({ key: "x", ctrlKey: false, metaKey: false, altKey: false });
+    expect(onRelease).toHaveBeenLastCalledWith("2");
+  });
+
   it("después de tipear lento, una ráfaga nueva sí es un código", () => {
     const clock = { t: 0 };
     const onScan = vi.fn();

@@ -1,9 +1,11 @@
 import type { Permission } from "@mostrador/shared";
 import { type ReactNode, useEffect, useState } from "react";
 import { credentials } from "../data/api";
+import { localDb, PULL_TABLES } from "../data/db";
 import { isSaleInProgress } from "../lib/saleActivity";
 import { LockScreen } from "../pages/auth/LockScreen";
 import { LoginPage } from "../pages/auth/LoginPage";
+import { syncEngine } from "../sync";
 import { SkeletonList } from "../ui/States";
 import { LiveShell } from "./LiveShell";
 import { lockScreen, useLockScreen } from "./lock";
@@ -47,6 +49,7 @@ export function SessionGate({ children }: { children: ReactNode }) {
   const { me } = session;
   return (
     <SessionProvider me={me}>
+      <SyncOnLogin me={me} />
       <IdleLock />
       <LiveShell
         base={{
@@ -84,4 +87,27 @@ function IdleLock() {
     };
   }, []);
   return locked ? <LockScreen onCancel={() => lockScreen.close()} /> : null;
+}
+
+/**
+ * Al entrar alguien, sincroniza. Si cambia lo que puede ver (costos), la copia local se
+ * vuelve a bajar entera para no dejar a la vista lo que no le corresponde.
+ */
+function SyncOnLogin({ me }: { me: Me }) {
+  const seesCosts = me.permissions.view_costs === "allow";
+  useEffect(() => {
+    void (async () => {
+      const db = localDb();
+      const viewer = seesCosts ? "costs" : "no-costs";
+      if ((await db.getMeta<string>("sync.viewer")) !== viewer) {
+        await db.transaction("rw", [...PULL_TABLES.map((t) => db[t]), db.meta], async () => {
+          for (const t of PULL_TABLES) await db[t].clear();
+          await db.meta.delete("sync.cursor");
+          await db.setMeta("sync.viewer", viewer);
+        });
+      }
+      await syncEngine().kick();
+    })();
+  }, [seesCosts]);
+  return null;
 }

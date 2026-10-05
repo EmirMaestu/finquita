@@ -21,3 +21,17 @@ export async function loginWithPin(page: Page, name: string, pin: string) {
   for (const d of pin) await page.getByRole("button", { name: d, exact: true }).click();
   await expect(page.getByRole("navigation", { name: "Módulos" })).toBeVisible();
 }
+
+/**
+ * Simula la pistola USB: teclas cada 4 ms y Enter, como las manda el lector
+ * (con keyboard.type de Playwright cada tecla espera la respuesta del navegador).
+ */
+export async function scanWithGun(page: Page, code: string) {
+  await page.evaluate(async (c) => {
+    for (const key of [...c, "Enter"]) {
+      const target = document.activeElement ?? document.body;
+      target.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }));
+      await new Promise((r) => setTimeout(r, 4));
+    }
+  }, code);
+}

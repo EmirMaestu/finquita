@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
   bigserial,
+  boolean,
   customType,
   index,
   jsonb,
@@ -125,3 +126,16 @@ export const changeLog = pgTable(
   },
   (t) => [index("change_log_entity_idx").on(t.entity, t.entityId)],
 );
+
+/** Caché de Open Food Facts por código (también los que no encontró). */
+export const offCache = pgTable("off_cache", {
+  code: text().primaryKey(),
+  found: boolean().notNull(),
+  data: jsonb().$type<{
+    name: string | null;
+    brand: string | null;
+    quantity: string | null;
+    imageUrl: string | null;
+  }>(),
+  fetchedAt: createdAt(),
+});

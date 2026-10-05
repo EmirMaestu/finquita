@@ -11,12 +11,12 @@ test("el dueño crea un producto y le cambia el precio", async ({ page }) => {
 
   await page.getByRole("button", { name: "Nuevo producto" }).click();
   const form = page.getByRole("dialog", { name: "Nuevo producto" });
-  await form.getByLabel("Nombre y presentación").fill("Galletitas de agua 200 g");
+  await form.getByLabel("Nombre y presentación").fill("Galletitas de salvado 200 g");
   await form.getByLabel("Categoría").selectOption({ label: "Almacén" });
   await form.getByLabel("Costo").fill("1000");
   await form.getByLabel("Precio de venta").fill("1500");
   await expect(form.getByText("Ganancia 50 % sobre el costo")).toBeVisible();
-  await form.getByLabel("Códigos de barras").fill("7790895000782");
+  await form.getByLabel("Códigos de barras").fill("7790895000805");
   await form.getByLabel("Stock mínimo").fill("6");
   await form.getByLabel("Stock inicial").fill("12");
   await form.getByRole("button", { name: "Guardar" }).click();
@@ -24,12 +24,12 @@ test("el dueño crea un producto y le cambia el precio", async ({ page }) => {
 
   // Queda abierta su ficha en el panel de la derecha.
   const panel = page.getByRole("complementary", { name: "Ficha del producto" });
-  await expect(panel.getByRole("heading", { name: "Galletitas de agua 200 g" })).toBeVisible();
+  await expect(panel.getByRole("heading", { name: "Galletitas de salvado 200 g" })).toBeVisible();
   await expect(panel).toContainText("OK · 12");
 
   // Buscarlo por código y editar el precio.
-  await page.getByLabel("Buscar productos").fill("7790895000782");
-  const row = page.getByRole("row", { name: /Galletitas de agua 200 g/ });
+  await page.getByLabel("Buscar productos").fill("7790895000805");
+  const row = page.getByRole("row", { name: /Galletitas de salvado 200 g/ });
   await expect(row).toContainText("$ 1.500");
   await panel.getByRole("button", { name: "Editar" }).click();
   const edit = page.getByRole("dialog", { name: "Editar producto" });

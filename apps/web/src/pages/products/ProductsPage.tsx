@@ -210,6 +210,13 @@ export function ProductsPage() {
       <Button
         variant="secondary"
         className="h-9 text-[13px]"
+        onClick={() => navigate("/productos/carga")}
+      >
+        Modo carga
+      </Button>
+      <Button
+        variant="secondary"
+        className="h-9 text-[13px]"
         onClick={() => navigate("/productos/importar")}
       >
         Importar

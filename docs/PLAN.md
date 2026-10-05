@@ -52,7 +52,7 @@ Cada tarea dice qué secciones del spec leer (§) y cuándo está lista. Las tar
   Listo cuando: un e2e crea y edita un producto.
 - [x] T19 · **Lectores.** Hook que reconoce la pistola por velocidad de tipeo en cualquier pantalla de Vender; escáner por cámara con @zxing/browser; pitido y aviso en pantalla. §Requisitos transversales.
   Listo cuando: el hook tiene tests con eventos de teclado simulados.
-- [ ] T20 · **Alta rápida y Modo carga.** Código desconocido → nombre y precio en diez segundos; Modo carga en serie con pistola o cámara. Open Food Facts a través de la API: User-Agent propio, caché y límite de 15 consultas por minuto. §Productos y stock.
+- [x] T20 · **Alta rápida y Modo carga.** Código desconocido → nombre y precio en diez segundos; Modo carga en serie con pistola o cámara. Open Food Facts a través de la API: User-Agent propio, caché y límite de 15 consultas por minuto. §Productos y stock.
   Listo cuando: el proxy tiene tests con fetch simulado y hay un e2e del Modo carga.
 - [ ] T21 · **Importar productos** desde Excel o CSV con asistente: relacionar columnas, vista previa (nuevos, actualizados, con error) y confirmar.
   Listo cuando: un test importa un archivo de ejemplo.

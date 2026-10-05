@@ -23,7 +23,7 @@ export default defineConfig({
       port: E2E.apiPort,
       reuseExistingServer: false,
       timeout: 120_000,
-      env: { LOG_LEVEL: "warn" },
+      env: { LOG_LEVEL: "warn", OFF_DISABLED: "1" },
     },
     {
       command: `bun run --cwd apps/web vite --port ${E2E.webPort} --strictPort`,

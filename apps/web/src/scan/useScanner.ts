@@ -11,9 +11,12 @@ export type ScannerOptions = {
   idleMs?: number;
   /** Reloj (para tests). */
   now?: () => number;
+  /** Una ráfaga terminó sin ser un código: estos caracteres se frenaron y hay que devolverlos. */
+  onRelease?: (chars: string) => void;
 };
 
-const PRINTABLE = /^[0-9A-Za-z\-.]$/;
+/** Los códigos del almacén son numéricos (EAN-13, EAN-8, UPC y los internos de la planilla). */
+const PRINTABLE = /^[0-9]$/;
 
 /**
  * Reconoce la pistola lectora por la velocidad de tipeo, en cualquier pantalla y sin
@@ -24,39 +27,51 @@ const PRINTABLE = /^[0-9A-Za-z\-.]$/;
  */
 export function createScanDetector(opts: Omit<ScannerOptions, "enabled">) {
   const minLength = opts.minLength ?? 4;
-  const maxGap = opts.maxGapMs ?? 35;
+  const maxGap = opts.maxGapMs ?? 50;
   const idleMs = opts.idleMs ?? 80;
-  const now = opts.now ?? (() => performance.now());
+  const clock = opts.now;
   let buffer = "";
+  let swallowed = "";
   let last = 0;
   let fast = false;
   let timer: ReturnType<typeof setTimeout> | null = null;
 
-  const reset = () => {
+  const clear = () => {
     buffer = "";
+    swallowed = "";
     fast = false;
     if (timer) clearTimeout(timer);
     timer = null;
   };
+  /** Corta la ráfaga: lo frenado vuelve al campo. */
+  const reset = () => {
+    const back = swallowed;
+    clear();
+    if (back) opts.onRelease?.(back);
+  };
   const finish = () => {
     const code = buffer;
-    const wasFast = fast;
-    reset();
-    if (wasFast && code.length >= minLength) {
+    if (fast && code.length >= minLength) {
+      clear();
       opts.onScan(code);
       return true;
     }
+    reset();
     return false;
   };
 
   return {
     /** Devuelve true si la tecla se usó para el código (y hay que cancelarla). */
-    keydown(e: Pick<KeyboardEvent, "key" | "ctrlKey" | "metaKey" | "altKey">): boolean {
+    keydown(
+      e: Pick<KeyboardEvent, "key" | "ctrlKey" | "metaKey" | "altKey"> & { timeStamp?: number },
+    ): boolean {
       if (e.ctrlKey || e.metaKey || e.altKey) {
         reset();
         return false;
       }
-      const t = now();
+      // La hora del evento de entrada, no la del manejador: si la pantalla está ocupada
+      // renderizando, los eventos llegan tarde pero con su hora real.
+      const t = clock ? clock() : (e.timeStamp ?? performance.now());
       if (e.key === "Enter" || e.key === "Tab") {
         if (buffer && t - last <= maxGap * 3) return finish();
         reset();
@@ -72,12 +87,13 @@ export function createScanDetector(opts: Omit<ScannerOptions, "enabled">) {
         buffer += e.key;
         fast = true;
       } else {
+        reset();
         buffer = e.key;
-        fast = false;
       }
       if (timer) clearTimeout(timer);
       timer = setTimeout(finish, idleMs);
       // Desde el segundo carácter rápido, la escritura se frena.
+      if (fast) swallowed += e.key;
       return fast;
     },
     reset,
@@ -91,8 +107,18 @@ export function useScanner({ onScan, enabled = true, ...rest }: ScannerOptions) 
   const options = useRef(rest);
   useEffect(() => {
     if (!enabled) return;
-    const detector = createScanDetector({ ...options.current, onScan: (c) => cb.current(c) });
+    let target: EventTarget | null = null;
+    const detector = createScanDetector({
+      ...options.current,
+      onScan: (c) => cb.current(c),
+      onRelease: (chars) => {
+        if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) {
+          if (document.activeElement === target) insertText(target, chars);
+        }
+      },
+    });
     const handler = (e: KeyboardEvent) => {
+      target = e.target;
       if (detector.keydown(e)) {
         e.preventDefault();
         e.stopPropagation();
@@ -104,6 +130,14 @@ export function useScanner({ onScan, enabled = true, ...rest }: ScannerOptions) 
       detector.reset();
     };
   }, [enabled]);
+}
+
+/** Escribe en un campo como si se hubiera tipeado (React se entera por el evento input). */
+function insertText(el: HTMLInputElement | HTMLTextAreaElement, text: string) {
+  const start = el.selectionStart ?? el.value.length;
+  const end = el.selectionEnd ?? el.value.length;
+  el.setRangeText(text, start, end, "end");
+  el.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
 /** Saca del final de un texto el primer carácter de un código escaneado que se coló. */

@@ -8,14 +8,16 @@ import type { Db } from "./db/client";
 import { ApiError, notFound } from "./lib/errors";
 import { EventHub } from "./lib/events";
 import { log } from "./lib/log";
+import { OffClient, type OffConfig, offConfigFromEnv } from "./lib/off";
 import { validationError } from "./lib/validate";
 import { auditRoutes } from "./routes/audit";
 import { authRoutes } from "./routes/auth";
 import { catalogRoutes } from "./routes/catalog";
 import { eventRoutes } from "./routes/events";
+import { offRoutes } from "./routes/off";
 import { syncRoutes } from "./routes/sync";
 
-export type AppDeps = { db: Db; auth?: AuthConfig; events?: EventHub };
+export type AppDeps = { db: Db; auth?: AuthConfig; events?: EventHub; off?: Partial<OffConfig> };
 
 export type AppEnv = {
   Variables: {
@@ -26,6 +28,7 @@ export type AppEnv = {
     actor: Actor | null;
     authz: Authorization;
     events: EventHub;
+    off: OffClient;
   };
 };
 
@@ -33,6 +36,7 @@ export function createApp(deps: AppDeps) {
   const app = new Hono<AppEnv>();
   const auth = createAuth(deps.db, deps.auth ?? authConfigFromEnv());
   const events = deps.events ?? new EventHub();
+  const off = new OffClient(deps.db, { ...offConfigFromEnv(), ...deps.off });
 
   app.use("*", async (c, next) => {
     const requestId = c.req.header("x-request-id") ?? crypto.randomUUID();
@@ -40,6 +44,7 @@ export function createApp(deps: AppDeps) {
     c.set("db", deps.db);
     c.set("auth", auth);
     c.set("events", events);
+    c.set("off", off);
     const start = performance.now();
     await next();
     c.header("x-request-id", requestId);
@@ -90,6 +95,7 @@ export function createApp(deps: AppDeps) {
   app.route("/api", auditRoutes);
   app.route("/api", syncRoutes);
   app.route("/api", catalogRoutes);
+  app.route("/api", offRoutes);
   app.route("/api", eventRoutes());
 
   return app;
