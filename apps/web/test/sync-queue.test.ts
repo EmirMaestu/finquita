@@ -23,19 +23,30 @@ function sale(): SyncOp {
   return { ...saleOp(), type: "sale.create" } as unknown as SyncOp;
 }
 
+type FakeServer = {
+  received: SyncOp[][];
+  offline: boolean;
+  reject: Set<string>;
+  errorOn: Set<string>;
+  changes: PullChange[];
+  transport: Transport & {
+    push: ReturnType<typeof vi.fn<Transport["push"]>>;
+    pull: ReturnType<typeof vi.fn<Transport["pull"]>>;
+  };
+};
+
 /** Servidor de mentira: aplica todo salvo lo que se le diga, y guarda lo que recibe. */
-function fakeServer() {
+function fakeServer(): FakeServer {
   const received: SyncOp[][] = [];
   const applied = new Set<string>();
-  const server = {
+  const server: FakeServer = {
     received,
     offline: false,
     reject: new Set<string>(),
     errorOn: new Set<string>(),
-    changes: [] as PullChange[],
-    cursor: 0,
+    changes: [],
     transport: {
-      push: vi.fn(async (body: { ops: SyncOp[] }) => {
+      push: vi.fn<Transport["push"]>(async (body) => {
         if (server.offline) throw new OfflineError();
         received.push(body.ops);
         const results: ServerResult[] = [];
@@ -51,13 +62,13 @@ function fakeServer() {
         }
         return { results };
       }),
-      pull: vi.fn(async (since: string) => {
+      pull: vi.fn<Transport["pull"]>(async (since) => {
         if (server.offline) throw new OfflineError();
         const from = Number(since);
         const changes = server.changes.slice(from);
         return { changes, cursor: String(server.changes.length), hasMore: false };
       }),
-    } satisfies Transport,
+    },
   };
   return server;
 }
