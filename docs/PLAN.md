@@ -31,7 +31,7 @@ Cada tarea dice qué secciones del spec leer (§) y cuándo está lista. Las tar
 
 ## Hito 2 · Motor sin conexión
 
-- [ ] T11 · **Protocolo de sincronización** en `packages/shared`: tipos de operación (`sale.create`, `cash.movement`, `stock.adjust`, `product.upsert`, etc.), esquemas Zod y reglas de conflicto. §Ventas sin conexión.
+- [x] T11 · **Protocolo de sincronización** en `packages/shared`: tipos de operación (`sale.create`, `cash.movement`, `stock.adjust`, `product.upsert`, etc.), esquemas Zod y reglas de conflicto. §Ventas sin conexión.
   Listo cuando: hay tests de validación de cada tipo de operación.
 - [ ] T12 · **`POST /api/sync/push`.** Aplica las operaciones en transacción, idempotente por `op_id`, con respuesta por operación (aplicada o rechazada con motivo); lo rechazado va a Avisos.
   Listo cuando: hay tests de operación duplicada, orden y rechazo.
