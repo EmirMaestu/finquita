@@ -22,7 +22,7 @@ Cada tarea dice qué secciones del spec leer (§) y cuándo está lista. Las tar
   Listo cuando: la migración se aplica y hay tests de las restricciones clave (código de barras único, `op_id` único).
 - [x] T07 · **Datos de ejemplo.** `db:seed` carga el escenario de §Datos de ejemplo: Almacén La Esquina, equipo, productos con costo y precio, proveedores, clientes con fiado y pedido 0042.
   Listo cuando: el seed corre dos veces sin duplicar y un test verifica saldos de fiado ($ 73.800 en la calle, $ 46.800 vencidos) y el total del pedido 0042 ($ 186.400).
-- [ ] T08 · **Autenticación.** Better Auth con email y contraseña para dueño y encargado; PIN de 4 a 6 dígitos con argon2 y bloqueo de 5 minutos tras 5 intentos; dispositivos habilitados por el dueño; cambio rápido de usuario con PIN. §Usuarios y permisos.
+- [x] T08 · **Autenticación.** Better Auth con email y contraseña para dueño y encargado; PIN de 4 a 6 dígitos con argon2 y bloqueo de 5 minutos tras 5 intentos; dispositivos habilitados por el dueño; cambio rápido de usuario con PIN. §Usuarios y permisos.
   Listo cuando: hay tests de login, PIN correcto, PIN incorrecto y bloqueo.
 - [ ] T09 · **Permisos en la API.** Middleware que aplica la matriz, con autorización por PIN para las acciones marcadas así y ajustes por persona. §Usuarios y permisos.
   Listo cuando: hay tests por rol de al menos 8 acciones de la matriz.

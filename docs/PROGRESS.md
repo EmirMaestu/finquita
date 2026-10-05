@@ -9,3 +9,4 @@ Formato: AAAA-MM-DD HH:MM · Tarea · Resultado · Commit
 2026-10-05 11:18 · T05 · vite-plugin-pwa (prompt), íconos de prueba, aviso que espera a que termine la venta, guía de 2 pasos; test del build y del aviso · commit "T05: PWA con manifest, service worker, aviso de versión nueva y guía para iPhone"
 2026-10-05 11:22 · T06 · 38 tablas (catálogo, stock, caja, ventas, fiado, compras, avisos, auditoría, sync); tests de restricciones clave · commit "T06: esquema núcleo"
 2026-10-05 11:27 · T07 · Almacén La Esquina: equipo, 26 productos, 6 proveedores, 5 clientes con fiado, pedidos 0041 y 0042, facturas; seed idempotente con tests de saldos y del pedido · commit "T07: datos de ejemplo del escenario"
+2026-10-05 11:35 · T08 · Better Auth (email y contraseña, alta solo por invitación), PIN argon2 con bloqueo de 5 min tras 5 intentos, dispositivos con token y revocación, cambio rápido de usuario; 12 tests · commit "T08: autenticación con email, PIN y dispositivos habilitados"

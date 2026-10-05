@@ -8,6 +8,10 @@ export type TestDb = {
   url: string;
   /** Vacía todas las tablas (para usar en beforeEach). */
   reset: () => Promise<void>;
+  /** Guarda el contenido actual (por ejemplo, después del seed)… */
+  snapshot: () => Promise<void>;
+  /** …y lo vuelve a dejar igual en cada test. */
+  restore: () => Promise<void>;
   close: () => Promise<void>;
 };
 
@@ -31,15 +35,36 @@ export async function createTestDb(): Promise<TestDb> {
   }
   const url = withDatabase(baseTestUrl(), name);
   const { db, sql } = createDb(url, { max: 5 });
+  const rows = await db.execute<{ tablename: string }>(
+    rawSql`select tablename from pg_tables where schemaname = 'public'`,
+  );
+  const tables = rows.map((r) => r.tablename);
+  const wipe = tables.map((t) => `delete from "public"."${t}";`).join("\n");
   return {
     db,
     url,
+    // DELETE con los FK apagados es mucho más rápido que TRUNCATE para tablas chicas.
     reset: async () => {
-      const rows = await db.execute<{ tablename: string }>(
-        rawSql`select tablename from pg_tables where schemaname = 'public'`,
-      );
-      const tables = rows.map((r) => `"public"."${r.tablename}"`);
-      if (tables.length) await db.execute(rawSql.raw(`truncate ${tables.join(", ")} cascade`));
+      await sql.begin(async (tx) => {
+        await tx.unsafe(`set local session_replication_role = replica;\n${wipe}`);
+      });
+    },
+    snapshot: async () => {
+      const copy = tables
+        .map(
+          (t) =>
+            `drop table if exists snap."${t}"; create table snap."${t}" as table public."${t}";`,
+        )
+        .join("\n");
+      await sql.unsafe(`create schema if not exists snap;\n${copy}`);
+    },
+    restore: async () => {
+      const fill = tables
+        .map((t) => `insert into public."${t}" select * from snap."${t}";`)
+        .join("\n");
+      await sql.begin(async (tx) => {
+        await tx.unsafe(`set local session_replication_role = replica;\n${wipe}\n${fill}`);
+      });
     },
     close: async () => {
       await sql.end();

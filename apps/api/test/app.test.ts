@@ -6,6 +6,7 @@ import { createDb } from "../src/db/client";
 import { ApiError } from "../src/lib/errors";
 import { validate } from "../src/lib/validate";
 import { createTestDb, type TestDb } from "./db";
+import { TEST_AUTH } from "./helpers/client";
 
 let t: TestDb;
 beforeAll(async () => {
@@ -17,7 +18,7 @@ afterAll(async () => {
 
 describe("/api/health", () => {
   it("responde ok con la base conectada", async () => {
-    const app = createApp({ db: t.db });
+    const app = createApp({ db: t.db, auth: TEST_AUTH });
     const res = await app.request("/api/health");
     expect(res.status).toBe(200);
     expect(await res.json()).toMatchObject({ ok: true, db: "ok" });
@@ -26,7 +27,7 @@ describe("/api/health", () => {
 
   it("responde 503 si la base no contesta", async () => {
     const { db, sql } = createDb("postgres://nadie:nada@127.0.0.1:1/x", { max: 1 });
-    const res = await createApp({ db }).request("/api/health");
+    const res = await createApp({ db, auth: TEST_AUTH }).request("/api/health");
     expect(res.status).toBe(503);
     await sql.end();
   });
@@ -34,7 +35,7 @@ describe("/api/health", () => {
 
 describe("errores y validación", () => {
   const build = () => {
-    const app = createApp({ db: t.db }) as unknown as Hono<AppEnv>;
+    const app = createApp({ db: t.db, auth: TEST_AUTH }) as unknown as Hono<AppEnv>;
     app.post("/api/test", validate("json", z.object({ monto: z.number().int() })), (c) =>
       c.json({ monto: c.req.valid("json").monto }),
     );

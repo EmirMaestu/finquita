@@ -1,27 +1,35 @@
 import { sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
+import { type Actor, type Device, resolveActor } from "./auth/actor";
+import { type Auth, type AuthConfig, authConfigFromEnv, createAuth } from "./auth/better-auth";
 import type { Db } from "./db/client";
 import { ApiError, notFound } from "./lib/errors";
 import { log } from "./lib/log";
 import { validationError } from "./lib/validate";
+import { authRoutes } from "./routes/auth";
 
-export type AppDeps = { db: Db };
+export type AppDeps = { db: Db; auth?: AuthConfig };
 
 export type AppEnv = {
   Variables: {
     db: Db;
+    auth: Auth;
     requestId: string;
+    device: Device | null;
+    actor: Actor | null;
   };
 };
 
 export function createApp(deps: AppDeps) {
   const app = new Hono<AppEnv>();
+  const auth = createAuth(deps.db, deps.auth ?? authConfigFromEnv());
 
   app.use("*", async (c, next) => {
     const requestId = c.req.header("x-request-id") ?? crypto.randomUUID();
     c.set("requestId", requestId);
     c.set("db", deps.db);
+    c.set("auth", auth);
     const start = performance.now();
     await next();
     c.header("x-request-id", requestId);
@@ -64,6 +72,11 @@ export function createApp(deps: AppDeps) {
     }
     return c.json({ ok: db === "ok", db, time: new Date().toISOString() }, db === "ok" ? 200 : 503);
   });
+
+  app.on(["GET", "POST"], "/api/auth/*", (c) => auth.handler(c.req.raw));
+
+  app.use("/api/*", resolveActor());
+  app.route("/api", authRoutes);
 
   return app;
 }
