@@ -266,7 +266,7 @@ export async function attention(db: Db, opts: { costs: boolean; now: Date }): Pr
       severity: "danger",
       text: `Cierre de ayer con diferencia de ${d < 0 ? "−" : "+"}${formatMoney(Math.abs(d))}`,
       action: "Ver arqueo",
-      path: "/caja/cierres",
+      path: "/caja/historial",
     });
   }
 

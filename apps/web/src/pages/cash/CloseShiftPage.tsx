@@ -2,7 +2,6 @@ import {
   closeResult,
   closingLines,
   countTotal,
-  DEFAULT_DENOMINATIONS,
   formatMoney,
   METHOD_LABEL,
   moneyInput,
@@ -169,11 +168,17 @@ export function CloseShiftPage() {
           <div className="flex items-center gap-2 border-b border-borde px-4 py-3">
             <span className="font-semibold">1 · Contá el efectivo</span>
             <span className="flex-1" />
-            <span className="inline-flex items-center gap-1.5 text-xs text-texto-suave">
-              <EyeOff size={14} aria-hidden /> Conteo ciego: no ves el esperado
-            </span>
+            {settings.cash.blindCount ? (
+              <span className="inline-flex items-center gap-1.5 text-xs text-texto-suave">
+                <EyeOff size={14} aria-hidden /> Conteo ciego: no ves el esperado
+              </span>
+            ) : (
+              <span className="text-xs text-texto-suave">
+                Esperado {formatMoney(v?.summary.expectedCashCents ?? 0)}
+              </span>
+            )}
           </div>
-          {DEFAULT_DENOMINATIONS.map((d) => {
+          {settings.cash.denominations.map((d) => {
             const n = counts[String(d)] ?? 0;
             return (
               <div

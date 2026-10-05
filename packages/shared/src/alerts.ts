@@ -99,7 +99,7 @@ export function alertPath(a: {
     case "receipt":
       return a.refId ? `/compras/recepcion/${a.refId}/costos` : "/compras/recepcion";
     case "shift":
-      return "/caja/cierres";
+      return "/caja/historial";
     case "sale":
       return "/vender/historial";
     case "stock_movement":

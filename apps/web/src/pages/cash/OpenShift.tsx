@@ -1,6 +1,5 @@
 import {
   countTotal,
-  DEFAULT_DENOMINATIONS,
   formatMoney,
   formatTime,
   moneyInput,
@@ -12,6 +11,7 @@ import { useEffect, useState } from "react";
 import { useMe } from "../../app/session";
 import { lastClosedOf, openShiftLocal } from "../../cash/local";
 import { localDb } from "../../data/db";
+import { useSettings } from "../../data/settings";
 import type { LocalShift } from "../../data/types";
 import { Button } from "../../ui/Button";
 import { FilterChip } from "../../ui/Chip";
@@ -29,6 +29,7 @@ export function OpenShift({
   onOpened?: (id: string) => void;
 }) {
   const me = useMe();
+  const settings = useSettings();
   const [mode, setMode] = useState<"bills" | "total">("bills");
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [total, setTotal] = useState("");
@@ -104,7 +105,7 @@ export function OpenShift({
       </div>
       {mode === "bills" ? (
         <div className="flex flex-col">
-          {DEFAULT_DENOMINATIONS.map((d) => {
+          {settings.cash.denominations.map((d) => {
             const n = counts[String(d)] ?? 0;
             return (
               <div

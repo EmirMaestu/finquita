@@ -118,7 +118,7 @@ Cada tarea dice qué secciones del spec leer (§) y cuándo está lista. Las tar
 
 ## Hito 9 · Ajustes y primeros pasos
 
-- [ ] T44 · **Ajustes:** todas las secciones de §Ajustes, incluidas la pantalla "Próximamente" de facturación y Funciones (modo simple).
+- [x] T44 · **Ajustes:** todas las secciones de §Ajustes, incluidas la pantalla "Próximamente" de facturación y Funciones (modo simple).
   Listo cuando: un e2e cambia un medio de pago y el cambio se ve en el cobro.
 - [ ] T45 · **Primeros pasos:** checklist de §Inicio y flujo 8 de §Flujos clave.
   Listo cuando: un e2e va desde la base vacía hasta la primera venta.

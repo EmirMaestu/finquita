@@ -88,9 +88,22 @@ export const DEFAULT_TICKETS: TicketSettings = {
   copies: 1,
 };
 
+/** Ajustes > Cajas: conteo ciego y billetes y monedas que se cuentan (en pesos). */
+export type CashSettings = { blindCount: boolean; denominations: number[] };
+
+export const DEFAULT_CASH: CashSettings = {
+  blindCount: true,
+  denominations: [20000, 10000, 2000, 1000, 500, 200, 100, 50, 20, 10],
+};
+
+/** Facturación electrónica (fase 2): por ahora, solo "Avisame cuando esté". */
+export type InvoicingSettings = { notifyWhenReady: boolean };
+
 export type SettingsMap = {
   features: Features;
   alerts: AlertMatrix;
+  cash: CashSettings;
+  invoicing: InvoicingSettings;
   pricing: PricingSettings;
   payments: PaymentsSettings;
   tickets: TicketSettings;
@@ -99,6 +112,8 @@ export type SettingsMap = {
 export const DEFAULT_SETTINGS: SettingsMap = {
   features: DEFAULT_FEATURES,
   alerts: DEFAULT_ALERTS,
+  cash: DEFAULT_CASH,
+  invoicing: { notifyWhenReady: false },
   pricing: DEFAULT_PRICING,
   payments: DEFAULT_PAYMENTS,
   tickets: DEFAULT_TICKETS,

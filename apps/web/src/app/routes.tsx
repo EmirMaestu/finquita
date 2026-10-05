@@ -27,6 +27,7 @@ import { SuppliersPage } from "../pages/purchases/SuppliersPage";
 import { ReportsPage } from "../pages/reports/ReportsPage";
 import { SalesHistoryPage } from "../pages/sell/SalesHistoryPage";
 import { SellPage } from "../pages/sell/SellPage";
+import { SettingsPage } from "../pages/settings/SettingsPage";
 import { AppShell } from "./layout/AppShell";
 import { MODULES } from "./modules";
 
@@ -51,6 +52,8 @@ export const routes: RouteObject[] = [
       { path: "clientes", element: <CustomersPage /> },
       { path: "avisos", element: <AlertsPage /> },
       { path: "reportes", element: <ReportsPage /> },
+      { path: "ajustes", element: <SettingsPage /> },
+      { path: "ajustes/:section", element: <SettingsPage /> },
       { path: "reportes/:kind", element: <ReportsPage /> },
       { path: "clientes/:id", element: <CustomersPage /> },
       { path: "compras/listas", element: <PriceListPage /> },
@@ -71,9 +74,16 @@ export const routes: RouteObject[] = [
       { path: "productos/:id", element: <ProductsPage /> },
       ...MODULES.filter(
         (m) =>
-          !["inicio", "productos", "caja", "vender", "compras", "clientes", "reportes"].includes(
-            m.id,
-          ),
+          ![
+            "inicio",
+            "productos",
+            "caja",
+            "vender",
+            "compras",
+            "clientes",
+            "reportes",
+            "ajustes",
+          ].includes(m.id),
       ).map((m) => ({
         path: `${m.path.slice(1)}/*`,
         element: <ModulePlaceholder />,
