@@ -1,6 +1,7 @@
 import { Navigate, type RouteObject } from "react-router";
 import { ModulePlaceholder } from "../pages/ModulePlaceholder";
 import { MorePage } from "../pages/MorePage";
+import { ImportPage } from "../pages/products/ImportPage";
 import { LoadModePage } from "../pages/products/LoadModePage";
 import { ProductsPage } from "../pages/products/ProductsPage";
 import { AppShell } from "./layout/AppShell";
@@ -14,6 +15,7 @@ export const routes: RouteObject[] = [
       { index: true, element: <Navigate to="/inicio" replace /> },
       { path: "productos", element: <ProductsPage /> },
       { path: "productos/carga", element: <LoadModePage /> },
+      { path: "productos/importar", element: <ImportPage /> },
       { path: "productos/:id", element: <ProductsPage /> },
       ...MODULES.filter((m) => m.id !== "productos").map((m) => ({
         path: `${m.path.slice(1)}/*`,

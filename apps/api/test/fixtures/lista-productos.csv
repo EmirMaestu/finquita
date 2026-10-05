@@ -1,0 +1,8 @@
+Producto;Código de barras;Costo;Precio;Categoría;Stock;Mínimo;Proveedor
+Galletitas de agua 200 g;7790895000782;1.000;1.500;Almacén > Galletitas;12;6;Distribuidora Andina
+Galletitas dulces 300 g;7790895000799;1.400;2.100;Almacén > Galletitas;8;4;Distribuidora Andina
+Yerba Playadito 1 kg;7791234000012;4850;7200;Almacén > Infusiones;3;8;Distribuidora Andina
+Coca-Cola 2,25 L;7790000001017;3300;4600;Bebidas > Gaseosas;14;12;Distribuidora Andina
+Sin precio;7790000000001;100;;Almacén;;;
+Código repetido;7790895000782;100;200;Almacén;;;
+Detergente 750 ml;7790000006012;1.300;1.950;Limpieza;10;4;Proveedor que no existe

@@ -14,6 +14,7 @@ import { auditRoutes } from "./routes/audit";
 import { authRoutes } from "./routes/auth";
 import { catalogRoutes } from "./routes/catalog";
 import { eventRoutes } from "./routes/events";
+import { importRoutes } from "./routes/import";
 import { offRoutes } from "./routes/off";
 import { syncRoutes } from "./routes/sync";
 
@@ -96,6 +97,7 @@ export function createApp(deps: AppDeps) {
   app.route("/api", syncRoutes);
   app.route("/api", catalogRoutes);
   app.route("/api", offRoutes);
+  app.route("/api", importRoutes);
   app.route("/api", eventRoutes());
 
   return app;
