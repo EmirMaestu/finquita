@@ -1,4 +1,5 @@
 import { Navigate, type RouteObject } from "react-router";
+import { AlertsPage } from "../pages/AlertsPage";
 import { CashPage } from "../pages/cash/CashPage";
 import { CloseShiftPage } from "../pages/cash/CloseShiftPage";
 import { ClosingsPage } from "../pages/cash/ClosingsPage";
@@ -45,6 +46,7 @@ export const routes: RouteObject[] = [
       { path: "compras/recepcion", element: <ReceivePage /> },
       { path: "compras/facturas", element: <PayablesPage /> },
       { path: "clientes", element: <CustomersPage /> },
+      { path: "avisos", element: <AlertsPage /> },
       { path: "clientes/:id", element: <CustomersPage /> },
       { path: "compras/listas", element: <PriceListPage /> },
       { path: "compras/recepcion/:id/costos", element: <ReceiptCostsPage /> },

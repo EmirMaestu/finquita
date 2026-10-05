@@ -49,6 +49,8 @@ export const alerts = pgTable(
     resolvedAt: ts("resolved_at"),
     resolvedBy: uuid(),
     data: jsonb().$type<Record<string, unknown>>(),
+    /** Cuándo salió la notificación push (null: falta mandarla). */
+    pushedAt: ts("pushed_at"),
     createdAt: createdAt(),
   },
   (t) => [
@@ -67,6 +69,23 @@ export const alertReads = pgTable(
     readAt: createdAt(),
   },
   (t) => [uniqueIndex("alert_reads_pk").on(t.alertId, t.memberId)],
+);
+
+/** Suscripciones Web Push (VAPID): una por navegador instalado. */
+export const pushSubscriptions = pgTable(
+  "push_subscriptions",
+  {
+    id: id(),
+    memberId: uuid().notNull(),
+    deviceId: uuid(),
+    endpoint: text().notNull(),
+    p256dh: text().notNull(),
+    auth: text().notNull(),
+    userAgent: text(),
+    createdAt: createdAt(),
+    lastSuccessAt: ts("last_success_at"),
+  },
+  (t) => [uniqueIndex("push_subscriptions_endpoint_uq").on(t.endpoint)],
 );
 
 /** Auditoría: quién, desde qué dispositivo, cuándo, valor anterior y nuevo. */

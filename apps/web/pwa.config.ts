@@ -30,5 +30,7 @@ export const pwaOptions: Partial<VitePWAOptions> = {
     // La primera vez, el service worker toma la página enseguida (vende sin internet sin recargar).
     // Las versiones nuevas igual esperan a que se acepte "Hay una versión nueva".
     clientsClaim: true,
+    // Avisos por push (Web Push con VAPID).
+    importScripts: ["push-sw.js"],
   },
 };

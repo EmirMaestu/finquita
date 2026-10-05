@@ -10,6 +10,7 @@ import { EventHub } from "./lib/events";
 import { log } from "./lib/log";
 import { OffClient, type OffConfig, offConfigFromEnv } from "./lib/off";
 import { validationError } from "./lib/validate";
+import { alertRoutes } from "./routes/alerts";
 import { auditRoutes } from "./routes/audit";
 import { authRoutes } from "./routes/auth";
 import { cashRoutes } from "./routes/cash";
@@ -126,6 +127,7 @@ export function createApp(deps: AppDeps) {
   app.route("/api", fileRoutes);
   app.route("/api", payableRoutes);
   app.route("/api", customerRoutes);
+  app.route("/api", alertRoutes);
   app.route("/api", eventRoutes());
 
   return app;

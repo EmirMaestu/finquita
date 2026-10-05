@@ -1,10 +1,12 @@
 import { Bell, ScanBarcode } from "lucide-react";
+import { useNavigate } from "react-router";
 import { scanRouter } from "../../scan/GlobalScan";
 import { ConnectionChip, RegisterChip } from "../../ui/StatusChips";
 import { useShell } from "../shell";
 
 export function MobileTopBar({ title }: { title: string }) {
   const shell = useShell();
+  const navigate = useNavigate();
   const showConnection = !shell.connection.online || shell.connection.pending > 0;
   return (
     <header
@@ -20,6 +22,7 @@ export function MobileTopBar({ title }: { title: string }) {
       <button
         type="button"
         aria-label={`Avisos${shell.unreadAlerts ? `: ${shell.unreadAlerts} sin leer` : ""}`}
+        onClick={() => navigate("/avisos")}
         className="relative inline-flex size-12 items-center justify-center"
       >
         <Bell size={24} aria-hidden />

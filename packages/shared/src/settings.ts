@@ -1,3 +1,4 @@
+import { type AlertMatrix, DEFAULT_ALERTS } from "./alerts";
 /** Ajustes con sus valores por defecto (modo simple). */
 
 export type Features = {
@@ -89,6 +90,7 @@ export const DEFAULT_TICKETS: TicketSettings = {
 
 export type SettingsMap = {
   features: Features;
+  alerts: AlertMatrix;
   pricing: PricingSettings;
   payments: PaymentsSettings;
   tickets: TicketSettings;
@@ -96,6 +98,7 @@ export type SettingsMap = {
 
 export const DEFAULT_SETTINGS: SettingsMap = {
   features: DEFAULT_FEATURES,
+  alerts: DEFAULT_ALERTS,
   pricing: DEFAULT_PRICING,
   payments: DEFAULT_PAYMENTS,
   tickets: DEFAULT_TICKETS,

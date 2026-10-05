@@ -57,6 +57,13 @@
       "when": 1791226209812,
       "tag": "0007_receipts_costs",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791229106568,
+      "tag": "0008_alerts_push",
+      "breakpoints": true
     }
   ]
 }

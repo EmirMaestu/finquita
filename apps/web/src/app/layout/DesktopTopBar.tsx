@@ -1,10 +1,12 @@
 import { Bell, PanelLeft, Search } from "lucide-react";
+import { useNavigate } from "react-router";
 import { ConnectionChip, RegisterChip } from "../../ui/StatusChips";
 import { useShell } from "../shell";
 import { UserMenu } from "../UserMenu";
 
 export function DesktopTopBar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
   const shell = useShell();
+  const navigate = useNavigate();
   return (
     <header
       data-print-hide
@@ -42,6 +44,7 @@ export function DesktopTopBar({ onToggleSidebar }: { onToggleSidebar?: () => voi
       <button
         type="button"
         aria-label={`Avisos${shell.unreadAlerts ? `: ${shell.unreadAlerts} sin leer` : ""}`}
+        onClick={() => navigate("/avisos")}
         className="relative inline-flex size-10 items-center justify-center rounded-lg hover:bg-neutro-suave"
       >
         <Bell size={22} aria-hidden />

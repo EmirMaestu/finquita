@@ -1,3 +1,4 @@
+export * from "./alerts";
 export * from "./barcode";
 export * from "./bulkprice";
 export * from "./cart";

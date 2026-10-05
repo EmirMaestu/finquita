@@ -1,4 +1,4 @@
-import { newId, todayAR } from "@mostrador/shared";
+import { DEFAULT_SETTINGS, newId, todayAR } from "@mostrador/shared";
 import { eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import { createApp } from "../src/app";
@@ -38,7 +38,7 @@ describe("GET /api/sync/pull", () => {
     expect(count("products")).toBe(26);
     expect(count("barcodes")).toBe(21);
     expect(count("customers")).toBe(5);
-    expect(count("settings")).toBe(4);
+    expect(count("settings")).toBe(Object.keys(DEFAULT_SETTINGS).length);
     expect(count("members")).toBe(5);
     const tomas = changes.find((c) => c.entity === "members" && c.data?.name === "Tomás");
     expect(tomas?.data).toEqual({

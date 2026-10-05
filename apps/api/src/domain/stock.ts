@@ -1,6 +1,6 @@
-import { newId, roundQty } from "@mostrador/shared";
-import { eq } from "drizzle-orm";
-import { products, type StockMovementKind, stockMovements } from "../db/schema/index";
+import { formatQty, newId, roundQty } from "@mostrador/shared";
+import { and, eq, ne } from "drizzle-orm";
+import { alerts, products, type StockMovementKind, stockMovements } from "../db/schema/index";
 import { raiseAlert } from "./alerts";
 import { type DbOrTx, Rejection } from "./types";
 
@@ -81,8 +81,34 @@ export async function applyStock(tx: DbOrTx, ch: StockChange): Promise<StockResu
         dedupeKey: `negative_stock:${target.id}`,
       });
     }
+    await lowStockCheck(tx, target, resulting);
   }
   return { movementId: id, productId: target.id, resultingQty: resulting };
+}
+
+/**
+ * Stock bajo: avisa cuando el stock cruza el mínimo hacia abajo (sin repetir) y el aviso
+ * se resuelve solo cuando se repone.
+ */
+async function lowStockCheck(tx: DbOrTx, p: typeof products.$inferSelect, resulting: number) {
+  const min = p.minStock;
+  if (min == null || min <= 0) return;
+  const key = `low_stock:${p.id}`;
+  if (resulting < min && p.stockQty >= min && resulting >= 0) {
+    await raiseAlert(tx, {
+      kind: "low_stock",
+      title: `${p.name}: quedan ${formatQty(resulting, p.saleUnit === "unit" ? "unit" : "kg")}`,
+      body: `Está debajo del mínimo (${formatQty(min, p.saleUnit === "unit" ? "unit" : "kg")}). Entra al pedido sugerido.`,
+      refType: "product",
+      refId: p.id,
+      dedupeKey: key,
+    });
+  } else if (resulting >= min && p.stockQty < min) {
+    await tx
+      .update(alerts)
+      .set({ status: "resolved", resolvedAt: new Date() })
+      .where(and(eq(alerts.dedupeKey, key), ne(alerts.status, "resolved")));
+  }
 }
 
 /**
