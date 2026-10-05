@@ -1,0 +1,47 @@
+# Entorno aislado para Claude Code: el agente y un Postgres solo para desarrollo y tests.
+# No publica puertos y no monta el socket de Docker: no ve el resto del VPS.
+name: mostrador-agent
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: mostrador
+      POSTGRES_PASSWORD: mostrador
+      POSTGRES_DB: mostrador
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mostrador"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    mem_limit: 1g
+    restart: unless-stopped
+
+  agent:
+    build:
+      context: .
+      args:
+        HOST_UID: ${HOST_UID:-1000}
+        HOST_GID: ${HOST_GID:-1000}
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://mostrador:mostrador@db:5432/mostrador
+      TZ: America/Argentina/Buenos_Aires
+    volumes:
+      - ..:/workspace
+      - agent-home:/home/node
+    working_dir: /workspace
+    init: true
+    tty: true
+    stdin_open: true
+    mem_limit: 4g
+    cpus: 2.0
+    restart: unless-stopped
+
+volumes:
+  dbdata:
+  agent-home:
