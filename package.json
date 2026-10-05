@@ -15,7 +15,8 @@
     "check": "biome check . && bun run typecheck && vitest run",
     "e2e": "playwright test",
     "db:migrate": "bun run --filter '@mostrador/api' db:migrate",
-    "db:seed": "bun run --filter '@mostrador/api' db:seed"
+    "db:seed": "bun run --filter '@mostrador/api' db:seed",
+    "fix": "biome check --write ."
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.15",

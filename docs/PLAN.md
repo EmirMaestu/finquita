@@ -7,7 +7,7 @@ Cada tarea dice qué secciones del spec leer (§) y cuándo está lista. Las tar
 
 - [x] T01 · **Monorepo y herramientas.** Bun workspaces con `apps/web`, `apps/api` y `packages/shared`; TypeScript estricto; Biome; Vitest; scripts `dev`, `check`, `test`, `e2e`, `db:migrate` y `db:seed` en el `package.json` raíz; `.gitignore` y `.env.example`. §Arquitectura técnica.
   Listo cuando: `bun install` y `bun run check` salen con 0, con un test de ejemplo en cada paquete.
-- [ ] T02 · **Base de datos y migraciones.** Drizzle con PostgreSQL vía `DATABASE_URL`; carpeta de migraciones; `docker-compose.dev.yml` con Postgres 16 para desarrollar fuera del contenedor. §Arquitectura técnica.
+- [x] T02 · **Base de datos y migraciones.** Drizzle con PostgreSQL vía `DATABASE_URL`; carpeta de migraciones; `docker-compose.dev.yml` con Postgres 16 para desarrollar fuera del contenedor. §Arquitectura técnica.
   Listo cuando: `bun run db:migrate` funciona sobre una base vacía y un test de integración se conecta.
 - [ ] T03 · **API base.** Hono en Bun: `/api/health`, manejo de errores, logs JSON, validación con Zod. §Arquitectura técnica.
   Listo cuando: el test de `/api/health` pasa.

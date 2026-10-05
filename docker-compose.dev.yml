@@ -1,0 +1,21 @@
+# Postgres 16 para desarrollar fuera del contenedor del agente.
+# Uso: docker compose -f docker-compose.dev.yml up -d
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: mostrador
+      POSTGRES_PASSWORD: mostrador
+      POSTGRES_DB: mostrador
+    ports:
+      - "5432:5432"
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mostrador"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  dbdata:
