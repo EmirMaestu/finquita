@@ -8,3 +8,4 @@ Formato: AAAA-MM-DD HH:MM · Tarea · Resultado · Commit
 2026-10-05 11:14 · T04 · Tailwind v4 con tokens claro/oscuro, barras de celular, tablet y compu; build ok; 6 tests de layout · commit "T04: app base con tokens, router y layout de iPhone y Mac"
 2026-10-05 11:18 · T05 · vite-plugin-pwa (prompt), íconos de prueba, aviso que espera a que termine la venta, guía de 2 pasos; test del build y del aviso · commit "T05: PWA con manifest, service worker, aviso de versión nueva y guía para iPhone"
 2026-10-05 11:22 · T06 · 38 tablas (catálogo, stock, caja, ventas, fiado, compras, avisos, auditoría, sync); tests de restricciones clave · commit "T06: esquema núcleo"
+2026-10-05 11:27 · T07 · Almacén La Esquina: equipo, 26 productos, 6 proveedores, 5 clientes con fiado, pedidos 0041 y 0042, facturas; seed idempotente con tests de saldos y del pedido · commit "T07: datos de ejemplo del escenario"
