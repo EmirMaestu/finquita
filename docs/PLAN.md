@@ -50,7 +50,7 @@ Cada tarea dice qué secciones del spec leer (§) y cuándo está lista. Las tar
   Listo cuando: el CRUD tiene tests y respeta permisos.
 - [x] T18 · **Lista y ficha de producto.** Tabla en Mac, tarjetas en iPhone, filtros y selección múltiple; ficha con pestañas. §Productos y stock.
   Listo cuando: un e2e crea y edita un producto.
-- [ ] T19 · **Lectores.** Hook que reconoce la pistola por velocidad de tipeo en cualquier pantalla de Vender; escáner por cámara con @zxing/browser; pitido y aviso en pantalla. §Requisitos transversales.
+- [x] T19 · **Lectores.** Hook que reconoce la pistola por velocidad de tipeo en cualquier pantalla de Vender; escáner por cámara con @zxing/browser; pitido y aviso en pantalla. §Requisitos transversales.
   Listo cuando: el hook tiene tests con eventos de teclado simulados.
 - [ ] T20 · **Alta rápida y Modo carga.** Código desconocido → nombre y precio en diez segundos; Modo carga en serie con pistola o cámara. Open Food Facts a través de la API: User-Agent propio, caché y límite de 15 consultas por minuto. §Productos y stock.
   Listo cuando: el proxy tiene tests con fetch simulado y hay un e2e del Modo carga.

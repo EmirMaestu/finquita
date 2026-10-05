@@ -24,21 +24,24 @@ export function Sheet({
 }) {
   const { layout } = useViewport();
   const ref = useRef<HTMLDivElement>(null);
+  const close = useRef(onClose);
+  close.current = onClose;
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.preventDefault();
-        onClose();
+        close.current();
       }
     };
     window.addEventListener("keydown", onKey);
+    // El foco va al primer campo solo al abrir.
     const first = ref.current?.querySelector<HTMLElement>(
       "input, select, textarea, button[data-autofocus]",
     );
     first?.focus();
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+  }, [open]);
   if (!open) return null;
   const phone = layout === "phone";
   return (

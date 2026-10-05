@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Outlet, useLocation } from "react-router";
+import { GlobalScan } from "../../scan/GlobalScan";
 import { InstallGuide } from "../../ui/InstallGuide";
+import { Toaster } from "../../ui/toast";
 import { moduleForPath } from "../modules";
 import { useViewport } from "../useViewport";
 import { BottomBar } from "./BottomBar";
@@ -37,6 +39,8 @@ export function AppShell() {
           <Outlet />
         </main>
         <BottomBar />
+        <GlobalScan />
+        <Toaster />
       </div>
     );
   }
@@ -51,6 +55,8 @@ export function AppShell() {
             <Outlet />
           </main>
         </div>
+        <GlobalScan />
+        <Toaster />
       </div>
     );
   }
@@ -73,6 +79,8 @@ export function AppShell() {
           <Outlet />
         </main>
       </div>
+      <GlobalScan />
+      <Toaster />
     </div>
   );
 }

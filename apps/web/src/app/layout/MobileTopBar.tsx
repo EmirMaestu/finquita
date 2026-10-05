@@ -1,4 +1,5 @@
 import { Bell, ScanBarcode } from "lucide-react";
+import { scanRouter } from "../../scan/GlobalScan";
 import { ConnectionChip, RegisterChip } from "../../ui/StatusChips";
 import { useShell } from "../shell";
 
@@ -26,6 +27,7 @@ export function MobileTopBar({ title }: { title: string }) {
       <button
         type="button"
         aria-label="Escanear"
+        onClick={() => scanRouter.openCamera()}
         className="inline-flex size-12 items-center justify-center text-primario"
       >
         <ScanBarcode size={26} aria-hidden />
