@@ -15,6 +15,8 @@ import { ProductsPage } from "../pages/products/ProductsPage";
 import { PromotionsPage } from "../pages/products/PromotionsPage";
 import { ShelfLabelsPage } from "../pages/products/ShelfLabelsPage";
 import { OrdersPage } from "../pages/purchases/OrdersPage";
+import { PayablesPage } from "../pages/purchases/PayablesPage";
+import { PriceListPage } from "../pages/purchases/PriceListPage";
 import { ReceiptCostsPage } from "../pages/purchases/ReceiptCostsPage";
 import { ReceivePage } from "../pages/purchases/ReceivePage";
 import { SuggestedFlow } from "../pages/purchases/SuggestedFlow";
@@ -40,6 +42,8 @@ export const routes: RouteObject[] = [
       { path: "compras/pedidos", element: <OrdersPage /> },
       { path: "compras/pedidos/:id", element: <OrdersPage /> },
       { path: "compras/recepcion", element: <ReceivePage /> },
+      { path: "compras/facturas", element: <PayablesPage /> },
+      { path: "compras/listas", element: <PriceListPage /> },
       { path: "compras/recepcion/:id/costos", element: <ReceiptCostsPage /> },
       { path: "vender/historial", element: <SalesHistoryPage /> },
       { path: "vender/historial/:id", element: <SalesHistoryPage /> },

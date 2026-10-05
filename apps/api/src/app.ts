@@ -21,6 +21,7 @@ import { importRoutes } from "./routes/import";
 import { labelRoutes } from "./routes/labels";
 import { offRoutes } from "./routes/off";
 import { orderRoutes } from "./routes/orders";
+import { payableRoutes } from "./routes/payables";
 import { priceRoutes } from "./routes/prices";
 import { promotionRoutes } from "./routes/promotions";
 import { purchasingRoutes } from "./routes/purchasing";
@@ -122,6 +123,7 @@ export function createApp(deps: AppDeps) {
   app.route("/api", orderRoutes);
   app.route("/api", receiptRoutes);
   app.route("/api", fileRoutes);
+  app.route("/api", payableRoutes);
   app.route("/api", eventRoutes());
 
   return app;

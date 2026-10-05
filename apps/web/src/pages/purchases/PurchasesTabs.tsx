@@ -7,6 +7,7 @@ const TABS = [
   ["/compras/proveedores", "Proveedores"],
   ["/compras/recepcion", "Recepción"],
   ["/compras/facturas", "Facturas y pagos"],
+  ["/compras/listas", "Listas de precios"],
 ] as const;
 
 /** Pestañas del módulo Compras. */

@@ -99,7 +99,7 @@ Cada tarea dice qué secciones del spec leer (§) y cuándo está lista. Las tar
   Listo cuando: hay tests del texto del mensaje y del enlace.
 - [x] T38 · **Recepción en iPhone,** con o sin pedido: faltantes, lotes, foto del remito y aviso de costo que cambió (el repositor no ve costos).
   Listo cuando: un e2e recibe el pedido 0042.
-- [ ] T39 · **Facturas y pagos a proveedores** (pagar desde la caja crea el movimiento) y **lista de precios** del proveedor (Excel, IVA y bonificación).
+- [x] T39 · **Facturas y pagos a proveedores** (pagar desde la caja crea el movimiento) y **lista de precios** del proveedor (Excel, IVA y bonificación).
   Listo cuando: hay tests del saldo por proveedor.
 
 ## Hito 7 · Clientes y fiado

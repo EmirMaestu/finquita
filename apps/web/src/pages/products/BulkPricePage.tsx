@@ -39,7 +39,7 @@ export function BulkPricePage() {
     queryFn: () => api<{ id: string; name: string }[]>("/api/suppliers?light=1").catch(() => []),
   });
   const [categoryId, setCategoryId] = useState("");
-  const [supplierId, setSupplierId] = useState("");
+  const [supplierId, setSupplierId] = useState(params.get("proveedor") ?? "");
   const [mode, setMode] = useState<Mode>("price_pct");
   const [pct, setPct] = useState("7");
   const [rounding, setRounding] = useState<number>(5000);
