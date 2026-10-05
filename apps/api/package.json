@@ -4,13 +4,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "bun --watch src/main.ts",
-    "start": "bun src/main.ts",
-    "worker": "bun src/worker.ts",
+    "dev": "bun --env-file=../../.env --watch src/main.ts",
+    "start": "bun --env-file=../../.env src/main.ts",
+    "worker": "bun --env-file=../../.env src/worker.ts",
     "typecheck": "tsc -p tsconfig.json",
-    "db:migrate": "bun scripts/migrate.ts",
+    "db:migrate": "bun --env-file=../../.env scripts/migrate.ts",
     "db:generate": "drizzle-kit generate",
-    "db:seed": "bun scripts/seed.ts"
+    "db:seed": "bun --env-file=../../.env scripts/seed.ts"
   },
   "dependencies": {
     "@mostrador/shared": "workspace:*",

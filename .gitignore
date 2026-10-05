@@ -13,5 +13,6 @@ dev-dist/
 *.tsbuildinfo
 .vite/
 /test-results/
-data/
-apps/api/data/
+# Fotos subidas en desarrollo (FILES_DIR). Anclado a la raíz: src/data/ es código.
+/data/
+/apps/api/data/
