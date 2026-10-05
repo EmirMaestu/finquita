@@ -1,0 +1,36 @@
+# Un solo origen: la app en /, la API en /api (sin CORS, cookies simples).
+# El subdominio sale de DOMAIN en .env; Caddy saca y renueva el certificado solo.
+{$DOMAIN} {
+	encode zstd gzip
+
+	# Fase 2: el webhook de WhatsApp también va por /api (/api/whatsapp/webhook).
+	handle /api/* {
+		# SSE: sin buffer, para que los avisos lleguen al instante.
+		reverse_proxy api:3000 {
+			flush_interval -1
+		}
+	}
+
+	handle {
+		root * /srv
+		# El service worker y el manifiesto no se cachean: así la app avisa "Hay una versión nueva".
+		@nocache path /sw.js /registerSW.js /manifest.webmanifest /index.html
+		header @nocache Cache-Control "no-cache"
+		@assets path /assets/*
+		header @assets Cache-Control "public, max-age=31536000, immutable"
+		try_files {path} /index.html
+		file_server
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "same-origin"
+		-Server
+	}
+
+	log {
+		output stdout
+		format json
+	}
+}

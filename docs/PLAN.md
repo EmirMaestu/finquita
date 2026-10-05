@@ -125,7 +125,7 @@ Cada tarea dice qué secciones del spec leer (§) y cuándo está lista. Las tar
 
 ## Hito 10 · Listo para desplegar (sin desplegar)
 
-- [ ] T46 · **Infraestructura de producción:** Dockerfiles de api y web, `infra/docker-compose.prod.yml` (caddy, api, worker, postgres, backup), `infra/Caddyfile` con el subdominio tomado de `.env`, backup con pg_dump y restic, y `docs/DEPLOY.md`. §Arquitectura técnica. No ejecutar nada contra el VPS.
+- [x] T46 · **Infraestructura de producción:** Dockerfiles de api y web, `infra/docker-compose.prod.yml` (caddy, api, worker, postgres, backup), `infra/Caddyfile` con el subdominio tomado de `.env`, backup con pg_dump y restic, y `docs/DEPLOY.md`. §Arquitectura técnica. No ejecutar nada contra el VPS.
   Listo cuando: un test valida el YAML del compose.
 - [ ] T47 · **Repaso final:** `bun run check` y `bun run e2e` en verde; README con cómo levantar todo y la lista de pendientes.
   Listo cuando: los dos comandos salen con 0.

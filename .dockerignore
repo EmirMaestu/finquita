@@ -1,0 +1,16 @@
+node_modules
+**/node_modules
+**/dist
+**/dev-dist
+.git
+.env
+.env.*
+!.env.example
+test-results
+playwright-report
+coverage
+data
+apps/api/data
+agent
+.claude
+*.docx

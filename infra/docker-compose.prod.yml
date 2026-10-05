@@ -1,0 +1,119 @@
+# Producción en el VPS: caddy, api, worker, postgres y backup.
+# Se usa con: docker compose -f infra/docker-compose.prod.yml --env-file .env up -d
+# Las imágenes las construye el CI; el VPS solo hace pull. Postgres no se expone fuera de Docker.
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+x-app-env: &app-env
+  DATABASE_URL: postgres://mostrador:${POSTGRES_PASSWORD}@postgres:5432/mostrador
+  BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+  BETTER_AUTH_URL: https://${DOMAIN}
+  VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY}
+  VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY}
+  VAPID_SUBJECT: ${VAPID_SUBJECT}
+  OFF_USER_AGENT: ${OFF_USER_AGENT}
+  FILES_DIR: /data/files
+  LOG_LEVEL: info
+  TZ: America/Argentina/Buenos_Aires
+
+services:
+  caddy:
+    image: ${REGISTRY:-ghcr.io/mostrador}/web:${TAG:-latest}
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN}
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+    logging: *logging
+
+  api:
+    image: ${REGISTRY:-ghcr.io/mostrador}/api:${TAG:-latest}
+    restart: unless-stopped
+    environment:
+      <<: *app-env
+      PORT: "3000"
+    volumes:
+      - files:/data/files
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "bun", "-e", "fetch('http://localhost:3000/api/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    mem_limit: 768m
+    logging: *logging
+
+  worker:
+    image: ${REGISTRY:-ghcr.io/mostrador}/api:${TAG:-latest}
+    restart: unless-stopped
+    command: ["bun", "src/worker.ts"]
+    environment:
+      <<: *app-env
+    volumes:
+      - files:/data/files
+    depends_on:
+      postgres:
+        condition: service_healthy
+      api:
+        condition: service_started
+    mem_limit: 384m
+    logging: *logging
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: mostrador
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: mostrador
+      TZ: America/Argentina/Buenos_Aires
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mostrador -d mostrador"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    mem_limit: 512m
+    logging: *logging
+
+  backup:
+    image: ${REGISTRY:-ghcr.io/mostrador}/backup:${TAG:-latest}
+    restart: unless-stopped
+    environment:
+      PGHOST: postgres
+      PGUSER: mostrador
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: mostrador
+      RESTIC_REPOSITORY: ${RESTIC_REPOSITORY}
+      RESTIC_PASSWORD: ${RESTIC_PASSWORD}
+      B2_ACCOUNT_ID: ${B2_ACCOUNT_ID}
+      B2_ACCOUNT_KEY: ${B2_ACCOUNT_KEY}
+      BACKUP_PING_URL: ${BACKUP_PING_URL:-}
+      TZ: America/Argentina/Buenos_Aires
+    volumes:
+      - files:/data/files:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    mem_limit: 256m
+    logging: *logging
+
+volumes:
+  pgdata:
+  files:
+  caddy_data:
+  caddy_config:
