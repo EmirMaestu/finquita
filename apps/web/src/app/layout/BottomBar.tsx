@@ -13,6 +13,7 @@ export function BottomBar() {
   items.push(MORE_ITEM);
   return (
     <nav
+      data-print-hide
       aria-label="Módulos"
       className="fixed inset-x-0 bottom-0 z-20 grid border-t border-borde bg-superficie px-1 pt-1.5 pb-[max(18px,env(safe-area-inset-bottom))]"
       style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}

@@ -30,3 +30,16 @@ describe("precios", () => {
     expect(formatPercent(-1200)).toBe("−12 %");
   });
 });
+
+import { contentFromName, unitPriceCents } from "./pricing";
+
+describe("precio por kilo o litro", () => {
+  it("saca el contenido del nombre", () => {
+    expect(contentFromName("Yerba Playadito 1 kg")).toEqual({ qty: 1, unit: "kg" });
+    expect(contentFromName("Coca-Cola 2,25 L")).toEqual({ qty: 2.25, unit: "l" });
+    expect(contentFromName("Fideos tirabuzón 500 g")).toEqual({ qty: 0.5, unit: "kg" });
+    expect(contentFromName("Cerveza rubia lata 473 ml")).toEqual({ qty: 0.473, unit: "l" });
+    expect(contentFromName("Huevo suelto")).toBeNull();
+    expect(unitPriceCents(190000, { qty: 0.5 })).toBe(380000);
+  });
+});

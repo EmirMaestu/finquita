@@ -6,7 +6,10 @@ import { UserMenu } from "../UserMenu";
 export function DesktopTopBar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
   const shell = useShell();
   return (
-    <header className="flex h-14 shrink-0 items-center gap-4 border-b border-borde bg-superficie px-4">
+    <header
+      data-print-hide
+      className="flex h-14 shrink-0 items-center gap-4 border-b border-borde bg-superficie px-4"
+    >
       <div className="flex w-[208px] items-center gap-2.5">
         {onToggleSidebar && (
           <button

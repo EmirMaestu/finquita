@@ -48,3 +48,24 @@ export function formatPercent(
   const sign = v < 0 ? "−" : opts.sign && v > 0 ? "+" : "";
   return `${sign}${f} %`;
 }
+
+/**
+ * Contenido neto desde el nombre ("Yerba Playadito 1 kg", "Coca-Cola 2,25 L", "Fideos 500 g")
+ * para mostrar el precio por kilo o por litro en la etiqueta.
+ */
+export function contentFromName(name: string): { qty: number; unit: "kg" | "l" } | null {
+  const m = /(\d+(?:[.,]\d+)?)\s*(kg|g|gr|l|lt|ml|cc)\b/i.exec(name);
+  if (!m) return null;
+  const n = Number((m[1] ?? "").replace(",", "."));
+  if (!n) return null;
+  const u = (m[2] ?? "").toLowerCase();
+  if (u === "kg") return { qty: n, unit: "kg" };
+  if (u === "g" || u === "gr") return { qty: n / 1000, unit: "kg" };
+  if (u === "l" || u === "lt") return { qty: n, unit: "l" };
+  return { qty: n / 1000, unit: "l" };
+}
+
+/** Precio por kilo o litro: "$ 6.900 / kg". */
+export function unitPriceCents(priceCents: number, content: { qty: number }): number {
+  return Math.round(priceCents / content.qty);
+}

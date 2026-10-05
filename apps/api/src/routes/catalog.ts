@@ -1,5 +1,6 @@
 import {
   addDays,
+  arDateTime,
   effectiveGrant,
   marginOnCostBp,
   newId,
@@ -14,6 +15,7 @@ import {
   desc,
   eq,
   gt,
+  gte,
   ilike,
   inArray,
   isNotNull,
@@ -130,6 +132,9 @@ const listQuery = z.object({
     .enum(["low", "out", "negative", "expiring", "stale", "inactive", "review", "quick", "no_cost"])
     .optional(),
   sort: z.enum(["name", "stock", "price", "updated"]).default("name"),
+  /** Los que cambiaron de precio desde esta fecha (AAAA-MM-DD), para las etiquetas. */
+  priceChangedSince: z.iso.date().optional(),
+  ids: z.string().max(40_000).optional(),
   limit: z.coerce.number().int().min(1).max(500).default(100),
   offset: z.coerce.number().int().min(0).default(0),
 });
@@ -180,6 +185,15 @@ catalogRoutes.get("/products", requireActor(), validate("query", listQuery), asy
     where.push(or(eq(products.needsReview, true), eq(products.priceReview, true)));
   if (f.filter === "quick") where.push(eq(products.quickButton, true));
   if (f.filter === "no_cost") where.push(isNull(products.costCents));
+  if (f.priceChangedSince)
+    where.push(gte(products.priceUpdatedAt, arDateTime(f.priceChangedSince)));
+  if (f.ids)
+    where.push(
+      inArray(
+        products.id,
+        f.ids.split(",").filter((x) => /^[0-9a-f-]{36}$/i.test(x)),
+      ),
+    );
   if (f.filter === "expiring") {
     where.push(
       sql`exists (select 1 from ${lots} where ${lots.productId} = ${products.id} and ${lots.qtyRemaining} > 0 and ${lots.expiresOn} <= ${addDays(todayAR(), 30)})`,

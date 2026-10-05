@@ -85,6 +85,8 @@ export type ProductQuery = {
   categoryId?: string;
   limit?: number;
   offset?: number;
+  ids?: string;
+  priceChangedSince?: string;
 };
 
 export type ProductPage = {
@@ -102,6 +104,8 @@ export async function fetchProducts(q: ProductQuery): Promise<ProductPage> {
   if (q.categoryId) params.set("categoryId", q.categoryId);
   params.set("limit", String(q.limit ?? 100));
   if (q.offset) params.set("offset", String(q.offset));
+  if (q.ids) params.set("ids", q.ids);
+  if (q.priceChangedSince) params.set("priceChangedSince", q.priceChangedSince);
   try {
     return await api<ProductPage>(`/api/products?${params}`);
   } catch (err) {

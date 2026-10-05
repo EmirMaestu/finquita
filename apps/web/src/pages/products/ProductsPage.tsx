@@ -18,6 +18,7 @@ import { Checkbox } from "../../ui/Checkbox";
 import { FilterChip } from "../../ui/Chip";
 import { cx } from "../../ui/cx";
 import { SelectField } from "../../ui/Field";
+import { Menu } from "../../ui/Menu";
 import { Sheet } from "../../ui/Sheet";
 import { EmptyState, ErrorState, OfflineBanner, SkeletonList } from "../../ui/States";
 import { ProductDetailView } from "./ProductDetailView";
@@ -207,20 +208,24 @@ export function ProductsPage() {
           className="min-w-0 flex-1 bg-transparent text-texto outline-none"
         />
       </label>
-      <Button
-        variant="secondary"
-        className="h-9 text-[13px]"
-        onClick={() => navigate("/productos/carga")}
-      >
-        Modo carga
-      </Button>
-      <Button
-        variant="secondary"
-        className="h-9 text-[13px]"
-        onClick={() => navigate("/productos/importar")}
-      >
-        Importar
-      </Button>
+      <Menu
+        label="Más acciones"
+        items={[
+          { label: "Modo carga", onSelect: () => navigate("/productos/carga") },
+          {
+            label: "Importar desde Excel",
+            onSelect: () => navigate("/productos/importar"),
+            hidden: !canEdit,
+          },
+          {
+            label: "Cambio masivo de precios",
+            onSelect: () => navigate("/productos/precios"),
+            hidden: !canEdit,
+          },
+          { label: "Etiquetas de góndola", onSelect: () => navigate("/productos/etiquetas") },
+          { label: "Planilla de códigos", onSelect: () => navigate("/productos/planilla") },
+        ]}
+      />
       {canEdit && (
         <Button className="h-9 text-[13px]" onClick={() => setForm({ product: null })}>
           Nuevo producto

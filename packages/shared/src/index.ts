@@ -1,3 +1,4 @@
+export * from "./barcode";
 export * from "./credit";
 export * from "./csv";
 export * from "./dates";

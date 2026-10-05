@@ -114,3 +114,17 @@
 .tnum {
   font-feature-settings: "tnum";
 }
+
+/* Impresión: solo la hoja (planilla, etiquetas, tickets). */
+@page {
+  size: A4;
+  margin: 10mm;
+}
+@media print {
+  body {
+    background: #fff;
+  }
+  [data-print-hide] {
+    display: none;
+  }
+}

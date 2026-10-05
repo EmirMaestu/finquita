@@ -111,10 +111,10 @@ describe("detector de pistola por velocidad de tipeo", () => {
     const d = createScanDetector({ onScan, now: () => clock.t });
     typeOn(d, clock, "pan", 150);
     clock.t += 500;
-    typeOn(d, clock, "2000000010013", 6);
+    typeOn(d, clock, "2000000010014", 6);
     clock.t += 6;
     d.keydown({ key: "Enter", ctrlKey: false, metaKey: false, altKey: false });
-    expect(onScan).toHaveBeenCalledWith("2000000010013");
+    expect(onScan).toHaveBeenCalledWith("2000000010014");
   });
 });
 
@@ -165,7 +165,7 @@ describe("cámara y planilla de códigos", () => {
   });
 
   it("los códigos internos de la planilla empiezan con 2", () => {
-    expect(pluFromInternalBarcode("2000000010013")).toBe("1001");
+    expect(pluFromInternalBarcode("2000000010014")).toBe("1001");
     expect(pluFromInternalBarcode("7791234000012")).toBeNull();
   });
 });

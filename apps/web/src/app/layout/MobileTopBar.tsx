@@ -7,7 +7,10 @@ export function MobileTopBar({ title }: { title: string }) {
   const shell = useShell();
   const showConnection = !shell.connection.online || shell.connection.pending > 0;
   return (
-    <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-2 border-b border-borde bg-superficie pr-2 pl-4 pt-[env(safe-area-inset-top)]">
+    <header
+      data-print-hide
+      className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-2 border-b border-borde bg-superficie pr-2 pl-4 pt-[env(safe-area-inset-top)]"
+    >
       <h1 className="m-0 flex-1 truncate text-xl font-semibold">{title}</h1>
       {showConnection ? (
         <ConnectionChip connection={shell.connection} compact />

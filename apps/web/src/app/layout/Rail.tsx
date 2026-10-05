@@ -8,6 +8,7 @@ export function Rail() {
   const shell = useShell();
   return (
     <nav
+      data-print-hide
       aria-label="Módulos"
       className="flex w-16 shrink-0 flex-col items-center gap-1 border-r border-borde bg-superficie px-2 py-3"
     >

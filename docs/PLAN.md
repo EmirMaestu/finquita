@@ -56,7 +56,7 @@ Cada tarea dice qué secciones del spec leer (§) y cuándo está lista. Las tar
   Listo cuando: el proxy tiene tests con fetch simulado y hay un e2e del Modo carga.
 - [x] T21 · **Importar productos** desde Excel o CSV con asistente: relacionar columnas, vista previa (nuevos, actualizados, con error) y confirmar.
   Listo cuando: un test importa un archivo de ejemplo.
-- [ ] T22 · **Planilla de códigos y etiquetas de góndola.** Página imprimible o PDF en A4; códigos internos que empiezan con 2 para lo que no tiene código de barras. §Productos y stock.
+- [x] T22 · **Planilla de códigos y etiquetas de góndola.** Página imprimible o PDF en A4; códigos internos que empiezan con 2 para lo que no tiene código de barras. §Productos y stock.
   Listo cuando: un test genera la planilla con los productos sin código.
 
 ## Hito 4 · Vender y caja
