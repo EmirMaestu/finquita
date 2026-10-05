@@ -8,6 +8,7 @@ export function SaleDone({
   totalCents,
   changeCents,
   method,
+  ticket,
   onDone,
   ms = 2000,
 }: {
@@ -15,6 +16,7 @@ export function SaleDone({
   totalCents: number;
   changeCents: number;
   method: string;
+  ticket?: string | null;
   onDone: () => void;
   ms?: number;
 }) {
@@ -47,6 +49,7 @@ export function SaleDone({
       <span className="tnum text-5xl leading-none font-semibold tracking-[-.03em] lg:text-8xl">
         {changeCents > 0 ? `Vuelto ${formatMoney(changeCents)}` : "Listo"}
       </span>
+      {ticket && <span className="text-[15px] opacity-85">{ticket}</span>}
       <span className="mt-10 text-sm opacity-75">Cualquier tecla para la próxima venta</span>
     </button>
   );

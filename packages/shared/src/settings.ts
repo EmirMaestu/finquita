@@ -68,16 +68,37 @@ export const DEFAULT_PAYMENTS: PaymentsSettings = {
   qrImage: null,
 };
 
+export type TicketSettings = {
+  /** Hay impresora térmica conectada a este local. */
+  printer: boolean;
+  width: 58 | 80;
+  header: string;
+  footer: string;
+  autoPrint: boolean;
+  copies: number;
+};
+
+export const DEFAULT_TICKETS: TicketSettings = {
+  printer: false,
+  width: 58,
+  header: "",
+  footer: "¡Gracias por tu compra!",
+  autoPrint: false,
+  copies: 1,
+};
+
 export type SettingsMap = {
   features: Features;
   pricing: PricingSettings;
   payments: PaymentsSettings;
+  tickets: TicketSettings;
 };
 
 export const DEFAULT_SETTINGS: SettingsMap = {
   features: DEFAULT_FEATURES,
   pricing: DEFAULT_PRICING,
   payments: DEFAULT_PAYMENTS,
+  tickets: DEFAULT_TICKETS,
 };
 
 /** Recargo de un medio sobre un monto: crédito +10 % sobre $ 8.550 → $ 855. */

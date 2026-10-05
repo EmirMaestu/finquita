@@ -31,6 +31,7 @@ import { stripScanLeak } from "../../scan/useScanner";
 import { completeSale, type Payment } from "../../sell/complete";
 import { productIndex } from "../../sell/searchIndex";
 import { heldSales, sale, useHeldSales, useSale } from "../../sell/store";
+import { printTicket, shareTicket, ticketFromSale } from "../../sell/ticket";
 import { useSyncStatus } from "../../sync/status";
 import { Button } from "../../ui/Button";
 import { cx } from "../../ui/cx";
@@ -40,7 +41,7 @@ import { toast } from "../../ui/toast";
 import { MovementSheet } from "../cash/MovementSheet";
 import { OpenShift } from "../cash/OpenShift";
 import { CustomerPicker } from "./CustomerPicker";
-import { PaymentDialog } from "./PaymentDialog";
+import { PaymentDialog, type TicketOutput } from "./PaymentDialog";
 import { QuickButtons } from "./QuickButtons";
 import { SaleDone } from "./SaleDone";
 import { type LineWarning, SaleList, SaleTable } from "./SaleLines";
@@ -66,7 +67,13 @@ type Dialog =
   | { kind: "customer" }
   | null;
 
-type Done = { number: number; totalCents: number; changeCents: number; method: string };
+type Done = {
+  number: number;
+  totalCents: number;
+  changeCents: number;
+  method: string;
+  ticket?: string | null;
+};
 
 /** Descuento general (F4): porcentaje o monto; por encima del tope, el cajero necesita PIN. */
 function DiscountDialog({
@@ -251,7 +258,7 @@ export function SellPage() {
   }, []);
 
   const finish = useCallback(
-    async (payments: Payment[], surchargeCents: number) => {
+    async (payments: Payment[], surchargeCents: number, output: TicketOutput = "none") => {
       if (!me || !reg.shift || !reg.registerId) return;
       // Fiado por encima del límite o con deuda vencida: el cajero necesita PIN.
       let authorizedBy: string | null = null;
@@ -297,7 +304,19 @@ export function SellPage() {
           totalCents: s.totalCents,
           changeCents: s.changeCents,
           method: METHOD_LABEL[main.method].toLowerCase(),
+          ticket:
+            output === "print"
+              ? "Ticket impreso"
+              : output === "share"
+                ? "Ticket para compartir"
+                : null,
         });
+        if (output !== "none") {
+          const t = ticketFromSale(s, me.business, settings.tickets.footer, customer?.name);
+          if (output === "print")
+            void printTicket(t, settings.tickets.width, settings.tickets.copies);
+          else void shareTicket(t, settings.tickets.width);
+        }
         setDialog(null);
         setWarnings([]);
         setAdultNotice(null);
@@ -306,7 +325,7 @@ export function SellPage() {
         setBusy(false);
       }
     },
-    [me, reg.shift, reg.registerId, customer, creditGrant],
+    [me, reg.shift, reg.registerId, customer, creditGrant, settings.tickets],
   );
 
   const applyDiscount = useCallback(
@@ -446,7 +465,7 @@ export function SellPage() {
               : null
           }
           busy={busy}
-          onConfirm={(p, s) => void finish(p, s)}
+          onConfirm={(p, s, o) => void finish(p, s, o)}
           onClose={() => {
             setDialog(null);
             focusSearch();

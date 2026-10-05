@@ -4,7 +4,7 @@ import { createContext, type ReactNode, useContext } from "react";
 import { ApiError, api, credentials, OfflineError } from "../data/api";
 
 export type Me = {
-  business: { name: string };
+  business: { name: string; address?: string | null; city?: string | null };
   member: { id: string; name: string; role: Role; email: string | null };
   permissions: Record<Permission, Grant>;
   device: { id: string; name: string; registerId: string | null } | null;

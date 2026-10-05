@@ -25,6 +25,8 @@ const TABS: { id: Tab; label: string; icon: typeof Banknote }[] = [
 
 const BILLS = [100_000, 200_000, 1_000_000, 2_000_000];
 
+export type TicketOutput = "print" | "share" | "none";
+
 export type FiadoInfo = {
   customerName: string;
   balanceCents: number;
@@ -50,7 +52,7 @@ export function PaymentDialog({
   totalCents: number;
   /** Cliente asignado (F5): habilita Fiado. */
   fiado: FiadoInfo | null;
-  onConfirm: (payments: Tender[], surchargeCents: number) => void;
+  onConfirm: (payments: Tender[], surchargeCents: number, output: TicketOutput) => void;
   onClose: () => void;
   busy?: boolean;
 }) {
@@ -62,6 +64,7 @@ export function PaymentDialog({
   const [transfer, setTransfer] = useState<"transfer" | "qr">("qr");
   const [verified, setVerified] = useState(false);
   const [typed, setTyped] = useState<string | null>(null);
+  const [output, setOutput] = useState<TicketOutput>(settings.tickets.printer ? "print" : "none");
   const box = useRef<HTMLDivElement>(null);
   // El foco pasa a la ventana: lo que se tipea va al monto, no al buscador de atrás.
   useEffect(() => {
@@ -112,8 +115,8 @@ export function PaymentDialog({
         return;
       }
     }
-    onConfirm(list, checkoutState(totalCents, list).surchargeCents);
-  }, [busy, payments, remaining, blocked, pending, totalCents, onConfirm]);
+    onConfirm(list, checkoutState(totalCents, list).surchargeCents, output);
+  }, [busy, payments, remaining, blocked, pending, totalCents, onConfirm, output]);
 
   // Teclado: dígitos al monto, Enter o Ctrl+Enter confirma, Esc vuelve a la venta.
   useEffect(() => {
@@ -220,6 +223,30 @@ export function PaymentDialog({
                 </span>
               </span>
             </div>
+            <fieldset className="m-0 flex gap-2 border-0 p-0" aria-label="Ticket">
+              {(
+                [
+                  ["print", "Imprimir"],
+                  ["share", "Compartir"],
+                  ["none", "Sin ticket"],
+                ] as const
+              ).map(([id, label]) => (
+                <button
+                  key={id}
+                  type="button"
+                  aria-pressed={output === id}
+                  onClick={() => setOutput(id)}
+                  className={cx(
+                    "h-9 flex-1 rounded-lg border text-[13px] font-semibold",
+                    output === id
+                      ? "border-primario bg-primario-suave text-primario"
+                      : "border-borde bg-superficie",
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
+            </fieldset>
           </div>
         </div>
 

@@ -38,7 +38,7 @@ describe("GET /api/sync/pull", () => {
     expect(count("products")).toBe(26);
     expect(count("barcodes")).toBe(21);
     expect(count("customers")).toBe(5);
-    expect(count("settings")).toBe(3);
+    expect(count("settings")).toBe(4);
     expect(count("members")).toBe(5);
     const tomas = changes.find((c) => c.entity === "members" && c.data?.name === "Tomás");
     expect(tomas?.data).toEqual({

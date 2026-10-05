@@ -69,7 +69,7 @@ Cada tarea dice qué secciones del spec leer (§) y cuándo está lista. Las tar
   Listo cuando: los tests dan 0,750 kg × $ 3.800 = $ 2.850 y "$ 2.000 de queso" a $ 13.500/kg = cortar 148 g.
 - [x] T26 · **Cobro:** Efectivo, Tarjeta, Transferencia o QR (con "Verificada") y Fiado (con límite); pago combinado y vuelto. §Vender.
   Listo cuando: un e2e reproduce el flujo 1 de §Flujos clave (total $ 18.550, vuelto $ 1.450).
-- [ ] T27 · **Ticket** de 58 y 80 mm con la impresión del navegador, y Compartir como PDF. §Vender · §Datos de ejemplo.
+- [x] T27 · **Ticket** de 58 y 80 mm con la impresión del navegador, y Compartir como PDF. §Vender · §Datos de ejemplo.
   Listo cuando: hay un snapshot del ticket de ejemplo.
 - [ ] T28 · **Historial, devoluciones y anulaciones** con PIN; lo devuelto vuelve a la góndola o va a merma. §Vender.
   Listo cuando: hay tests de las dos salidas del stock.

@@ -13,6 +13,7 @@ export * from "./pricing";
 export * from "./qty";
 export * from "./settings";
 export * from "./sync";
+export * from "./ticket";
 export * from "./weights";
 export * from "./xlsx";
 export * from "./xlsx-writer";

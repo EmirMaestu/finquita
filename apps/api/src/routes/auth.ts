@@ -20,9 +20,17 @@ export const authRoutes = new Hono<AppEnv>();
 authRoutes.get("/me", requireActor(), async (c) => {
   const { member, device, via } = actorOf(c);
   const overrides = await loadOverrides(c.get("db"), member.id);
-  const [business] = await c.get("db").select({ name: businesses.name }).from(businesses).limit(1);
+  const [business] = await c
+    .get("db")
+    .select({ name: businesses.name, address: businesses.address, city: businesses.city })
+    .from(businesses)
+    .limit(1);
   return c.json({
-    business: { name: business?.name ?? "Mostrador" },
+    business: {
+      name: business?.name ?? "Mostrador",
+      address: business?.address ?? null,
+      city: business?.city ?? null,
+    },
     member: { id: member.id, name: member.name, role: member.role, email: member.email },
     permissions: effectiveGrants(member.role, overrides),
     device: device ? { id: device.id, name: device.name, registerId: device.registerId } : null,
