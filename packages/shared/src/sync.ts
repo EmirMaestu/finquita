@@ -112,6 +112,8 @@ export const saleCreate = z
 export const saleVoid = z.object({
   saleId: uuid,
   reason: z.string().min(1).max(200),
+  /** Turno donde se devuelve la plata (si el de la venta ya cerró). */
+  shiftId: uuid.nullable().optional(),
 });
 
 export const saleReturn = z.object({

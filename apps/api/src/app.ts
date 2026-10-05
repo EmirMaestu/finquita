@@ -10,6 +10,7 @@ import { log } from "./lib/log";
 import { validationError } from "./lib/validate";
 import { auditRoutes } from "./routes/audit";
 import { authRoutes } from "./routes/auth";
+import { syncRoutes } from "./routes/sync";
 
 export type AppDeps = { db: Db; auth?: AuthConfig };
 
@@ -21,6 +22,8 @@ export type AppEnv = {
     device: Device | null;
     actor: Actor | null;
     authz: Authorization;
+    /** Aviso para SSE cuando un push aplicó cambios (T15). */
+    onSyncApplied?: (res: unknown) => void;
   };
 };
 
@@ -81,6 +84,7 @@ export function createApp(deps: AppDeps) {
   app.use("/api/*", resolveActor());
   app.route("/api", authRoutes);
   app.route("/api", auditRoutes);
+  app.route("/api", syncRoutes);
 
   return app;
 }
