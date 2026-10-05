@@ -6,13 +6,15 @@ import { type Auth, type AuthConfig, authConfigFromEnv, createAuth } from "./aut
 import type { Authorization } from "./auth/permissions";
 import type { Db } from "./db/client";
 import { ApiError, notFound } from "./lib/errors";
+import { EventHub } from "./lib/events";
 import { log } from "./lib/log";
 import { validationError } from "./lib/validate";
 import { auditRoutes } from "./routes/audit";
 import { authRoutes } from "./routes/auth";
+import { eventRoutes } from "./routes/events";
 import { syncRoutes } from "./routes/sync";
 
-export type AppDeps = { db: Db; auth?: AuthConfig };
+export type AppDeps = { db: Db; auth?: AuthConfig; events?: EventHub };
 
 export type AppEnv = {
   Variables: {
@@ -22,20 +24,21 @@ export type AppEnv = {
     device: Device | null;
     actor: Actor | null;
     authz: Authorization;
-    /** Aviso para SSE cuando un push aplicó cambios (T15). */
-    onSyncApplied?: (res: unknown) => void;
+    events: EventHub;
   };
 };
 
 export function createApp(deps: AppDeps) {
   const app = new Hono<AppEnv>();
   const auth = createAuth(deps.db, deps.auth ?? authConfigFromEnv());
+  const events = deps.events ?? new EventHub();
 
   app.use("*", async (c, next) => {
     const requestId = c.req.header("x-request-id") ?? crypto.randomUUID();
     c.set("requestId", requestId);
     c.set("db", deps.db);
     c.set("auth", auth);
+    c.set("events", events);
     const start = performance.now();
     await next();
     c.header("x-request-id", requestId);
@@ -85,6 +88,7 @@ export function createApp(deps: AppDeps) {
   app.route("/api", authRoutes);
   app.route("/api", auditRoutes);
   app.route("/api", syncRoutes);
+  app.route("/api", eventRoutes());
 
   return app;
 }

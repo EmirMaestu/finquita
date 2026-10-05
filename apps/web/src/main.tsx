@@ -7,6 +7,7 @@ import { PwaUpdater } from "./app/PwaUpdater";
 import { routes } from "./app/routes";
 import { applyTheme, savedTheme } from "./app/theme";
 import { syncEngine } from "./sync";
+import { listenServerEvents } from "./sync/events";
 import "./styles.css";
 
 applyTheme(savedTheme());
@@ -15,6 +16,8 @@ applyTheme(savedTheme());
 void navigator.storage?.persist?.().catch(() => {});
 
 syncEngine().start();
+// El servidor avisa por SSE cuando hay cambios para bajar.
+listenServerEvents(() => void syncEngine().kick());
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1 } },

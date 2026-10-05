@@ -18,7 +18,6 @@ syncRoutes.post("/sync/push", requireActor(), validate("json", pushRequest), asy
     deviceNow: new Date(body.deviceNow),
     ops: body.ops,
   });
-  c.get("onSyncApplied")?.(res);
   return c.json(res);
 });
 

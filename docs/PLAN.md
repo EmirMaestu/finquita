@@ -39,7 +39,7 @@ Cada tarea dice qué secciones del spec leer (§) y cuándo está lista. Las tar
   Listo cuando: hay tests de cursor y de bajas.
 - [x] T14 · **Cliente de sincronización en la web.** Dexie con catálogo, clientes, caja y cola; aplicación optimista; envío por lotes de hasta 100; disparadores (inicio, cada 20 s, al volver internet, después de cada venta, aviso por SSE); chip "Sin conexión · N ventas por sincronizar". §Requisitos transversales.
   Listo cuando: la cola tiene tests unitarios.
-- [ ] T15 · **SSE `/api/events`** que avisa a los dispositivos que hay cambios.
+- [x] T15 · **SSE `/api/events`** que avisa a los dispositivos que hay cambios.
   Listo cuando: un test verifica que un push dispara el evento.
 - [ ] T16 · **Conflictos.** Los seis casos de §Ventas sin conexión como tests de integración: última unidad en dos dispositivos, precio cambiado sin conexión, edición concurrente, fiado sobre el límite, código repetido y cierre de turno sin conexión.
   Listo cuando: los seis pasan.
