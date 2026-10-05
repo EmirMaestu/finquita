@@ -22,6 +22,7 @@ const PRICE_FIELDS: (keyof ProductFields)[] = ["priceCents", "costCents", "margi
 export async function upsertProduct(tx: DbOrTx, ctx: OpContext, p: OpPayload<"product.upsert">) {
   const [current] = await tx.select().from(products).where(eq(products.id, p.id)).for("update");
   let created = false;
+  await checkLinks(tx, p.id, { ...current, ...p.changes });
 
   if (!current) {
     // Alta rápida: la puede hacer quien vende; queda para completar si no tiene costo.
@@ -127,6 +128,48 @@ export async function upsertProduct(tx: DbOrTx, ctx: OpContext, p: OpPayload<"pr
     }
   }
   return { productId: p.id, created, duplicateBarcodes: duplicates };
+}
+
+/** Reglas de presentaciones vinculadas, servicios y envases. */
+async function checkLinks(
+  tx: DbOrTx,
+  id: string,
+  next: {
+    stockBaseId?: string | null;
+    stockBaseFactor?: number | null;
+    containerProductId?: string | null;
+    kind?: string;
+  },
+) {
+  if (next.stockBaseId) {
+    if (next.stockBaseId === id)
+      throw new Rejection("Un producto no puede compartir stock consigo mismo");
+    const [base] = await tx.select().from(products).where(eq(products.id, next.stockBaseId));
+    if (!base || base.deletedAt)
+      throw new Rejection("El producto base de la presentación no existe");
+    if (base.stockBaseId)
+      throw new Rejection("El producto base no puede ser a su vez una presentación vinculada");
+    if (base.kind === "service" || next.kind === "service")
+      throw new Rejection("Los servicios no llevan stock");
+    if (!next.stockBaseFactor || next.stockBaseFactor <= 0) {
+      throw new Rejection("Indicá cuántas unidades del producto base trae la presentación");
+    }
+    const [child] = await tx
+      .select({ id: products.id })
+      .from(products)
+      .where(eq(products.stockBaseId, id))
+      .limit(1);
+    if (child) throw new Rejection("Este producto ya es base de otra presentación");
+  }
+  if (next.containerProductId) {
+    if (next.containerProductId === id)
+      throw new Rejection("El envase tiene que ser otro producto");
+    const [c] = await tx
+      .select({ id: products.id })
+      .from(products)
+      .where(eq(products.id, next.containerProductId));
+    if (!c) throw new Rejection("El envase no existe");
+  }
 }
 
 const WASTE_REASONS = new Set(["waste", "breakage", "expired"]);

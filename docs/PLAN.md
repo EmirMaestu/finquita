@@ -46,7 +46,7 @@ Cada tarea dice qué secciones del spec leer (§) y cuándo está lista. Las tar
 
 ## Hito 3 · Catálogo
 
-- [ ] T17 · **API de catálogo:** productos, códigos, categorías, presentaciones vinculadas, precio fijo, servicios a comisión y envases retornables. §Productos y stock.
+- [x] T17 · **API de catálogo:** productos, códigos, categorías, presentaciones vinculadas, precio fijo, servicios a comisión y envases retornables. §Productos y stock.
   Listo cuando: el CRUD tiene tests y respeta permisos.
 - [ ] T18 · **Lista y ficha de producto.** Tabla en Mac, tarjetas en iPhone, filtros y selección múltiple; ficha con pestañas. §Productos y stock.
   Listo cuando: un e2e crea y edita un producto.

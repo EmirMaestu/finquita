@@ -224,6 +224,16 @@ export const productFields = z
     quickButton: z.boolean(),
     active: z.boolean(),
     needsReview: z.boolean(),
+    purchaseUnitName: z.string().max(30).nullable(),
+    purchaseUnitQty: qty.nullable(),
+    /** Presentación vinculada: comparte el stock de otro producto. */
+    stockBaseId: uuid.nullable(),
+    stockBaseFactor: qty.refine((v) => v > 0, "Tiene que ser mayor a cero").nullable(),
+    /** Servicios (recargas): comisión en puntos básicos. */
+    commissionBp: z.number().int().min(0).max(10000).nullable(),
+    /** Envase retornable que se cobra aparte. */
+    containerProductId: uuid.nullable(),
+    photoUrl: z.string().max(500).nullable(),
   })
   .partial();
 export type ProductFields = z.infer<typeof productFields>;

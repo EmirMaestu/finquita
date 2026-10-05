@@ -11,6 +11,7 @@ import { log } from "./lib/log";
 import { validationError } from "./lib/validate";
 import { auditRoutes } from "./routes/audit";
 import { authRoutes } from "./routes/auth";
+import { catalogRoutes } from "./routes/catalog";
 import { eventRoutes } from "./routes/events";
 import { syncRoutes } from "./routes/sync";
 
@@ -88,6 +89,7 @@ export function createApp(deps: AppDeps) {
   app.route("/api", authRoutes);
   app.route("/api", auditRoutes);
   app.route("/api", syncRoutes);
+  app.route("/api", catalogRoutes);
   app.route("/api", eventRoutes());
 
   return app;

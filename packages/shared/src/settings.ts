@@ -27,7 +27,7 @@ export type PricingSettings = {
 };
 
 export const DEFAULT_PRICING: PricingSettings = {
-  roundingCents: 1000,
+  roundingCents: 5000,
   defaultMarginBp: 4000,
   minMarginBp: 2000,
   discountCapBp: 1000,
