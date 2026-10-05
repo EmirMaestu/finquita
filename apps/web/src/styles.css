@@ -1,0 +1,116 @@
+@import "tailwindcss";
+@import "@fontsource-variable/inter";
+
+/* Tokens del sistema de diseño (docs/design · Sistema de diseño). */
+:root {
+  --fondo: #faf8f5;
+  --superficie: #ffffff;
+  --borde: #e7e2da;
+  --texto: #1f1b16;
+  --texto-suave: #6b635a;
+  --texto-apagado: #8c847a;
+  --primario: #1f6b4f;
+  --primario-hover: #185640;
+  --sobre-primario: #ffffff;
+  --acento: #f2b33d;
+  --exito: #177a48;
+  --alerta: #9a5b00;
+  --peligro: #c2362f;
+  --peligro-hover: #a62d27;
+  --info: #2f6db5;
+  --deshabilitado: #efebe4;
+  --foco: #2f6db5;
+  /* Fondos suaves (agregados por el diseño) */
+  --primario-suave: #e2efe9;
+  --exito-suave: #e3f2e9;
+  --alerta-suave: #fbeedb;
+  --peligro-suave: #fbe5e3;
+  --info-suave: #e3edf9;
+  --acento-suave: #fdf1d6;
+  --neutro-suave: #f3f0ea;
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --fondo: #14120f;
+  --superficie: #1e1b17;
+  --borde: #34302a;
+  --texto: #f3efe9;
+  --texto-suave: #a8a096;
+  --texto-apagado: #7d766d;
+  --primario: #4fb389;
+  --primario-hover: #66c39b;
+  /* En tema oscuro, el texto sobre el primario va oscuro. */
+  --sobre-primario: #14120f;
+  --acento: #f2b33d;
+  --exito: #4cc38a;
+  --alerta: #f0a43a;
+  --peligro: #f07167;
+  --peligro-hover: #f38a82;
+  --info: #6ea8f0;
+  --deshabilitado: #2a2621;
+  --foco: #6ea8f0;
+  --primario-suave: color-mix(in srgb, #4fb389 18%, #1e1b17);
+  --exito-suave: color-mix(in srgb, #4cc38a 18%, #1e1b17);
+  --alerta-suave: color-mix(in srgb, #f0a43a 18%, #1e1b17);
+  --peligro-suave: color-mix(in srgb, #f07167 18%, #1e1b17);
+  --info-suave: color-mix(in srgb, #6ea8f0 18%, #1e1b17);
+  --acento-suave: color-mix(in srgb, #f2b33d 22%, #1e1b17);
+  --neutro-suave: #2a2621;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --font-sans: "Inter Variable", Inter, system-ui, -apple-system, sans-serif;
+  --color-fondo: var(--fondo);
+  --color-superficie: var(--superficie);
+  --color-borde: var(--borde);
+  --color-texto: var(--texto);
+  --color-texto-suave: var(--texto-suave);
+  --color-texto-apagado: var(--texto-apagado);
+  --color-primario: var(--primario);
+  --color-primario-hover: var(--primario-hover);
+  --color-sobre-primario: var(--sobre-primario);
+  --color-acento: var(--acento);
+  --color-exito: var(--exito);
+  --color-alerta: var(--alerta);
+  --color-peligro: var(--peligro);
+  --color-peligro-hover: var(--peligro-hover);
+  --color-info: var(--info);
+  --color-deshabilitado: var(--deshabilitado);
+  --color-foco: var(--foco);
+  --color-primario-suave: var(--primario-suave);
+  --color-exito-suave: var(--exito-suave);
+  --color-alerta-suave: var(--alerta-suave);
+  --color-peligro-suave: var(--peligro-suave);
+  --color-info-suave: var(--info-suave);
+  --color-acento-suave: var(--acento-suave);
+  --color-neutro-suave: var(--neutro-suave);
+  --radius-ui: 8px;
+  --radius-card: 12px;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    margin: 0;
+    background: var(--fondo);
+    color: var(--texto);
+    font-family: var(--font-sans);
+    font-feature-settings: "tnum";
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+  }
+  :focus-visible {
+    outline: 2px solid var(--foco);
+    outline-offset: 2px;
+  }
+}
+
+.tnum {
+  font-feature-settings: "tnum";
+}

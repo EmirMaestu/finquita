@@ -11,7 +11,7 @@ Cada tarea dice qué secciones del spec leer (§) y cuándo está lista. Las tar
   Listo cuando: `bun run db:migrate` funciona sobre una base vacía y un test de integración se conecta.
 - [x] T03 · **API base.** Hono en Bun: `/api/health`, manejo de errores, logs JSON, validación con Zod. §Arquitectura técnica.
   Listo cuando: el test de `/api/health` pasa.
-- [ ] T04 · **App base.** React, Vite, Tailwind; tokens del sistema de diseño como variables CSS con tema claro y oscuro; React Router; barra inferior en iPhone y barra lateral en Mac; proxy de `/api` en desarrollo. §Sistema de diseño · §Navegación.
+- [x] T04 · **App base.** React, Vite, Tailwind; tokens del sistema de diseño como variables CSS con tema claro y oscuro; React Router; barra inferior en iPhone y barra lateral en Mac; proxy de `/api` en desarrollo. §Sistema de diseño · §Navegación.
   Listo cuando: el build no tiene errores y hay un test de render del layout en los dos tamaños.
 - [ ] T05 · **PWA.** vite-plugin-pwa: manifest (nombre provisorio Mostrador, íconos de prueba), service worker que precachea la app, aviso "Hay una versión nueva" que nunca interrumpe una venta, guía de instalación para iPhone. §Arquitectura técnica (PWA).
   Listo cuando: el build genera manifest y service worker, y el componente del aviso tiene test.
