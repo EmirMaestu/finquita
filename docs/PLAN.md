@@ -41,7 +41,7 @@ Cada tarea dice qué secciones del spec leer (§) y cuándo está lista. Las tar
   Listo cuando: la cola tiene tests unitarios.
 - [x] T15 · **SSE `/api/events`** que avisa a los dispositivos que hay cambios.
   Listo cuando: un test verifica que un push dispara el evento.
-- [ ] T16 · **Conflictos.** Los seis casos de §Ventas sin conexión como tests de integración: última unidad en dos dispositivos, precio cambiado sin conexión, edición concurrente, fiado sobre el límite, código repetido y cierre de turno sin conexión.
+- [x] T16 · **Conflictos.** Los seis casos de §Ventas sin conexión como tests de integración: última unidad en dos dispositivos, precio cambiado sin conexión, edición concurrente, fiado sobre el límite, código repetido y cierre de turno sin conexión.
   Listo cuando: los seis pasan.
 
 ## Hito 3 · Catálogo

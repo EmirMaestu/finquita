@@ -29,12 +29,33 @@ export async function ensureMac(db: Db): Promise<string> {
   return id;
 }
 
-/** Cliente con la sesión de PIN de una persona del equipo en la Mac. */
-// biome-ignore lint/suspicious/noExplicitAny: cualquier app de Hono
-export async function as(app: Hono<any>, db: Db, key: MemberKey): Promise<TestClient> {
+/** Otro dispositivo habilitado (por ejemplo, el iPhone del dueño). */
+export async function ensureDevice(db: Db, name: string): Promise<string> {
+  const token = `token-${name}`;
+  await db
+    .insert(devices)
+    .values({
+      id: seedId(`device:${name}`),
+      name,
+      kind: "iphone",
+      tokenHash: hashToken(token),
+      enabledAt: new Date(),
+    })
+    .onConflictDoNothing();
+  return token;
+}
+
+/** Cliente con la sesión de PIN de una persona del equipo en la Mac (u otro dispositivo). */
+export async function as(
+  // biome-ignore lint/suspicious/noExplicitAny: cualquier app de Hono
+  app: Hono<any>,
+  db: Db,
+  key: MemberKey,
+  device?: string,
+): Promise<TestClient> {
   await ensureMac(db);
   const c = new TestClient(app);
-  c.deviceToken = MAC_TOKEN;
+  c.deviceToken = device ? await ensureDevice(db, device) : MAC_TOKEN;
   const r = await c.post("/api/pin/login", { memberId: memberId(key), pin: pinOf(key) });
   if (r.status !== 200) throw new Error(`No pudo entrar ${key}: ${JSON.stringify(r.body)}`);
   c.pinToken = r.body.token;
