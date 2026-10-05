@@ -122,6 +122,25 @@ const VALID: Record<OpType, () => unknown> = {
     shiftId: id(),
   }),
   "shortage.note": () => ({ id: id(), productId: id(), note: "Se terminó la lavandina" }),
+  "receipt.confirm": () => ({
+    id: id(),
+    kind: "order",
+    orderId: id(),
+    supplierId: id(),
+    photoId: id(),
+    lines: [
+      {
+        id: id(),
+        productId: id(),
+        orderLineId: id(),
+        qty: 10,
+        damagedQty: 0,
+        unitCostCents: 235000,
+        lotCode: "1004",
+        expiresOn: "2026-11-07",
+      },
+    ],
+  }),
 };
 
 /** Un caso inválido por tipo, con el campo que tiene que marcar. */
@@ -146,6 +165,7 @@ const INVALID: Record<OpType, [() => unknown, string]> = {
     "amountCents",
   ],
   "shortage.note": [() => ({ id: id() }), "productId"],
+  "receipt.confirm": [() => ({ ...(VALID["receipt.confirm"]() as object), lines: [] }), "lines"],
 };
 
 describe("protocolo de sincronización", () => {

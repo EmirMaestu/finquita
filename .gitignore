@@ -13,3 +13,5 @@ dev-dist/
 *.tsbuildinfo
 .vite/
 /test-results/
+data/
+apps/api/data/

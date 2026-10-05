@@ -153,6 +153,8 @@ export const receipts = pgTable("receipts", {
   orderId: uuid().references(() => purchaseOrders.id),
   kind: text().$type<"order" | "no_order" | "wholesale">().notNull(),
   status: text().$type<"draft" | "confirmed">().notNull().default("draft"),
+  /** Lo recibió alguien que no ve costos: falta que el encargado o el dueño los complete. */
+  costsPending: boolean().notNull().default(false),
   photoUrl: text(),
   totalCents: money("total_cents").notNull().default(0),
   notes: text(),

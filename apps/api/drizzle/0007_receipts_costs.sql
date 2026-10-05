@@ -1,0 +1,1 @@
+ALTER TABLE "receipts" ADD COLUMN "costs_pending" boolean DEFAULT false NOT NULL;

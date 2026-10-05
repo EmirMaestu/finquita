@@ -28,7 +28,8 @@ export type AlertKind =
   | "credit_over_limit"
   | "shift_mismatch"
   | "clock_skew"
-  | "shift_closed";
+  | "shift_closed"
+  | "receipt_costs";
 
 /** Avisos: campana en la app y push. */
 export const alerts = pgTable(

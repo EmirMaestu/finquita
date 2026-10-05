@@ -28,6 +28,7 @@ export class MostradorDB extends Dexie {
   deltas!: Table<Delta, number>;
   sales!: Table<Row, string>;
   cashMoves!: Table<LocalCashMove, string>;
+  files!: Table<{ id: string; blob: Blob; type: string; createdAt: string }, string>;
   meta!: Table<{ key: string; value: unknown }, string>;
 
   constructor(name = "mostrador") {
@@ -51,6 +52,8 @@ export class MostradorDB extends Dexie {
     });
     // v2: movimientos de caja del turno (los del servidor y los propios sin confirmar).
     this.version(2).stores({ cashMoves: "id, shiftId, opId" });
+    // v3: fotos (remitos, comprobantes) que esperan conexión para subirse.
+    this.version(3).stores({ files: "id" });
   }
 
   async getMeta<T>(key: string): Promise<T | undefined> {

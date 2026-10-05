@@ -2,6 +2,7 @@ import type { OpType, SyncOp } from "@mostrador/shared";
 import { cashMovement, closeShift, openShift } from "./cash";
 import { adjustStock, noteShortage, upsertCustomer, upsertProduct } from "./catalog";
 import { creditPayment } from "./credit";
+import { confirmReceipt } from "./receipts";
 import { createSale, returnSale, voidSale } from "./sales";
 import type { DbOrTx, OpContext } from "./types";
 
@@ -19,6 +20,7 @@ const APPLIERS: Record<OpType, Applier> = {
   "customer.upsert": upsertCustomer as Applier,
   "credit.payment": creditPayment as Applier,
   "shortage.note": noteShortage as Applier,
+  "receipt.confirm": confirmReceipt as Applier,
 };
 
 export const OP_LABEL: Record<OpType, string> = {
@@ -33,6 +35,7 @@ export const OP_LABEL: Record<OpType, string> = {
   "customer.upsert": "cliente",
   "credit.payment": "cobro de fiado",
   "shortage.note": "faltante",
+  "receipt.confirm": "recepción de mercadería",
 };
 
 /** Aplica una operación del protocolo con el servicio de dominio que le corresponde. */

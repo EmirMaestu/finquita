@@ -286,6 +286,37 @@ export const shortageNote = z.object({
   note: z.string().max(200).nullable().optional(),
 });
 
+/** Recepción de mercadería, con o sin pedido. Queda en cola si no hay conexión. */
+export const receiptConfirm = z.object({
+  id: uuid,
+  kind: z.enum(["order", "no_order", "wholesale"]),
+  orderId: uuid.nullable().optional(),
+  supplierId: uuid.nullable().optional(),
+  /** Foto del remito o la factura: se sube aparte (PUT /api/files/:id). */
+  photoId: uuid.nullable().optional(),
+  invoiceNumber: z.string().max(40).nullable().optional(),
+  notes: z.string().max(500).nullable().optional(),
+  lines: z
+    .array(
+      z.object({
+        id: uuid,
+        productId: uuid,
+        orderLineId: uuid.nullable().optional(),
+        /** Lo que llegó, dañados incluidos. */
+        qty: z.number().min(0).max(100_000),
+        damagedQty: z.number().min(0).max(100_000).default(0),
+        /** Solo quien ve costos lo manda. */
+        unitCostCents: z.number().int().min(0).nullable().optional(),
+        lotCode: z.string().max(40).nullable().optional(),
+        expiresOn: z.iso.date().nullable().optional(),
+        /** "Actualizar precio": el precio nuevo, si se tocó en la recepción. */
+        newPriceCents: z.number().int().min(0).nullable().optional(),
+      }),
+    )
+    .min(1, "La recepción no tiene productos.")
+    .max(500),
+});
+
 // ── Operaciones ──────────────────────────────────────────────────────────────
 
 export const OP_PAYLOADS = {
@@ -300,6 +331,7 @@ export const OP_PAYLOADS = {
   "customer.upsert": customerUpsert,
   "credit.payment": creditPayment,
   "shortage.note": shortageNote,
+  "receipt.confirm": receiptConfirm,
 } as const;
 
 export type OpType = keyof typeof OP_PAYLOADS;

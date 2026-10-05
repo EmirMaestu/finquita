@@ -1,4 +1,5 @@
 import { OfflineError } from "../data/api";
+import { uploadPendingFiles } from "../data/files";
 import type { SyncClient } from "./client";
 import { bumpLocalVersion, getSyncStatus, setSyncStatus } from "./status";
 
@@ -81,6 +82,7 @@ export class SyncEngine {
     setSyncStatus({ syncing: true });
     try {
       await this.client.sync();
+      await uploadPendingFiles().catch(() => undefined);
       setSyncStatus({ online: true, lastSyncAt: new Date().toISOString() });
       bumpLocalVersion();
     } catch (err) {
