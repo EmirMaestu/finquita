@@ -35,7 +35,11 @@ export async function confirmReceiptLocal(r: {
     const good = roundQty(l.qty - l.damagedQty);
     const p = await db.products.get(l.productId);
     if (!p || !good) continue;
-    deltas.push({ kind: "stock" as const, key: p.stockBaseId ?? p.id, amount: roundQty(good * (p.stockBaseId ? (p.stockBaseFactor ?? 1) : 1)) });
+    deltas.push({
+      kind: "stock" as const,
+      key: p.stockBaseId ?? p.id,
+      amount: roundQty(good * (p.stockBaseId ? (p.stockBaseFactor ?? 1) : 1)),
+    });
   }
   await syncClient().enqueue(
     {

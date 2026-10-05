@@ -62,16 +62,38 @@ export type CustomerChanges = {
 };
 
 /** Alta o edición de la ficha: viaja por la cola. */
-export async function saveCustomerLocal(memberId: string, id: string | null, changes: CustomerChanges): Promise<string> {
+export async function saveCustomerLocal(
+  memberId: string,
+  id: string | null,
+  changes: CustomerChanges,
+): Promise<string> {
   const db = localDb();
   const cid = id ?? newId();
   const cur = await db.customers.get(cid);
   await db.customers.put({
-    ...(cur ?? { id: cid, balanceCents: 0, termsDays: 30, active: true, overdueCents: 0, oldestDebtAt: null, nickname: null, phone: null, creditLimitCents: 0, terms: "30d", name: "" }),
+    ...(cur ?? {
+      id: cid,
+      balanceCents: 0,
+      termsDays: 30,
+      active: true,
+      overdueCents: 0,
+      oldestDebtAt: null,
+      nickname: null,
+      phone: null,
+      creditLimitCents: 0,
+      terms: "30d",
+      name: "",
+    }),
     ...(changes as Partial<LocalCustomer>),
     id: cid,
   } as LocalCustomer);
-  await syncClient().enqueue({ opId: newId(), type: "customer.upsert", memberId, deviceAt: new Date().toISOString(), payload: { id: cid, changes } });
+  await syncClient().enqueue({
+    opId: newId(),
+    type: "customer.upsert",
+    memberId,
+    deviceAt: new Date().toISOString(),
+    payload: { id: cid, changes },
+  });
   bumpLocalVersion();
   void syncEngine().kick();
   return cid;
@@ -80,13 +102,33 @@ export async function saveCustomerLocal(memberId: string, id: string | null, cha
 /** Cobrar fiado: el efectivo entra a la caja del turno; baja el saldo local enseguida. */
 export async function collectCreditLocal(
   memberId: string,
-  p: { customerId: string; amountCents: number; method: "cash" | "debit" | "credit" | "transfer" | "qr"; shiftId: string | null; applyTo: "oldest" | string[]; note?: string | null },
+  p: {
+    customerId: string;
+    amountCents: number;
+    method: "cash" | "debit" | "credit" | "transfer" | "qr";
+    shiftId: string | null;
+    applyTo: "oldest" | string[];
+    note?: string | null;
+  },
 ): Promise<string> {
   const id = newId();
   const opId = newId();
   const at = new Date().toISOString();
   if (p.shiftId) {
-    await localDb().cashMoves.put({ id: newId(), shiftId: p.shiftId, kind: "credit_payment", method: p.method, amountCents: p.amountCents, reason: "Cobro de fiado", category: null, memberId, authorizedByName: null, at, opId, source: "local" });
+    await localDb().cashMoves.put({
+      id: newId(),
+      shiftId: p.shiftId,
+      kind: "credit_payment",
+      method: p.method,
+      amountCents: p.amountCents,
+      reason: "Cobro de fiado",
+      category: null,
+      memberId,
+      authorizedByName: null,
+      at,
+      opId,
+      source: "local",
+    });
   }
   await syncClient().enqueue(
     {
@@ -94,7 +136,15 @@ export async function collectCreditLocal(
       type: "credit.payment",
       memberId,
       deviceAt: at,
-      payload: { id, customerId: p.customerId, amountCents: p.amountCents, method: p.method, shiftId: p.shiftId, applyTo: p.applyTo, note: p.note ?? null },
+      payload: {
+        id,
+        customerId: p.customerId,
+        amountCents: p.amountCents,
+        method: p.method,
+        shiftId: p.shiftId,
+        applyTo: p.applyTo,
+        note: p.note ?? null,
+      },
     },
     [{ kind: "balance", key: p.customerId, amount: -p.amountCents }],
   );

@@ -25,9 +25,16 @@ async function upload(id: string, blob: Blob, type: string): Promise<boolean> {
   if (deviceToken) headers["x-device-token"] = deviceToken;
   if (pinToken) headers.authorization = `Bearer ${pinToken}`;
   try {
-    const res = await fetch(`/api/files/${id}`, { method: "PUT", headers, body: blob, credentials: "same-origin" });
+    const res = await fetch(`/api/files/${id}`, {
+      method: "PUT",
+      headers,
+      body: blob,
+      credentials: "same-origin",
+    });
     // 4xx que no se arregla reintentando: se descarta.
-    return res.ok || (res.status >= 400 && res.status < 500 && res.status !== 401 && res.status !== 408);
+    return (
+      res.ok || (res.status >= 400 && res.status < 500 && res.status !== 401 && res.status !== 408)
+    );
   } catch {
     return false;
   }
