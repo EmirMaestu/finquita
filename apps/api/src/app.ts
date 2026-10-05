@@ -17,6 +17,7 @@ import { cashRoutes } from "./routes/cash";
 import { catalogRoutes } from "./routes/catalog";
 import { countRoutes } from "./routes/counts";
 import { customerRoutes } from "./routes/customers";
+import { dashboardRoutes } from "./routes/dashboard";
 import { eventRoutes } from "./routes/events";
 import { fileRoutes } from "./routes/files";
 import { importRoutes } from "./routes/import";
@@ -128,6 +129,7 @@ export function createApp(deps: AppDeps) {
   app.route("/api", payableRoutes);
   app.route("/api", customerRoutes);
   app.route("/api", alertRoutes);
+  app.route("/api", dashboardRoutes);
   app.route("/api", eventRoutes());
 
   return app;

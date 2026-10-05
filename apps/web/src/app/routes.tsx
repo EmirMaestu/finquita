@@ -4,6 +4,7 @@ import { CashPage } from "../pages/cash/CashPage";
 import { CloseShiftPage } from "../pages/cash/CloseShiftPage";
 import { ClosingsPage } from "../pages/cash/ClosingsPage";
 import { CustomersPage } from "../pages/customers/CustomersPage";
+import { HomePage } from "../pages/home/HomePage";
 import { ModulePlaceholder } from "../pages/ModulePlaceholder";
 import { MorePage } from "../pages/MorePage";
 import { BulkPricePage } from "../pages/products/BulkPricePage";
@@ -34,6 +35,7 @@ export const routes: RouteObject[] = [
     element: <AppShell />,
     children: [
       { index: true, element: <Navigate to="/inicio" replace /> },
+      { path: "inicio", element: <HomePage /> },
       { path: "caja", element: <CashPage /> },
       { path: "caja/cierre", element: <CloseShiftPage /> },
       { path: "caja/historial", element: <ClosingsPage /> },
@@ -65,7 +67,7 @@ export const routes: RouteObject[] = [
       { path: "productos/conteos/:id", element: <CountPage /> },
       { path: "productos/:id", element: <ProductsPage /> },
       ...MODULES.filter(
-        (m) => !["productos", "caja", "vender", "compras", "clientes"].includes(m.id),
+        (m) => !["inicio", "productos", "caja", "vender", "compras", "clientes"].includes(m.id),
       ).map((m) => ({
         path: `${m.path.slice(1)}/*`,
         element: <ModulePlaceholder />,

@@ -19,19 +19,27 @@ export async function loginWithPin(page: Page, name: string, pin: string) {
   await page.goto("/");
   await page.getByRole("button", { name: new RegExp(`^${name.charAt(0)} ${name} `) }).click();
   for (const d of pin) await page.getByRole("button", { name: d, exact: true }).click();
-  await expect(page.getByRole("navigation", { name: "Módulos" })).toBeVisible();
+  // El cajero entra directo a Vender (modo mostrador, sin la barra de módulos).
+  await expect(
+    page
+      .getByRole("navigation", { name: "Módulos" })
+      .or(page.getByLabel("Escaneá o buscá por nombre"))
+      .first(),
+  ).toBeVisible();
 }
 
 /**
- * Simula la pistola USB: teclas cada 4 ms y Enter, como las manda el lector
+ * Simula la pistola USB: los dígitos y Enter de un tirón, como los manda el lector
  * (con keyboard.type de Playwright cada tecla espera la respuesta del navegador).
  */
 export async function scanWithGun(page: Page, code: string) {
   await page.evaluate(async (c) => {
+    // Primero, que la página termine de pintar: con el hilo ocupado, los eventos de la prueba
+    // salen espaciados (la pistola real no tiene ese problema: el sistema les pone la hora).
+    await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)));
     for (const key of [...c, "Enter"]) {
       const target = document.activeElement ?? document.body;
       target.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }));
-      await new Promise((r) => setTimeout(r, 4));
     }
   }, code);
 }
