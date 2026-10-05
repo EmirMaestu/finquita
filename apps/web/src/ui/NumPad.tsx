@@ -34,10 +34,9 @@ export function NumPad({
   const keys = ["1", "2", "3", "4", "5", "6", "7", "8", "9", decimal ? "," : "", "0", "back"];
   return (
     <div className={cx("grid grid-cols-3 gap-2", className)}>
-      {keys.map((k, i) =>
+      {keys.map((k) =>
         k === "" ? (
-          // biome-ignore lint/suspicious/noArrayIndexKey: lugar vacío fijo
-          <span key={i} />
+          <span key="vacío" />
         ) : (
           <button
             key={k}

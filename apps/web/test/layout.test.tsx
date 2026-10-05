@@ -42,7 +42,7 @@ describe("layout", () => {
   it("en Mac (1280 px) muestra la barra lateral con los tres grupos", () => {
     setViewport(1280);
     const { container } = renderRoutes(routes, {
-      path: "/vender",
+      path: "/caja",
       shell: {
         businessName: "Almacén La Esquina",
         register: { open: true, cashier: "Tomás", since: "14:00" },
@@ -54,9 +54,16 @@ describe("layout", () => {
       expect(within(nav).getByText(g)).toBeInTheDocument();
     }
     expect(within(nav).getAllByRole("link")).toHaveLength(8);
-    expect(within(nav).getByRole("link", { name: "Vender" })).toHaveClass("text-primario");
+    expect(within(nav).getByRole("link", { name: "Caja" })).toHaveClass("text-primario");
     expect(screen.getByText("Caja abierta · Tomás · desde 14:00")).toBeInTheDocument();
     expect(screen.getByText("Almacén La Esquina")).toBeInTheDocument();
+  });
+
+  it("en Mac, Vender va en modo mostrador: sin barra lateral", () => {
+    setViewport(1280);
+    const { container } = renderRoutes(routes, { path: "/vender" });
+    expect(container.querySelector("[data-mode='counter']")).toBeInTheDocument();
+    expect(screen.queryByRole("navigation", { name: "Módulos" })).not.toBeInTheDocument();
   });
 
   it("el chip de conexión cuenta las ventas por sincronizar", () => {

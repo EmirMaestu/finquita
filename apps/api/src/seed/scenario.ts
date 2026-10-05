@@ -13,6 +13,9 @@ export const BUSINESS = {
   hours: "Lunes a sábado de 8 a 13 y de 17 a 21",
 };
 
+/** Medios de pago del local: alias y CVU de ejemplo. */
+export const PAYMENTS = { alias: "la.esquina.mp", cvu: "0000003100012345678901" };
+
 export const TEAM: { key: string; name: string; role: Role; email?: string; pin: string }[] = [
   {
     key: "carlos",

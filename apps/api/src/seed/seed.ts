@@ -21,7 +21,16 @@ import {
   suppliers,
 } from "../db/schema/index";
 import { seedId } from "./ids";
-import { BUSINESS, CATEGORIES, CUSTOMERS, ORDER_0042, PRODUCTS, SUPPLIERS, TEAM } from "./scenario";
+import {
+  BUSINESS,
+  CATEGORIES,
+  CUSTOMERS,
+  ORDER_0042,
+  PAYMENTS,
+  PRODUCTS,
+  SUPPLIERS,
+  TEAM,
+} from "./scenario";
 
 const cents = (pesos: number) => Math.round(pesos * 100);
 const marginBp = (cost: number, price: number) => Math.round((price / cost - 1) * 10000);
@@ -45,7 +54,8 @@ export async function seed(db: Db, opts: SeedOptions = {}) {
       .onConflictDoNothing();
 
     for (const [key, value] of Object.entries(DEFAULT_SETTINGS)) {
-      await tx.insert(settings).values({ key, value }).onConflictDoNothing();
+      const v = key === "payments" ? { ...(value as object), ...PAYMENTS } : value;
+      await tx.insert(settings).values({ key, value: v }).onConflictDoNothing();
     }
 
     for (const m of TEAM) {

@@ -35,3 +35,31 @@ export async function scanWithGun(page: Page, code: string) {
     }
   }, code);
 }
+
+/** Llama a la API desde la página, con los tokens del dispositivo y del PIN. */
+export async function apiFromPage<T = unknown>(page: Page, path: string): Promise<T> {
+  return page.evaluate(async (p) => {
+    const headers: Record<string, string> = {};
+    const d = localStorage.getItem("mostrador.deviceToken");
+    const t = localStorage.getItem("mostrador.pinToken");
+    if (d) headers["x-device-token"] = d;
+    if (t) headers.authorization = `Bearer ${t}`;
+    const r = await fetch(p, { headers });
+    return r.json();
+  }, path) as Promise<T>;
+}
+
+/** Abre el turno de caja si está cerrado (fondo tipeado directo). */
+export async function ensureShiftOpen(page: Page, floatPesos = "20000") {
+  const open = page.getByRole("region", { name: "Abrir turno" });
+  const search = page.getByLabel("Escaneá o buscá por nombre");
+  const shiftView = page.getByRole("region", { name: "Efectivo esperado" });
+  await expect(open.or(search).or(shiftView).first()).toBeVisible({ timeout: 20_000 });
+  if (await open.isVisible().catch(() => false)) {
+    await open.getByRole("button", { name: "Total directo" }).click();
+    await open.getByLabel("Fondo inicial").fill(floatPesos);
+    const comment = open.getByLabel("Comentario");
+    if (await comment.isVisible().catch(() => false)) await comment.fill("Prueba");
+    await open.getByRole("button", { name: /^Abrir turno/ }).click();
+  }
+}

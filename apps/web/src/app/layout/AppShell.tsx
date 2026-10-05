@@ -7,6 +7,7 @@ import { Toaster } from "../../ui/toast";
 import { moduleForPath } from "../modules";
 import { useViewport } from "../useViewport";
 import { BottomBar } from "./BottomBar";
+import { CounterTopBar } from "./CounterTopBar";
 import { DesktopTopBar } from "./DesktopTopBar";
 import { MobileTopBar } from "./MobileTopBar";
 import { Rail } from "./Rail";
@@ -57,6 +58,21 @@ export function AppShell() {
             <Outlet />
           </main>
         </div>
+        <GlobalScan />
+        <Toaster />
+        <PinAuthorizer />
+      </div>
+    );
+  }
+
+  // Modo mostrador: Vender ocupa toda la pantalla, sin barra lateral.
+  if (location.pathname.startsWith("/vender")) {
+    return (
+      <div className="flex h-full flex-col bg-fondo" data-layout={layout} data-mode="counter">
+        <CounterTopBar />
+        <main className="min-h-0 flex-1">
+          <Outlet />
+        </main>
         <GlobalScan />
         <Toaster />
         <PinAuthorizer />

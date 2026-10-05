@@ -63,7 +63,7 @@ Cada tarea dice qué secciones del spec leer (§) y cuándo está lista. Las tar
 
 - [x] T23 · **Caja: abrir turno, turno en curso y movimientos** (retiro, gasto, ingreso, pago a proveedor) con motivo y PIN. §Caja.
   Listo cuando: un test calcula el efectivo esperado del ejemplo del spec ($ 121.900).
-- [ ] T24 · **Vender en modo simple** para Mac e iPhone: lista, botones rápidos y Cobrar; atajos de teclado; ventas en espera. §Vender · §Navegación.
+- [x] T24 · **Vender en modo simple** para Mac e iPhone: lista, botones rápidos y Cobrar; atajos de teclado; ventas en espera. §Vender · §Navegación.
   Listo cuando: un e2e vende 4 productos usando solo el teclado.
 - [ ] T25 · **Pesables:** teclado de peso con atajos de 100 g, ¼ kg y ½ kg, y modo por plata. §Vender.
   Listo cuando: los tests dan 0,750 kg × $ 3.800 = $ 2.850 y "$ 2.000 de queso" a $ 13.500/kg = cortar 148 g.

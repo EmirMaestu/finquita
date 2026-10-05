@@ -35,12 +35,52 @@ export const DEFAULT_PRICING: PricingSettings = {
   reserveDays: 2,
 };
 
+export type PaymentMethodSettings = {
+  enabled: boolean;
+  /** Recargo (+) o descuento (−) del medio, en puntos básicos. */
+  surchargeBp: number;
+  /** Comisión que cobra el medio (para rentabilidad), en puntos básicos. */
+  feeBp: number;
+};
+
+export type PaymentsSettings = {
+  methods: Record<
+    "cash" | "debit" | "credit" | "transfer" | "qr" | "account",
+    PaymentMethodSettings
+  >;
+  alias: string;
+  cvu: string;
+  /** Imagen del QR fijo del local (data URL). */
+  qrImage: string | null;
+};
+
+export const DEFAULT_PAYMENTS: PaymentsSettings = {
+  methods: {
+    cash: { enabled: true, surchargeBp: 0, feeBp: 0 },
+    debit: { enabled: true, surchargeBp: 0, feeBp: 80 },
+    credit: { enabled: true, surchargeBp: 1000, feeBp: 180 },
+    transfer: { enabled: true, surchargeBp: 0, feeBp: 0 },
+    qr: { enabled: true, surchargeBp: 0, feeBp: 80 },
+    account: { enabled: true, surchargeBp: 0, feeBp: 0 },
+  },
+  alias: "",
+  cvu: "",
+  qrImage: null,
+};
+
 export type SettingsMap = {
   features: Features;
   pricing: PricingSettings;
+  payments: PaymentsSettings;
 };
 
 export const DEFAULT_SETTINGS: SettingsMap = {
   features: DEFAULT_FEATURES,
   pricing: DEFAULT_PRICING,
+  payments: DEFAULT_PAYMENTS,
 };
+
+/** Recargo de un medio sobre un monto: crédito +10 % sobre $ 8.550 → $ 855. */
+export function surchargeFor(amountCents: number, bp: number): number {
+  return Math.round((amountCents * bp) / 10000);
+}

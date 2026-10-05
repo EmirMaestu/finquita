@@ -1,6 +1,6 @@
 import { canAuthorize, PERMISSIONS, type Permission, summarizeShift } from "@mostrador/shared";
 import { verify } from "@node-rs/argon2";
-import { and, asc, desc, eq, inArray, ne } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, ne, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import type { AppEnv } from "../app";
@@ -12,6 +12,7 @@ import {
   cashMovements,
   members,
   registers,
+  sales,
   shifts,
   supplierInvoices,
   suppliers,
@@ -47,12 +48,18 @@ cashRoutes.get("/registers", requireActor(), async (c) => {
     .orderBy(desc(shifts.closedAt))
     .limit(1);
   const who = await names(db, [...open.map((s) => s.memberId), lastClosed?.memberId ?? null]);
+  const numbers = await db
+    .select({ registerId: sales.registerId, max: sql<number>`max(${sales.number})::int` })
+    .from(sales)
+    .groupBy(sales.registerId);
+  const lastNumber = new Map(numbers.map((n) => [n.registerId, n.max]));
   return c.json(
     regs.map((r) => {
       const s = open.find((x) => x.registerId === r.id);
       const prev = lastClosed?.registerId === r.id ? lastClosed : null;
       return {
         ...r,
+        lastSaleNumber: lastNumber.get(r.id) ?? 0,
         openShift: s
           ? {
               id: s.id,
