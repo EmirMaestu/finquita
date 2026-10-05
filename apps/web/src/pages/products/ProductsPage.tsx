@@ -13,6 +13,7 @@ import {
   type ProductFilter,
   type ProductItem,
 } from "../../data/products";
+import { useSettings } from "../../data/settings";
 import { Button, IconButton } from "../../ui/Button";
 import { Checkbox } from "../../ui/Checkbox";
 import { FilterChip } from "../../ui/Chip";
@@ -151,6 +152,7 @@ export function ProductsPage() {
   const [search, setSearch] = useSearchParams();
   const seeCosts = useCan("view_costs");
   const canEdit = useCan("change_prices");
+  const { features } = useSettings();
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<ProductFilter | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -227,6 +229,11 @@ export function ProductsPage() {
           { label: "Etiquetas de góndola", onSelect: () => navigate("/productos/etiquetas") },
           { label: "Planilla de códigos", onSelect: () => navigate("/productos/planilla") },
           { label: "Movimientos de stock", onSelect: () => navigate("/productos/movimientos") },
+          {
+            label: "Conteos de inventario",
+            onSelect: () => navigate("/productos/conteos"),
+            hidden: !features.counts,
+          },
         ]}
       />
       {canEdit && (

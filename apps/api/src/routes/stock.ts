@@ -4,7 +4,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import type { AppEnv } from "../app";
 import { actorOf, requireActor } from "../auth/actor";
-import { loadOverrides, requirePermission } from "../auth/permissions";
+import { loadOverrides, requireFull } from "../auth/permissions";
 import { alerts, members, products, stockMovements } from "../db/schema/index";
 import { adjustStock } from "../domain/catalog";
 import { runDomain } from "../domain/request";
@@ -86,7 +86,7 @@ stockRoutes.post("/stock/adjustments", requireActor(), validate("json", adjustBo
 });
 
 /** Ajustes del repositor que esperan aprobación. */
-stockRoutes.get("/stock/pending", requireActor(), requirePermission("adjust_stock"), async (c) => {
+stockRoutes.get("/stock/pending", requireActor(), requireFull("adjust_stock"), async (c) => {
   const rows = await c
     .get("db")
     .select({

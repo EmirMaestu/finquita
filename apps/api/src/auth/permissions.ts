@@ -81,6 +81,21 @@ export async function authorize(c: Context<AppEnv>, perm: Permission): Promise<A
   return { grant: "allow", authorizedBy: authorizer.id };
 }
 
+/** Middleware: exige el permiso pleno (no alcanza "queda para aprobar" ni "solo lo suyo"). */
+export function requireFull(perm: Permission): MiddlewareHandler<AppEnv> {
+  return async (c, next) => {
+    const a = await authorize(c, perm);
+    if (a.grant !== "allow") {
+      throw forbidden(`No tenés permiso para esto. Lo puede hacer: ${whoCan(perm)}.`, {
+        permission: perm,
+        whoCan: whoCan(perm),
+      });
+    }
+    c.set("authz", a);
+    await next();
+  };
+}
+
 /** Middleware: exige el permiso y deja el resultado en `c.var.authz`. */
 export function requirePermission(perm: Permission): MiddlewareHandler<AppEnv> {
   return async (c, next) => {

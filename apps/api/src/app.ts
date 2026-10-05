@@ -14,6 +14,7 @@ import { auditRoutes } from "./routes/audit";
 import { authRoutes } from "./routes/auth";
 import { cashRoutes } from "./routes/cash";
 import { catalogRoutes } from "./routes/catalog";
+import { countRoutes } from "./routes/counts";
 import { eventRoutes } from "./routes/events";
 import { importRoutes } from "./routes/import";
 import { labelRoutes } from "./routes/labels";
@@ -108,6 +109,7 @@ export function createApp(deps: AppDeps) {
   app.route("/api", salesRoutes);
   app.route("/api", stockRoutes);
   app.route("/api", priceRoutes);
+  app.route("/api", countRoutes);
   app.route("/api", eventRoutes());
 
   return app;
