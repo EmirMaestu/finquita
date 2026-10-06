@@ -1,3 +1,4 @@
+import type { DecodeHintType as HintType } from "@zxing/library";
 import { X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { createRepeatFilter } from "./camera";
@@ -26,18 +27,44 @@ export function CameraScanner({
     const accept = createRepeatFilter();
     (async () => {
       try {
-        const { BrowserMultiFormatReader } = await import("@zxing/browser");
-        const reader = new BrowserMultiFormatReader();
+        const [{ BrowserMultiFormatReader }, { BarcodeFormat, DecodeHintType }] = await Promise.all(
+          [import("@zxing/browser"), import("@zxing/library")],
+        );
+        // Solo los formatos de productos (EAN/UPC en el almacén) y con más esfuerzo por
+        // cuadro: buscar todos los formatos hacía que los códigos chicos no se leyeran nunca.
+        const hints = new Map<HintType, unknown>([
+          [
+            DecodeHintType.POSSIBLE_FORMATS,
+            [
+              BarcodeFormat.EAN_13,
+              BarcodeFormat.EAN_8,
+              BarcodeFormat.UPC_A,
+              BarcodeFormat.UPC_E,
+              BarcodeFormat.CODE_128,
+              BarcodeFormat.ITF,
+            ],
+          ],
+          [DecodeHintType.TRY_HARDER, true],
+        ]);
+        const reader = new BrowserMultiFormatReader(hints, {
+          delayBetweenScanAttempts: 100,
+        });
         const el = video.current;
         if (!el || cancelled) return;
-        const controls = await reader.decodeFromConstraints(
-          { video: { facingMode: "environment" } },
-          el,
-          (result) => {
-            const text = result?.getText();
-            if (text && accept(text)) cb.current(text);
+        // Por defecto el iPhone da 640×480: con eso las barras de una lata no se distinguen.
+        // Se pide HD y foco continuo (donde el navegador lo permita; si no, se ignora).
+        const constraints = {
+          video: {
+            facingMode: { ideal: "environment" },
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+            advanced: [{ focusMode: "continuous" } as MediaTrackConstraintSet],
           },
-        );
+        } satisfies MediaStreamConstraints;
+        const controls = await reader.decodeFromConstraints(constraints, el, (result) => {
+          const text = result?.getText();
+          if (text && accept(text)) cb.current(text);
+        });
         stop = () => controls.stop();
         if (cancelled) stop();
       } catch {
