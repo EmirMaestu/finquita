@@ -109,6 +109,13 @@
     outline: 2px solid var(--foco);
     outline-offset: 2px;
   }
+  /* Tailwind 4 deja los botones con cursor de flecha: los que se pueden tocar llevan la mano. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  summary,
+  label[for] {
+    cursor: pointer;
+  }
 }
 
 .tnum {

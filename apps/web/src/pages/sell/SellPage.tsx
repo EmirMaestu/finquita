@@ -855,7 +855,7 @@ export function SellPage() {
             Cajón
           </Button>
         </div>
-        <div className="flex justify-between gap-2 text-xs text-texto-suave">
+        <div className="flex items-center justify-between gap-2 text-xs text-texto-suave">
           <button
             type="button"
             className="font-semibold text-primario"
@@ -865,10 +865,10 @@ export function SellPage() {
           </button>
           <button
             type="button"
-            className="text-left text-xs text-texto-suave"
+            className="-my-1 inline-flex items-center gap-1.5 rounded-lg px-2 py-2 text-sm font-medium text-texto-suave hover:bg-borde/40 hover:text-texto"
             onClick={() => navigate("/inicio")}
           >
-            <Lock size={12} className="mr-1 inline" aria-hidden />
+            <Lock size={15} aria-hidden />
             Salir del modo mostrador
           </button>
         </div>
