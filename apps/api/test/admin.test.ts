@@ -73,6 +73,8 @@ async function ownerWithSession() {
   const c = new TestClient(createApp({ db: ref.t.db, auth: TEST_AUTH }));
   const r = await c.signUp("carlos@laesquina.example", "contraseña-larga", "Carlos Díaz");
   expect(r.status).toBe(200);
+  const carlos = (await listUsers(ref.t.db)).find((u) => u.id === memberId("carlos"));
+  expect(carlos?.lastLogin).toBeInstanceOf(Date);
   const [m] = await ref.t.db
     .select()
     .from(members)
@@ -116,6 +118,10 @@ describe("usuarios", () => {
       .where(eq(auditLog.action, "admin.reset_password"));
     expect(a).toMatchObject({ entityId: memberId("carlos"), note: "Soporte (panel de admin)" });
     expect(JSON.stringify(a)).not.toContain(temp);
+
+    // Con la temporal se puede entrar de verdad.
+    const fresh = new TestClient(createApp({ db: ref.t.db, auth: TEST_AUTH }));
+    expect((await fresh.signIn("carlos@laesquina.example", temp)).status).toBe(200);
   });
 
   it("no resetea la contraseña de quien no tiene cuenta", async () => {
@@ -148,5 +154,106 @@ describe("usuarios", () => {
   it("rechaza un PIN que no tiene de 4 a 6 números", async () => {
     await expect(resetPin(ref.t.db, memberId("lucia"), "12a4")).rejects.toBeInstanceOf(AdminError);
     await expect(resetPin(ref.t.db, memberId("lucia"), "123")).rejects.toBeInstanceOf(AdminError);
+  });
+});
+
+const ADMIN_PW = "una-contraseña-de-admin-larga";
+
+function adminApp(password: string | null = ADMIN_PW) {
+  return createApp({
+    db: ref.t.db,
+    auth: TEST_AUTH,
+    admin: { password, backupsDir: dir, version: "abc1234" },
+  });
+}
+
+async function loggedIn() {
+  const c = new TestClient(adminApp());
+  const r = await c.form("/api/admin/login", { password: ADMIN_PW });
+  expect(r.status).toBe(302);
+  expect(r.location).toBe("/api/admin");
+  return c;
+}
+
+describe("rutas del panel", () => {
+  it("sin ADMIN_PASSWORD el panel no existe", async () => {
+    const c = new TestClient(adminApp(null));
+    expect((await c.get("/api/admin")).status).toBe(404);
+    expect((await c.get("/api/admin/login")).status).toBe(404);
+  });
+
+  it("sin sesión manda al login", async () => {
+    const c = new TestClient(adminApp());
+    expect((await c.get("/api/admin")).status).toBe(302);
+    expect((await c.get("/api/admin/login")).body).toContain("Panel de soporte");
+  });
+
+  it("contraseña mala da 401; la buena entra y muestra el panel", async () => {
+    const c = new TestClient(adminApp());
+    expect((await c.form("/api/admin/login", { password: "mala" })).status).toBe(401);
+    const ok = await loggedIn();
+    const page = await ok.get("/api/admin");
+    expect(page.status).toBe(200);
+    expect(page.body).toContain("Estado del sistema");
+    expect(page.body).toContain("abc1234");
+    expect(page.body).toContain("mostrador-2026-10-05.dump");
+  });
+
+  it("después de cinco fallos, el sexto intento da 429 aunque la contraseña sea buena", async () => {
+    const c = new TestClient(adminApp());
+    for (let i = 0; i < 5; i++) {
+      expect((await c.form("/api/admin/login", { password: "mala" })).status).toBe(401);
+    }
+    expect((await c.form("/api/admin/login", { password: ADMIN_PW })).status).toBe(429);
+  });
+
+  it("un formulario desde otro origen da 403", async () => {
+    const c = await loggedIn();
+    const r = await c.form(
+      `/api/admin/users/${memberId("lucia")}/pin`,
+      { pin: "1111" },
+      "https://otro-sitio.example",
+    );
+    expect(r.status).toBe(403);
+  });
+
+  it("una cookie adulterada vuelve al login", async () => {
+    const c = await loggedIn();
+    c.cookies.set("mostrador_admin", "9999999999999.firma-falsa");
+    const r = await c.form(`/api/admin/users/${memberId("lucia")}/pin`, { pin: "1111" });
+    expect(r.status).toBe(302);
+    expect(r.location).toBe("/api/admin/login");
+  });
+
+  it("resetea el PIN desde el panel", async () => {
+    const c = await loggedIn();
+    const r = await c.form(`/api/admin/users/${memberId("lucia")}/pin`, { pin: "2468" });
+    expect(r.status).toBe(200);
+    expect(r.body).toContain("PIN de");
+    expect((await verifyMemberPin(ref.t.db, memberId("lucia"), "2468")).ok).toBe(true);
+  });
+
+  it("muestra la contraseña temporal una sola vez", async () => {
+    await ownerWithSession();
+    const c = await loggedIn();
+    const r = await c.form(`/api/admin/users/${memberId("carlos")}/password`, {});
+    expect(r.status).toBe(200);
+    expect(r.body).toMatch(/<code>[A-Za-z0-9]{12}<\/code>/);
+  });
+
+  it("baja una copia y rechaza nombres raros", async () => {
+    const c = await loggedIn();
+    const ok = await c.get("/api/admin/backups/mostrador-2026-10-05.dump");
+    expect(ok.status).toBe(200);
+    expect(ok.body).toBe("copia-nueva!");
+    expect((await c.get("/api/admin/backups/..%2F..%2Fetc%2Fpasswd")).status).toBe(400);
+    expect((await c.get("/api/admin/backups/mostrador-2099-01-01.dump")).status).toBe(404);
+  });
+
+  it("salir borra la sesión", async () => {
+    const c = await loggedIn();
+    const r = await c.form("/api/admin/logout", {});
+    expect(r.status).toBe(302);
+    expect((await c.get("/api/admin")).status).toBe(302);
   });
 });

@@ -31,9 +31,10 @@ export function bytes(n: number | null): string {
 
 const CSS = `
 :root{--fondo:#faf8f5;--superficie:#fff;--borde:#e7e2da;--texto:#1f1b16;--suave:#6b635a;
---primario:#1f6b4f;--exito:#177a48;--exito-s:#e3f2e9;--peligro:#c2362f;--peligro-s:#fbe5e3}
+--primario:#1f6b4f;--primario-texto:#1f6b4f;--exito:#177a48;--exito-s:#e3f2e9;--peligro:#c2362f;--peligro-s:#fbe5e3}
 @media (prefers-color-scheme:dark){:root{--fondo:#14120f;--superficie:#1d1a16;--borde:#34302a;
---texto:#f2eee8;--suave:#b3aaa0;--exito-s:#17301f;--peligro-s:#3a1c1a}}
+--texto:#f2eee8;--suave:#b3aaa0;--primario-texto:#6fcf9f;--exito:#5fd08f;--exito-s:#17301f;
+--peligro:#ff8a80;--peligro-s:#3a1c1a}}
 *{box-sizing:border-box}body{margin:0;background:var(--fondo);color:var(--texto);
 font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
 main{max-width:960px;margin:0 auto;padding:16px}
@@ -49,7 +50,8 @@ form{display:inline-flex;gap:6px;margin:2px 0}input{font:inherit;padding:6px 8px
 border:1px solid var(--borde);border-radius:8px;background:var(--superficie);color:var(--texto)}
 input[name=pin]{width:90px}button{font:inherit;padding:6px 12px;border-radius:8px;
 border:1px solid var(--primario);background:var(--primario);color:#fff;cursor:pointer}
-button.sec{background:transparent;color:var(--primario)}
+button.sec{background:transparent;color:var(--primario-texto);border-color:var(--primario-texto)}
+a{color:var(--primario-texto)}
 .login{max-width:360px;margin:15vh auto}.login form{display:flex;flex-direction:column;width:100%}
 `;
 
@@ -76,7 +78,8 @@ export function loginPage(error?: string) {
       <h1>Panel de soporte</h1>
       ${error ? html`<p class="flash error">${error}</p>` : ""}
       <form method="post" action="/api/admin/login">
-        <input type="password" name="password" placeholder="Contraseña" autofocus required />
+        <input type="password" name="password" placeholder="Contraseña" aria-label="Contraseña"
+          autocomplete="current-password" autofocus required />
         <button type="submit">Entrar</button>
       </form>
     </div>`,
@@ -145,15 +148,16 @@ function usersTable(users: AdminUser[] | null) {
           <td>
             ${
               u.hasAccount
-                ? html`<form method="post" action="/api/admin/users/${u.id}/password">
+                ? html`<form method="post" action="/api/admin/users/${encodeURIComponent(u.id)}/password">
                     <button class="sec" type="submit">Resetear contraseña</button>
                   </form>`
                 : ""
             }
             ${
               u.hasPin
-                ? html`<form method="post" action="/api/admin/users/${u.id}/pin">
-                    <input name="pin" inputmode="numeric" pattern="[0-9]{4,6}"
+                ? html`<form method="post" action="/api/admin/users/${encodeURIComponent(u.id)}/pin">
+                    <input name="pin" inputmode="numeric" pattern="[0-9]{4,6}" maxlength="6"
+                      autocomplete="off" aria-label="PIN nuevo de ${u.name}"
                       placeholder="PIN nuevo" required />
                     <button class="sec" type="submit">Resetear PIN</button>
                   </form>`
@@ -173,7 +177,7 @@ function backupsTable(backups: Backup[]) {
       (b) => html`<tr>
         <td>${when(b.modifiedAt)}</td>
         <td>${bytes(b.size)}</td>
-        <td><a href="/api/admin/backups/${b.name}">Descargar</a></td>
+        <td><a href="/api/admin/backups/${encodeURIComponent(b.name)}">Descargar</a></td>
       </tr>`,
     )}
   </table>`;

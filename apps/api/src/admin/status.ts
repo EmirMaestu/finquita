@@ -31,7 +31,9 @@ export async function listBackups(dir: string): Promise<Backup[]> {
   }
   const out: Backup[] = [];
   for (const name of names.filter((n) => BACKUP_RE.test(n))) {
-    const s = await stat(join(dir, name));
+    // Si la borraron entre readdir y stat, se saltea.
+    const s = await stat(join(dir, name)).catch(() => null);
+    if (!s) continue;
     out.push({ name, size: s.size, modifiedAt: s.mtime });
   }
   return out.sort((a, b) => b.name.localeCompare(a.name));

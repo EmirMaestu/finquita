@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
+import { type AdminConfig, adminConfigFromEnv } from "./admin/session";
 import { type Actor, type Device, resolveActor } from "./auth/actor";
 import { type Auth, type AuthConfig, authConfigFromEnv, createAuth } from "./auth/better-auth";
 import type { Authorization } from "./auth/permissions";
@@ -10,6 +11,7 @@ import { EventHub } from "./lib/events";
 import { log } from "./lib/log";
 import { OffClient, type OffConfig, offConfigFromEnv } from "./lib/off";
 import { validationError } from "./lib/validate";
+import { adminRoutes } from "./routes/admin";
 import { alertRoutes } from "./routes/alerts";
 import { auditRoutes } from "./routes/audit";
 import { authRoutes } from "./routes/auth";
@@ -37,7 +39,13 @@ import { stockRoutes } from "./routes/stock";
 import { supplierRoutes } from "./routes/suppliers";
 import { syncRoutes } from "./routes/sync";
 
-export type AppDeps = { db: Db; auth?: AuthConfig; events?: EventHub; off?: Partial<OffConfig> };
+export type AppDeps = {
+  db: Db;
+  auth?: AuthConfig;
+  events?: EventHub;
+  off?: Partial<OffConfig>;
+  admin?: Partial<AdminConfig>;
+};
 
 export type AppEnv = {
   Variables: {
@@ -54,7 +62,14 @@ export type AppEnv = {
 
 export function createApp(deps: AppDeps) {
   const app = new Hono<AppEnv>();
-  const auth = createAuth(deps.db, deps.auth ?? authConfigFromEnv());
+  const authConfig = deps.auth ?? authConfigFromEnv();
+  const auth = createAuth(deps.db, authConfig);
+  const admin: AdminConfig = {
+    ...adminConfigFromEnv(),
+    secret: authConfig.secret,
+    origin: new URL(authConfig.baseURL).origin,
+    ...deps.admin,
+  };
   const events = deps.events ?? new EventHub();
   const off = new OffClient(deps.db, { ...offConfigFromEnv(), ...deps.off });
 
@@ -109,6 +124,9 @@ export function createApp(deps: AppDeps) {
   });
 
   app.on(["GET", "POST"], "/api/auth/*", (c) => auth.handler(c.req.raw));
+
+  // Panel de soporte: va antes de resolveActor (no usa dispositivos ni PIN).
+  app.route("/api/admin", adminRoutes(admin));
 
   app.use("/api/*", resolveActor());
   app.route("/api", authRoutes);

@@ -34,6 +34,7 @@ describe("cookie de sesión", () => {
     const [exp, sig] = signSession(cfg).split(".");
     expect(verifySession(cfg, `${Number(exp) + 1000}.${sig}`)).toBe(false);
     expect(verifySession(cfg, "basura")).toBe(false);
+    expect(verifySession(cfg, `${exp}.${sig}.extra`)).toBe(false);
     expect(verifySession(cfg, undefined)).toBe(false);
   });
 

@@ -41,6 +41,26 @@ export class TestClient {
     return { status: res.status, body: data as any };
   }
 
+  async form(path: string, fields: Record<string, string>, origin = ORIGIN) {
+    const h: Record<string, string> = {
+      origin,
+      "content-type": "application/x-www-form-urlencoded",
+    };
+    if (this.cookies.size) h.cookie = [...this.cookies].map(([k, v]) => `${k}=${v}`).join("; ");
+    const res = await this.app.request(`http://localhost${path}`, {
+      method: "POST",
+      headers: h,
+      body: new URLSearchParams(fields).toString(),
+      redirect: "manual",
+    });
+    for (const c of res.headers.getSetCookie()) {
+      const [pair] = c.split(";");
+      const [k, ...v] = (pair ?? "").split("=");
+      if (k) this.cookies.set(k.trim(), v.join("="));
+    }
+    return { status: res.status, location: res.headers.get("location"), body: await res.text() };
+  }
+
   get(path: string) {
     return this.request("GET", path);
   }

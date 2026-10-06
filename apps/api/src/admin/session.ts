@@ -54,7 +54,9 @@ export function signSession(cfg: AdminConfig, now = Date.now()): string {
 
 export function verifySession(cfg: AdminConfig, value: string | undefined, now = Date.now()) {
   if (!cfg.password || !value) return false;
-  const [exp, sig] = value.split(".");
+  const parts = value.split(".");
+  if (parts.length !== 2) return false;
+  const [exp, sig] = parts;
   if (!exp || !sig || !/^\d+$/.test(exp) || Number(exp) <= now) return false;
   return safeEqual(sig, sign(cfg, exp));
 }
