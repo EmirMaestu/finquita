@@ -14,6 +14,8 @@ import { fetchCategories, type ProductDetail, type ProductItem } from "../../dat
 import { Button } from "../../ui/Button";
 import { SelectField, TextField, Toggle } from "../../ui/Field";
 import { Sheet } from "../../ui/Sheet";
+import { toast } from "../../ui/toast";
+import { saveSupplierLink, useCanLinkSuppliers } from "./SupplierLinkSheet";
 
 type Props = {
   open: boolean;
@@ -30,6 +32,14 @@ export function ProductForm({ open, onClose, product, onSaved, initialCode }: Pr
   const seeCosts = useCan("view_costs");
   const cats = useQuery({ queryKey: ["categories"], queryFn: fetchCategories, enabled: open });
   const editing = Boolean(product);
+  const canLink = useCanLinkSuppliers();
+  const suppliers = useQuery({
+    queryKey: ["suppliers-light"],
+    queryFn: () => api<{ id: string; name: string }[]>("/api/suppliers?light=1"),
+    enabled: open && !editing && canLink,
+  });
+  const [supplierId, setSupplierId] = useState("");
+  const [supplierCode, setSupplierCode] = useState("");
   const [name, setName] = useState(product?.name ?? "");
   const [categoryId, setCategoryId] = useState(product?.categoryId ?? "");
   const [price, setPrice] = useState(moneyInput(product?.priceCents));
@@ -75,9 +85,28 @@ export function ProductForm({ open, onClose, product, onSaved, initialCode }: Pr
         .filter(Boolean);
       if (!product) {
         const stock = num(initialStock);
-        return api<ProductItem>("/api/products", {
+        const created = await api<ProductItem>("/api/products", {
           body: { ...changes, barcodes, ...(stock ? { initialStock: stock } : {}) },
         });
+        if (supplierId) {
+          // El producto ya existe: si falla el vínculo, se avisa y se agrega desde la ficha.
+          try {
+            await saveSupplierLink(supplierId, {
+              productId: created.id,
+              supplierCode: supplierCode.trim() || null,
+              isPrimary: true,
+              ...(seeCosts && costCents != null ? { costCents } : {}),
+            });
+            await qc.invalidateQueries({ queryKey: ["supplier", supplierId] });
+          } catch {
+            toast({
+              text: "Producto guardado, pero no se pudo vincular el proveedor. Agregalo desde la ficha, en Proveedores.",
+              tone: "error",
+              ms: 8000,
+            });
+          }
+        }
+        return created;
       }
       const updated = await api<ProductItem>(`/api/products/${product.id}`, {
         method: "PATCH",
@@ -204,6 +233,36 @@ export function ProductForm({ open, onClose, product, onSaved, initialCode }: Pr
           placeholder="1042"
           hint="Para pesables y botones rápidos."
         />
+        {!editing && canLink && (
+          <>
+            <SelectField
+              label="Proveedor principal"
+              value={supplierId}
+              onChange={(e) => setSupplierId(e.target.value)}
+              hint={
+                suppliers.isError
+                  ? "No pudimos traer los proveedores. Lo podés agregar después desde la ficha."
+                  : "Opcional. Lo usa el pedido sugerido."
+              }
+            >
+              <option value="">{suppliers.isPending ? "Cargando…" : "Sin proveedor"}</option>
+              {(suppliers.data ?? []).map((x) => (
+                <option key={x.id} value={x.id}>
+                  {x.name}
+                </option>
+              ))}
+            </SelectField>
+            <TextField
+              label="Código del proveedor"
+              value={supplierCode}
+              onChange={(e) => setSupplierCode(e.target.value)}
+              placeholder="YPL-1K"
+              maxLength={40}
+              disabled={!supplierId}
+              hint={supplierId ? "Opcional." : "Elegí primero el proveedor."}
+            />
+          </>
+        )}
         <TextField
           label="Stock mínimo"
           inputMode="decimal"

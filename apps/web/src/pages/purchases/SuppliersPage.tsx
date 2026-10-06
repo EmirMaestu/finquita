@@ -1,6 +1,6 @@
 import { formatDate, formatMoney, formatQty } from "@mostrador/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { MessageCircle } from "lucide-react";
+import { MessageCircle, Star } from "lucide-react";
 import { useState } from "react";
 import { useCan } from "../../app/session";
 import { ApiError, api } from "../../data/api";
@@ -10,6 +10,11 @@ import { cx } from "../../ui/cx";
 import { SelectField, TextField } from "../../ui/Field";
 import { Sheet } from "../../ui/Sheet";
 import { EmptyState, ErrorState, SkeletonList } from "../../ui/States";
+import {
+  type SupplierLink,
+  SupplierLinkSheet,
+  useCanLinkSuppliers,
+} from "../products/SupplierLinkSheet";
 import { PurchasesTabs } from "./PurchasesTabs";
 
 export type Supplier = {
@@ -210,6 +215,8 @@ function SupplierForm({ supplier, onClose }: { supplier?: Supplier | null; onClo
 
 function SupplierDetailView({ id, onEdit }: { id: string; onEdit: (s: Supplier) => void }) {
   const canEdit = useCan("build_orders");
+  const canLink = useCanLinkSuppliers();
+  const [link, setLink] = useState<{ link: SupplierLink | null } | null>(null);
   const q = useQuery({
     queryKey: ["supplier", id],
     queryFn: () => api<SupplierDetail>(`/api/suppliers/${id}`),
@@ -268,20 +275,62 @@ function SupplierDetailView({ id, onEdit }: { id: string; onEdit: (s: Supplier) 
           Sin WhatsApp: los pedidos salen en PDF o texto para copiar.
         </span>
       )}
-      <div className="mt-2 text-xs font-semibold tracking-[.06em] text-texto-suave uppercase">
-        Productos · {s.products.length}
+      <div className="mt-2 flex items-center gap-2">
+        <span className="flex-1 text-xs font-semibold tracking-[.06em] text-texto-suave uppercase">
+          Productos · {s.products.length}
+        </span>
+        {canLink && (
+          <Button variant="secondary" onClick={() => setLink({ link: null })}>
+            Agregar producto
+          </Button>
+        )}
       </div>
-      <ul className="m-0 list-none p-0">
+      {s.products.length === 0 && (
+        <span className="text-texto-suave">
+          Todavía no tiene productos. Vinculalos para armar los pedidos sugeridos.
+        </span>
+      )}
+      <ul className="m-0 list-none p-0" aria-label="Productos del proveedor">
         {s.products.map((p) => (
-          <li key={p.productId} className="flex justify-between gap-2 border-t border-borde py-1.5">
-            <span>
-              {p.name}
-              <span className="text-texto-suave">
-                {p.supplierCode ? ` · ${p.supplierCode}` : ""} · stock{" "}
-                {formatQty(p.stockQty, p.saleUnit === "unit" ? "unit" : "kg")}
+          <li key={p.productId} className="flex items-center gap-2 border-t border-borde py-1.5">
+            <span className="min-w-0 flex-1">
+              <span className="flex flex-wrap items-center gap-1.5">
+                {p.name}
+                {p.isPrimary && (
+                  <Chip tone="primario" icon={Star}>
+                    Principal
+                  </Chip>
+                )}
+              </span>
+              <span className="block text-xs text-texto-suave">
+                {[
+                  p.supplierCode,
+                  p.packQty != null ? `bulto × ${formatQty(p.packQty)}` : null,
+                  `stock ${formatQty(p.stockQty, p.saleUnit === "unit" ? "unit" : "kg")}`,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
               </span>
             </span>
             {p.costCents != null && <span className="tnum">{formatMoney(p.costCents)}</span>}
+            {canLink && (
+              <Button
+                variant="ghost"
+                aria-label={`Editar ${p.name}`}
+                onClick={() =>
+                  setLink({
+                    link: {
+                      ...p,
+                      supplierId: s.id,
+                      supplierName: s.name,
+                      productName: p.name,
+                    },
+                  })
+                }
+              >
+                Editar
+              </Button>
+            )}
           </li>
         ))}
       </ul>
@@ -297,6 +346,14 @@ function SupplierDetailView({ id, onEdit }: { id: string; onEdit: (s: Supplier) 
             </div>
           ))}
         </>
+      )}
+      {link && (
+        <SupplierLinkSheet
+          from="supplier"
+          supplierId={s.id}
+          link={link.link}
+          onClose={() => setLink(null)}
+        />
       )}
     </div>
   );

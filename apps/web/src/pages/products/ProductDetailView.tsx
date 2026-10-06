@@ -1,14 +1,21 @@
 import { formatDate, formatMoney, formatPercent, formatQty, formatTime } from "@mostrador/shared";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Star } from "lucide-react";
 import { useState } from "react";
 import { useCan } from "../../app/session";
 import { fetchProduct, type ProductDetail } from "../../data/products";
 import { Button } from "../../ui/Button";
+import { Chip } from "../../ui/Chip";
 import { ErrorState, Skeleton } from "../../ui/States";
 import { Tabs } from "../../ui/Tabs";
 import { AdjustStockSheet } from "./AdjustStockSheet";
 import { ProductChips, StockChip } from "./StockChip";
+import {
+  type SupplierLink,
+  SupplierLinkSheet,
+  useCanLinkSuppliers,
+  useSupplierLinkActions,
+} from "./SupplierLinkSheet";
 
 type Tab = "general" | "precio" | "stock" | "proveedores" | "historial";
 
@@ -107,6 +114,9 @@ export function ProductDetailView({
   const canEdit = useCan("change_prices");
   const canAdjust = useCan("adjust_stock");
   const [adjust, setAdjust] = useState(initialAdjust ?? false);
+  const canLink = useCanLinkSuppliers();
+  const actions = useSupplierLinkActions();
+  const [link, setLink] = useState<{ link: SupplierLink | null } | null>(null);
   const q = useQuery({ queryKey: ["product", id], queryFn: () => fetchProduct(id) });
   if (q.isPending) {
     return (
@@ -296,18 +306,94 @@ export function ProductDetailView({
             ))}
           </>
         )}
-        {tab === "proveedores" &&
-          (p.suppliers.length ? (
-            p.suppliers.map((s) => (
-              <Row key={s.supplierId} label={s.name + (s.isPrimary ? " · principal" : "")}>
-                {[s.supplierCode, seeCosts && s.costCents != null ? formatMoney(s.costCents) : null]
-                  .filter(Boolean)
-                  .join(" · ") || "—"}
-              </Row>
-            ))
-          ) : (
-            <div className="text-texto-suave">Sin proveedor cargado.</div>
-          ))}
+        {tab === "proveedores" && (
+          <>
+            {p.suppliers.length ? (
+              <ul className="m-0 list-none p-0" aria-label="Proveedores del producto">
+                {p.suppliers.map((s) => (
+                  <li
+                    key={s.supplierId}
+                    className="flex flex-col gap-1.5 border-t border-borde py-2.5"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex min-w-0 flex-col gap-0.5">
+                        <span className="flex flex-wrap items-center gap-1.5 font-medium">
+                          {s.name}
+                          {s.isPrimary && (
+                            <Chip tone="primario" icon={Star}>
+                              Principal
+                            </Chip>
+                          )}
+                        </span>
+                        <span className="text-xs text-texto-suave">
+                          {[
+                            s.supplierCode ? `Código ${s.supplierCode}` : "Sin código",
+                            s.packQty != null ? `bulto × ${formatQty(s.packQty)}` : null,
+                          ]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </span>
+                      </div>
+                      {seeCosts && (
+                        <span className="tnum shrink-0 font-semibold">
+                          {s.costCents != null ? formatMoney(s.costCents) : "Sin costo"}
+                        </span>
+                      )}
+                    </div>
+                    {canLink && (
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          variant="secondary"
+                          onClick={() =>
+                            setLink({
+                              link: {
+                                ...s,
+                                productId: p.id,
+                                supplierName: s.name,
+                                productName: p.name,
+                              },
+                            })
+                          }
+                        >
+                          Editar
+                        </Button>
+                        {!s.isPrimary && (
+                          <Button
+                            variant="ghost"
+                            disabled={actions.save.isPending}
+                            onClick={() =>
+                              actions.makePrimary({
+                                ...s,
+                                productId: p.id,
+                                supplierName: s.name,
+                              })
+                            }
+                          >
+                            Hacer principal
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="text-texto-suave">
+                Sin proveedor cargado.
+                {canLink ? " Agregá a quién se lo comprás para armar los pedidos." : ""}
+              </div>
+            )}
+            {canLink && (
+              <Button
+                variant="secondary"
+                className="self-start"
+                onClick={() => setLink({ link: null })}
+              >
+                Agregar proveedor
+              </Button>
+            )}
+          </>
+        )}
         {tab === "historial" &&
           (p.history.length ? (
             p.history.map((h) => (
@@ -337,6 +423,16 @@ export function ProductDetailView({
         </div>
       )}
       {adjust && <AdjustStockSheet productId={p.id} onClose={() => setAdjust(false)} />}
+      {link && (
+        <SupplierLinkSheet
+          from="product"
+          productId={p.id}
+          link={link.link}
+          firstLink={p.suppliers.length === 0}
+          takenIds={p.suppliers.map((s) => s.supplierId)}
+          onClose={() => setLink(null)}
+        />
+      )}
     </div>
   );
 }
