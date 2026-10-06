@@ -21,7 +21,10 @@ set -euo pipefail
 cd /opt/mostrador
 rm -rf src && mkdir src && tar -xzf /tmp/mostrador-up/src.tar.gz -C src
 cp /tmp/mostrador-up/compose.yml /tmp/mostrador-up/backup.sh . && chmod +x backup.sh
-sed -i '/^APP_VERSION=/d' .env && echo "APP_VERSION=$TAG" >> .env
+sed -i '/^APP_VERSION=/d' .env
+# Si .env no termina en salto de línea, sin esto APP_VERSION se pegaría a la última variable.
+[ -z "$(tail -c1 .env)" ] || echo >> .env
+echo "APP_VERSION=$TAG" >> .env
 docker compose up -d --build
 for i in $(seq 1 30); do curl -sf -m 3 http://127.0.0.1:3100/api/health >/dev/null && break; sleep 2; done
 curl -sf -m 3 http://127.0.0.1:3100/api/health

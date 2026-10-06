@@ -103,6 +103,7 @@ export async function resetPassword(db: Db, memberId: string, now = new Date()):
 export async function resetPin(db: Db, memberId: string, pin: string, now = new Date()) {
   if (!PIN_RE.test(pin)) throw new AdminError("El PIN tiene que tener de 4 a 6 números.");
   const m = await findMember(db, memberId);
+  if (!m.pinHash) throw new AdminError(`${m.name} no tiene PIN.`);
   const pinHash = await hashPin(pin);
   await db.transaction(async (tx) => {
     await tx

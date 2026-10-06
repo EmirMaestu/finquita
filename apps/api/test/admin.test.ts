@@ -272,3 +272,13 @@ describe("rutas del panel", () => {
     expect((await c.get("/api/admin")).status).toBe(302);
   });
 });
+
+describe("reset de PIN sin PIN previo", () => {
+  it("no le pone PIN a quien no tenía", async () => {
+    await ref.t.db
+      .update(members)
+      .set({ pinHash: null })
+      .where(eq(members.id, memberId("nico")));
+    await expect(resetPin(ref.t.db, memberId("nico"), "1357")).rejects.toBeInstanceOf(AdminError);
+  });
+});
