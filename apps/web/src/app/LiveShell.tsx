@@ -1,6 +1,6 @@
 import { formatTime } from "@mostrador/shared";
-import { useQuery } from "@tanstack/react-query";
-import type { ReactNode } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { type ReactNode, useEffect, useRef } from "react";
 import { useRegister } from "../cash/useRegister";
 import { api } from "../data/api";
 import { useSyncStatus } from "../sync/status";
@@ -10,6 +10,17 @@ import { defaultShell, ShellProvider, type ShellState } from "./shell";
 export function LiveShell({ base, children }: { base?: Partial<ShellState>; children: ReactNode }) {
   const sync = useSyncStatus();
   const reg = useRegister();
+  const qc = useQueryClient();
+  // Cada vez que la copia local cambia (un ajuste, una recepción o un ciclo de sincronización),
+  // la lista y la ficha de productos se vuelven a pedir: así el stock nuevo aparece enseguida.
+  // Solo se refrescan las consultas que están en pantalla.
+  const lastVersion = useRef(sync.version);
+  useEffect(() => {
+    if (sync.version === lastVersion.current) return;
+    lastVersion.current = sync.version;
+    void qc.invalidateQueries({ queryKey: ["products"] });
+    void qc.invalidateQueries({ queryKey: ["product"] });
+  }, [sync.version, qc]);
   // Campana: avisos sin leer (se mira cada minuto y al volver a la app).
   const alerts = useQuery({
     queryKey: ["alerts-count"],

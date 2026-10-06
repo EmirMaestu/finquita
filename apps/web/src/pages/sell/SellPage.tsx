@@ -735,6 +735,7 @@ export function SellPage() {
             onSelect={(id) => sale.set({ selected: id })}
             warnings={warnings}
             onDismissWarning={(id) => setWarnings((w) => w.filter((x) => x.lineId !== id))}
+            onQty={(id, dir) => sale.setCart(bumpQty(cart, id, dir))}
             onRemove={(id) => {
               sale.setCart(removeLine(cart, id), null);
               setWarnings((w) => w.filter((x) => x.lineId !== id));
