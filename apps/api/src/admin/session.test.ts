@@ -75,4 +75,33 @@ describe("bloqueo por intentos", () => {
     l.fail("ip", 0);
     expect(l.blocked("ip", 0)).toBe(false);
   });
+
+  it("attempt cuenta en el momento: el sexto intento seguido ya no pasa", () => {
+    const l = new LoginLimiter();
+    const results = Array.from({ length: 7 }, () => l.attempt("ip", 0));
+    expect(results).toEqual([true, true, true, true, true, false, false]);
+  });
+
+  it("attempt no bloquea si un ingreso bueno limpió la cuenta antes", () => {
+    const l = new LoginLimiter();
+    for (let i = 0; i < 4; i++) l.attempt("ip", 0);
+    l.success("ip");
+    for (let i = 0; i < 4; i++) expect(l.attempt("ip", 0)).toBe(true);
+  });
+
+  it("saca la entrada cuando el bloqueo venció", () => {
+    const l = new LoginLimiter();
+    for (let i = 0; i < 5; i++) l.attempt("ip", 0);
+    expect(l.size).toBe(1);
+    expect(l.blocked("ip", 15 * 60_000 + 1)).toBe(false);
+    expect(l.size).toBe(0);
+  });
+
+  it("barre las entradas viejas cuando el mapa pasa de mil", () => {
+    const l = new LoginLimiter();
+    for (let i = 0; i < 1001; i++) l.attempt(`ip-${i}`, 0);
+    expect(l.size).toBe(1001);
+    l.attempt("nueva", 16 * 60_000);
+    expect(l.size).toBe(1);
+  });
 });

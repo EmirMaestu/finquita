@@ -207,6 +207,21 @@ describe("rutas del panel", () => {
     expect((await c.form("/api/admin/login", { password: ADMIN_PW })).status).toBe(429);
   });
 
+  it("diez intentos en paralelo: solo cinco llegan a comparar, el resto da 429", async () => {
+    const c = new TestClient(adminApp());
+    const rs = await Promise.all(
+      Array.from({ length: 10 }, () => c.form("/api/admin/login", { password: "mala" })),
+    );
+    expect(rs.filter((r) => r.status === 401)).toHaveLength(5);
+    expect(rs.filter((r) => r.status === 429)).toHaveLength(5);
+  });
+
+  it("un id de persona mal formado da 400 y no un 500", async () => {
+    const c = await loggedIn();
+    const r = await c.form("/api/admin/users/not-a-uuid/pin", { pin: "1111" });
+    expect(r.status).toBe(400);
+  });
+
   it("un formulario desde otro origen da 403", async () => {
     const c = await loggedIn();
     const r = await c.form(

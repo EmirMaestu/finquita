@@ -54,13 +54,13 @@ export function adminRoutes(cfg: AdminConfig) {
 
   r.post("/login", async (c) => {
     const ip = clientIp(c.req.header("x-forwarded-for"));
-    if (limiter.blocked(ip)) {
+    // Se cuenta antes de cualquier await; si no, los pedidos en paralelo se saltean el límite.
+    if (!limiter.attempt(ip)) {
       return c.html(loginPage("Demasiados intentos. Probá de nuevo en 15 minutos."), 429);
     }
     const body = await c.req.parseBody();
     const password = typeof body.password === "string" ? body.password : "";
     if (!checkPassword(cfg, password)) {
-      limiter.fail(ip);
       log.warn("panel de admin: contraseña incorrecta", { ip });
       return c.html(loginPage("Contraseña incorrecta."), 401);
     }

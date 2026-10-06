@@ -67,23 +67,57 @@ export function checkPassword(cfg: AdminConfig, input: string): boolean {
 
 /** Cinco intentos fallidos desde una IP la bloquean 15 minutos (en memoria: una sola API). */
 export class LoginLimiter {
-  private fails = new Map<string, { count: number; until: number }>();
+  private fails = new Map<string, { count: number; until: number; last: number }>();
 
   constructor(
     private max = 5,
     private lockMs = 15 * 60_000,
   ) {}
 
+  /** Cantidad de IPs que se están recordando (para tests). */
+  get size(): number {
+    return this.fails.size;
+  }
+
+  /** Borra la entrada de esta IP si el bloqueo ya venció. */
+  private expire(ip: string, now: number) {
+    const f = this.fails.get(ip);
+    if (f && f.count >= this.max && f.until <= now) this.fails.delete(ip);
+  }
+
+  /** Cuando el mapa crece de más, saca lo vencido y lo viejo sin bloqueo. */
+  private sweep(now: number) {
+    if (this.fails.size <= 1000) return;
+    for (const [ip, f] of this.fails) {
+      const lockExpired = f.count >= this.max && f.until <= now;
+      const stale = f.until === 0 && now - f.last > 15 * 60_000;
+      if (lockExpired || stale) this.fails.delete(ip);
+    }
+  }
+
   blocked(ip: string, now = Date.now()): boolean {
+    this.expire(ip, now);
     const f = this.fails.get(ip);
     return !!f && f.until > now;
+  }
+
+  /**
+   * Cuenta el intento en el momento, sin esperar a saber si la contraseña era buena:
+   * así los pedidos en paralelo no se saltean el límite. Devuelve false si está bloqueada.
+   * Un ingreso bueno tiene que llamar a success() para limpiar la cuenta.
+   */
+  attempt(ip: string, now = Date.now()): boolean {
+    if (this.blocked(ip, now)) return false;
+    this.sweep(now);
+    this.fail(ip, now);
+    return true;
   }
 
   fail(ip: string, now = Date.now()): void {
     const prev = this.fails.get(ip);
     const expired = prev && prev.count >= this.max && prev.until <= now;
     const count = expired ? 1 : (prev?.count ?? 0) + 1;
-    this.fails.set(ip, { count, until: count >= this.max ? now + this.lockMs : 0 });
+    this.fails.set(ip, { count, until: count >= this.max ? now + this.lockMs : 0, last: now });
   }
 
   success(ip: string): void {

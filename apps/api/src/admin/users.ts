@@ -63,7 +63,11 @@ export async function listUsers(db: Db): Promise<AdminUser[]> {
     .sort((a, b) => ROLE_ORDER[a.role] - ROLE_ORDER[b.role] || a.name.localeCompare(b.name));
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 async function findMember(db: Db, memberId: string) {
+  // Un id mal formado no tiene que llegar a Postgres (daría un 500).
+  if (!UUID_RE.test(memberId)) throw new AdminError("Esa persona no existe.");
   const [m] = await db.select().from(members).where(eq(members.id, memberId)).limit(1);
   if (!m) throw new AdminError("Esa persona no existe.");
   return m;
