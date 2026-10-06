@@ -1,0 +1,70 @@
+# Mostrador (finquita.emir-maestu.com) en el VPS compartido.
+# Caddy del host sirve la web desde /var/www/mostrador y manda /api a 127.0.0.1:3100.
+# Uso: cd /opt/mostrador && docker compose up -d --build
+name: mostrador-prod
+
+x-logging: &logging
+  driver: json-file
+  options: { max-size: "10m", max-file: "5" }
+
+x-app-env: &app-env
+  DATABASE_URL: postgres://mostrador:${POSTGRES_PASSWORD}@postgres:5432/mostrador
+  BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+  BETTER_AUTH_URL: https://${DOMAIN}
+  VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY}
+  VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY}
+  VAPID_SUBJECT: ${VAPID_SUBJECT}
+  OFF_USER_AGENT: ${OFF_USER_AGENT}
+  FILES_DIR: /data/files
+  LOG_LEVEL: info
+  TZ: America/Argentina/Buenos_Aires
+
+services:
+  api:
+    build: { context: ./src, dockerfile: apps/api/Dockerfile }
+    image: mostrador/api:local
+    restart: unless-stopped
+    environment:
+      <<: *app-env
+      PORT: "3000"
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      APP_VERSION: ${APP_VERSION:-dev}
+      BACKUPS_DIR: /backups
+    ports: ["127.0.0.1:3100:3000"]
+    volumes:
+      - files:/data/files
+      - /opt/mostrador/backups:/backups:ro
+    depends_on: { postgres: { condition: service_healthy } }
+    mem_limit: 768m
+    logging: *logging
+
+  worker:
+    image: mostrador/api:local
+    restart: unless-stopped
+    command: ["bun", "src/worker.ts"]
+    environment: *app-env
+    volumes: [files:/data/files]
+    depends_on: { postgres: { condition: service_healthy }, api: { condition: service_started } }
+    mem_limit: 384m
+    logging: *logging
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: mostrador
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: mostrador
+      TZ: America/Argentina/Buenos_Aires
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mostrador -d mostrador"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    mem_limit: 512m
+    logging: *logging
+
+volumes:
+  pgdata:
+  files:

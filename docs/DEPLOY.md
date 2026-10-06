@@ -74,3 +74,16 @@ Entrar a `https://almacen.tudominio.com`, crear la cuenta del dueño y seguir lo
 ## Monitoreo
 
 Uptime Kuma revisa `https://almacen.tudominio.com/api/health` cada minuto y avisa si se cae, y recibe el ping de las copias.
+
+## VPS compartido (finquita.emir-maestu.com)
+
+Mostrador corre en el mismo VPS que otros sitios, detrás del Caddy del sistema (no el de este compose):
+
+- `/opt/mostrador`: `compose.yml` (proyecto `mostrador-prod`: postgres, api en `127.0.0.1:3100`, worker), `.env` (600) y `backups/`.
+- `/var/www/mostrador`: la web compilada. `/etc/caddy/mostrador.caddy`, importado desde el Caddyfile.
+- Copia diaria a las 04:30 (`backup.sh` por cron, guarda 30).
+- Deploy desde la PC: `bash infra/vps/deploy.sh` (commit limpio).
+
+### Panel de soporte
+
+`https://finquita.emir-maestu.com/api/admin`, con la contraseña `ADMIN_PASSWORD` del `.env` del VPS (16 caracteres o más; sin ella el panel no existe). Muestra el estado, permite resetear contraseñas y PIN (queda en la auditoría) y bajar las copias. Para cambiar la contraseña: editar `.env` y `docker compose up -d api`.
