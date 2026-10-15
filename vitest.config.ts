@@ -1,4 +1,5 @@
 import { defineConfig } from "vitest/config";
+import "./scripts/load-env.ts";
 
 export default defineConfig({
   test: {

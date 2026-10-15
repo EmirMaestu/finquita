@@ -42,7 +42,22 @@ Para las notificaciones push hacen falta claves VAPID en `.env` (`bunx web-push 
 | `bun run db:migrate` · `bun run db:seed` | Migraciones y datos de ejemplo |
 | `bun run fix` | Corrige formato y lint |
 
-Las pruebas de integración usan `TEST_DATABASE_URL` (una base por archivo, copiada de una plantilla ya migrada). Los e2e crean sus bases `mostrador_e2e` y `mostrador_e2e_vacio`.
+Las pruebas de integración usan `TEST_DATABASE_URL` (una base por archivo, copiada de una plantilla ya migrada). Los e2e crean sus bases `mostrador_e2e` y `mostrador_e2e_vacio` en el Postgres de `DATABASE_URL` (host y puerto incluidos). Vitest y Playwright toman esas variables del entorno y, si no están, del `.env` de la raíz (`scripts/load-env.ts`; lo que ya viene definido en el entorno manda).
+
+### Varios agentes en paralelo (`E2E_SLOT`)
+
+Para correr hasta tres agentes a la vez en worktrees de la misma máquina, cada uno usa un "slot" `N` (1, 2, 3) con su propio cluster de Postgres en el puerto `544N`; `main` sigue en el 5432.
+
+- Cada worktree tiene su `.env` apuntando a su cluster: `DATABASE_URL=postgres://mostrador:mostrador@localhost:544N/mostrador` y `TEST_DATABASE_URL=...:544N/mostrador_test`.
+- `E2E_SLOT=N bun run e2e` suma `N*10` a los cuatro puertos (API 3100/3101, web 5174/5175) y agrega el sufijo `_aN` a las bases (`mostrador_e2e_aN`, `mostrador_e2e_vacio_aN`). Las URLs salen de esos puertos; todo está en `e2e/env.ts`.
+- Sin `E2E_SLOT` (o con 0) queda el comportamiento de siempre.
+
+| Slot | Postgres | API | Web | Bases |
+| --- | --- | --- | --- | --- |
+| 0 (main) | 5432 | 3100 / 3101 | 5174 / 5175 | `mostrador_e2e`, `mostrador_e2e_vacio` |
+| 1 | 5441 | 3110 / 3111 | 5184 / 5185 | `mostrador_e2e_a1`, `mostrador_e2e_vacio_a1` |
+| 2 | 5442 | 3120 / 3121 | 5194 / 5195 | `mostrador_e2e_a2`, `mostrador_e2e_vacio_a2` |
+| 3 | 5443 | 3130 / 3131 | 5204 / 5205 | `mostrador_e2e_a3`, `mostrador_e2e_vacio_a3` |
 
 ## Producción
 
