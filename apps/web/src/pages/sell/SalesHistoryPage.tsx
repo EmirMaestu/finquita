@@ -27,6 +27,7 @@ import { Button } from "../../ui/Button";
 import { Chip, FilterChip } from "../../ui/Chip";
 import { cx } from "../../ui/cx";
 import { SelectField, TextField } from "../../ui/Field";
+import { Key } from "../../ui/Key";
 import { Sheet } from "../../ui/Sheet";
 import { EmptyState, ErrorState, OfflineBanner, SkeletonList } from "../../ui/States";
 import { Stepper } from "../../ui/Stepper";
@@ -296,7 +297,7 @@ function VoidDialog({ sale, onClose }: { sale: SaleDetail; onClose: () => void }
       footer={
         <>
           <Button variant="secondary" onClick={onClose} className="flex-1">
-            Cancelar · Esc
+            Cancelar <Key>Esc</Key>
           </Button>
           <Button
             variant="danger"

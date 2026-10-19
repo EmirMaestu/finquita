@@ -15,6 +15,7 @@ import { Checkbox } from "../../ui/Checkbox";
 import { Chip, FilterChip } from "../../ui/Chip";
 import { cx } from "../../ui/cx";
 import { SelectField, TextField } from "../../ui/Field";
+import { Key } from "../../ui/Key";
 import { NumPad } from "../../ui/NumPad";
 import { Sheet } from "../../ui/Sheet";
 import { EmptyState, ErrorState, SkeletonList } from "../../ui/States";
@@ -275,7 +276,7 @@ function QtyEntry({
         </div>
         <NumPad onKey={onKey} decimal={kg} big />
         <Button size="xl" disabled={!typed} onClick={() => onSave(n)}>
-          Guardar · ⏎
+          Guardar <Key>⏎</Key>
         </Button>
       </div>
     </Sheet>

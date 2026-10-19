@@ -52,7 +52,10 @@ export function SaleDone({
         {changeCents > 0 ? `Vuelto ${formatMoney(changeCents)}` : "Listo"}
       </span>
       {ticket && <span className="text-[15px] opacity-85">{ticket}</span>}
-      <span className="mt-10 text-sm opacity-75">Cualquier tecla para la próxima venta</span>
+      <span className="mt-10 text-sm opacity-75">
+        <span className="lg:hidden">Tocá para la próxima venta</span>
+        <span className="hidden lg:inline">Cualquier tecla para la próxima venta</span>
+      </span>
     </button>
   );
 }

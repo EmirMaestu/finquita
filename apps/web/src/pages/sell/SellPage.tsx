@@ -39,6 +39,7 @@ import { useSyncStatus } from "../../sync/status";
 import { Button } from "../../ui/Button";
 import { cx } from "../../ui/cx";
 import { TextField } from "../../ui/Field";
+import { Key } from "../../ui/Key";
 import { Sheet } from "../../ui/Sheet";
 import { toast } from "../../ui/toast";
 import { MovementSheet } from "../cash/MovementSheet";
@@ -92,17 +93,28 @@ function DiscountDialog({
 }) {
   const [value, setValue] = useState("");
   const pct = value.trim().endsWith("%");
-  const n = pct ? Number(value.replace("%", "").replace(",", ".")) : null;
+  const n = pct ? Number(value.replace("%", "").replace(",", ".").trim()) : null;
   const cents = pct
-    ? discountFor(subtotalCents, { percentBp: Math.round((n ?? 0) * 100) })
+    ? Number.isFinite(n)
+      ? discountFor(subtotalCents, { percentBp: Math.round((n ?? 0) * 100) })
+      : 0
     : (parseMoney(value) ?? 0);
+  // Un descuento va de $ 0 al subtotal: ni negativo (sería un recargo) ni más que la venta.
+  const error = !value.trim()
+    ? null
+    : cents <= 0
+      ? "Poné un descuento mayor que $ 0 (por ejemplo, 10% o 500)."
+      : cents > subtotalCents
+        ? `El descuento no puede superar el subtotal (${formatMoney(subtotalCents)}).`
+        : null;
+  const valid = Boolean(value.trim()) && !error;
   return (
     <Sheet open onClose={onClose} title="Descuento">
       <form
         className="flex flex-col gap-3"
         onSubmit={(e) => {
           e.preventDefault();
-          onApply(Math.min(cents, subtotalCents));
+          if (valid) onApply(cents);
         }}
       >
         <TextField
@@ -110,10 +122,11 @@ function DiscountDialog({
           value={value}
           onChange={(e) => setValue(e.target.value)}
           placeholder="10% o 500"
-          hint={`${formatMoney(cents)} · tope sin PIN ${capBp / 100} %`}
+          hint={`${formatMoney(Math.max(0, cents))} · tope sin PIN ${capBp / 100} %`}
+          error={error}
         />
-        <Button type="submit" size="lg">
-          Aplicar · Enter
+        <Button type="submit" size="lg" disabled={!valid}>
+          Aplicar <Key>Enter</Key>
         </Button>
       </form>
     </Sheet>
@@ -318,12 +331,13 @@ export function SellPage() {
           surchargeCents,
           authorizedBy,
         });
-        const main = payments.reduce((a, b) => (b.amountCents > a.amountCents ? b : a));
         setDone({
           number: s.number,
           totalCents: s.totalCents,
           changeCents: s.changeCents,
-          method: METHOD_LABEL[main.method].toLowerCase(),
+          method: [...new Set(payments.map((p) => METHOD_LABEL[p.method].toLowerCase()))].join(
+            " + ",
+          ),
           ticket:
             output === "print"
               ? "Ticket impreso"

@@ -5,6 +5,7 @@ import type { LocalProduct } from "../../data/types";
 import type { HeldSale } from "../../sell/store";
 import { Button } from "../../ui/Button";
 import { TextField } from "../../ui/Field";
+import { Key } from "../../ui/Key";
 import { Sheet } from "../../ui/Sheet";
 import { QuickCreateForm } from "../products/QuickCreate";
 
@@ -51,7 +52,7 @@ export function MiscDialog({
           placeholder="Opcional"
         />
         <Button type="submit" size="lg" disabled={!valid}>
-          Agregar · Enter
+          Agregar <Key>Enter</Key>
         </Button>
       </form>
     </Sheet>

@@ -12,6 +12,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSettings } from "../../data/settings";
 import { Button } from "../../ui/Button";
 import { cx } from "../../ui/cx";
+import { Key } from "../../ui/Key";
 import { NumPad } from "../../ui/NumPad";
 
 type Tab = "cash" | "card" | "transfer" | "account";
@@ -22,18 +23,6 @@ const TABS: { id: Tab; label: string; icon: typeof Banknote; key: string }[] = [
   { id: "transfer", label: "Transferencia o QR", icon: QrCode, key: "Q" },
   { id: "account", label: "Fiado", icon: HandCoins, key: "F" },
 ];
-
-/** Pista de tecla solo en la compu (en el celular no hay teclado). */
-function Key({ children }: { children: string }) {
-  return (
-    <kbd
-      aria-hidden
-      className="hidden rounded border border-current/30 px-1.5 py-0.5 text-[11px] font-semibold opacity-70 lg:inline"
-    >
-      {children}
-    </kbd>
-  );
-}
 
 const BILLS = [100_000, 200_000, 1_000_000, 2_000_000];
 
@@ -108,8 +97,13 @@ export function PaymentDialog({
   const extra = pending?.surchargeCents ?? 0;
   /** Lo que todavía falta, contando lo que se está tipeando en el medio elegido. */
   const current = pending ? pending.amountCents - extra : 0;
-  // Con algo tipeado, "Falta" descuenta ese monto; sin tipear, muestra lo que falta.
+  // "Falta" es lo que queda después de los pagos ya agregados; con algo tipeado, descuenta eso.
+  // Sin pagos y sin tipear no se muestra: el medio elegido cubre justo el total.
   const stillDue = typed !== null ? Math.max(0, remaining - current) : remaining;
+  const showDue = payments.length > 0 || typed !== null;
+  // Lo que se muestra en grande: en efectivo, lo recibido; con otro medio, lo que se cobra
+  // (con el recargo incluido: es el número que va al posnet).
+  const shown = tab === "cash" ? current : (pending?.amountCents ?? 0);
   const projectedChange =
     tab === "cash" && pending ? Math.max(0, pending.amountCents - remaining) : changeCents;
 
@@ -259,7 +253,7 @@ export function PaymentDialog({
                 <span className="tnum font-semibold">{formatMoney(p.amountCents)}</span>
               </div>
             ))}
-            {stillDue > 0 ? (
+            {!showDue ? null : stillDue > 0 ? (
               <div className="flex justify-between rounded-lg bg-alerta-suave px-3 py-2.5 font-semibold text-alerta">
                 <span>Falta</span>
                 <span className="tnum">{formatMoney(stillDue)}</span>
@@ -463,14 +457,16 @@ export function PaymentDialog({
               <div className="flex min-h-[72px] flex-col justify-center rounded-lg border border-borde bg-fondo px-3.5 py-2.5">
                 <div className="text-xs text-texto-suave">
                   {tab === "cash"
-                    ? "Recibido en efectivo"
-                    : `Monto con ${METHOD_LABEL[method].toLowerCase()}`}
+                    ? typed === null
+                      ? "Recibido en efectivo · justo"
+                      : "Recibido en efectivo"
+                    : `Cobrá con ${METHOD_LABEL[method].toLowerCase()}${extra > 0 ? ` · incluye recargo ${formatMoney(extra)}` : ""}`}
                 </div>
                 <output
                   className="block tnum text-[32px] font-semibold tracking-[-.02em]"
                   aria-label="Monto"
                 >
-                  {formatMoney(current)}
+                  {formatMoney(shown)}
                 </output>
               </div>
               <NumPad onKey={onKey} keyboard />
@@ -485,7 +481,7 @@ export function PaymentDialog({
                     <button
                       key={b}
                       type="button"
-                      onClick={() => setTyped(String(b / 100))}
+                      onClick={() => setTyped((t) => String((Number(t ?? "0") || 0) + b / 100))}
                       className="h-12 rounded-lg border border-borde bg-superficie text-[15px] font-semibold hover:bg-neutro-suave"
                     >
                       {formatMoney(b)}
@@ -514,17 +510,22 @@ export function PaymentDialog({
           {blocked && remaining > 0 && (
             <div className="text-[13px] font-semibold text-alerta">{blocked}</div>
           )}
-          <Button
-            size="xl"
-            onClick={confirm}
-            disabled={busy || (remaining > 0 && Boolean(blocked))}
-            className="h-16 text-xl"
-          >
-            {remaining > 0 && current < remaining ? "Agregar pago" : "Confirmar cobro"}
-            <kbd aria-hidden className="hidden rounded bg-white/20 px-1.5 py-0.5 text-xs lg:inline">
-              Ctrl ⏎
-            </kbd>
-          </Button>
+          <div className="sticky -mx-5 -mb-5 bottom-0 bg-superficie px-5 pt-2 pb-5 lg:-mx-7 lg:-mb-7 lg:px-7 lg:pb-7">
+            <Button
+              size="xl"
+              onClick={confirm}
+              disabled={busy || (remaining > 0 && Boolean(blocked))}
+              className="h-16 w-full text-xl"
+            >
+              {remaining > 0 && current < remaining ? "Agregar pago" : "Confirmar cobro"}
+              <kbd
+                aria-hidden
+                className="hidden rounded bg-white/20 px-1.5 py-0.5 text-xs lg:inline"
+              >
+                Ctrl ⏎
+              </kbd>
+            </Button>
+          </div>
         </div>
       </div>
     </div>

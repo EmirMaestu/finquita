@@ -11,6 +11,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { LocalProduct } from "../../data/types";
 import { Button } from "../../ui/Button";
 import { cx } from "../../ui/cx";
+import { Key } from "../../ui/Key";
 import { NumPad } from "../../ui/NumPad";
 
 /** Gramos tipeados a kilos: "235" → 0,235 kg. */
@@ -169,6 +170,7 @@ export function WeightDialog({
           >
             <span className="text-xs text-texto-suave">
               {mode === "money" ? "Peso real que marca la balanza" : "Peso que marca la balanza"}
+              {" · en gramos: 350 = 0,350 kg"}
             </span>
             <span className="flex items-baseline justify-between">
               <output
@@ -212,12 +214,11 @@ export function WeightDialog({
             onClick={next}
             className="mt-auto"
           >
-            {mode === "money" && field === "money"
-              ? "Ya corté · ⏎"
-              : `Agregar ${formatMoney(amount)} · ⏎`}
+            {mode === "money" && field === "money" ? "Ya corté" : `Agregar ${formatMoney(amount)}`}
+            <Key>⏎</Key>
           </Button>
           <Button variant="ghost" onClick={onClose}>
-            Cancelar · Esc
+            Cancelar <Key>Esc</Key>
           </Button>
         </div>
       </div>
