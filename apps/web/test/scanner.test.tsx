@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { pluFromInternalBarcode } from "../src/data/catalog";
 import { createRepeatFilter } from "../src/scan/camera";
@@ -167,5 +167,119 @@ describe("cámara y planilla de códigos", () => {
   it("los códigos internos de la planilla empiezan con 2", () => {
     expect(pluFromInternalBarcode("2000000010014")).toBe("1001");
     expect(pluFromInternalBarcode("7791234000012")).toBeNull();
+  });
+});
+
+describe("pistola contra teclado: campos numéricos y teclados de diálogo", () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  it("en un campo numérico los dígitos nunca se frenan, aunque vayan rápido", () => {
+    const clock = { t: 0 };
+    const onScan = vi.fn();
+    const d = createScanDetector({ onScan, now: () => clock.t });
+    const used: boolean[] = [];
+    for (const key of "15000") {
+      clock.t += 5;
+      used.push(
+        d.keydown({ key, ctrlKey: false, metaKey: false, altKey: false }, { numeric: true }),
+      );
+    }
+    clock.t += 5;
+    d.keydown({ key: "Enter", ctrlKey: false, metaKey: false, altKey: false }, { numeric: true });
+    expect(used.every((u) => !u)).toBe(true);
+    expect(onScan).not.toHaveBeenCalled();
+  });
+
+  it("en el teclado del cobro, '10000' tipeado a 40 ms vuelve entero y no es un código", () => {
+    const clock = { t: 0 };
+    const onScan = vi.fn();
+    const onRelease = vi.fn();
+    const d = createScanDetector({ onScan, onRelease, now: () => clock.t, idleMs: 80 });
+    for (const key of "10000") {
+      clock.t += 40;
+      // Se frena desde el primer dígito (así la pistola no escribe en el monto)…
+      expect(
+        d.keydown({ key, ctrlKey: false, metaKey: false, altKey: false }, { keypad: true }),
+      ).toBe(true);
+    }
+    // …y al terminar sin Enter, vuelve todo.
+    vi.advanceTimersByTime(100);
+    expect(onScan).not.toHaveBeenCalled();
+    expect(onRelease).toHaveBeenCalledWith("10000");
+  });
+
+  it("en el teclado del cobro, la pistola (ráfaga + Enter) sí es un código y no escribe nada", () => {
+    const clock = { t: 0 };
+    const onScan = vi.fn();
+    const onRelease = vi.fn();
+    const d = createScanDetector({ onScan, onRelease, now: () => clock.t });
+    for (const key of "7790000001017") {
+      clock.t += 8;
+      d.keydown({ key, ctrlKey: false, metaKey: false, altKey: false }, { keypad: true });
+    }
+    clock.t += 8;
+    expect(
+      d.keydown({ key: "Enter", ctrlKey: false, metaKey: false, altKey: false }, { keypad: true }),
+    ).toBe(true);
+    expect(onScan).toHaveBeenCalledWith("7790000001017");
+    expect(onRelease).not.toHaveBeenCalled();
+  });
+
+  it("en el teclado del peso, '350' a ritmo normal llega dígito por dígito", () => {
+    const clock = { t: 0 };
+    const onScan = vi.fn();
+    const onRelease = vi.fn();
+    const d = createScanDetector({ onScan, onRelease, now: () => clock.t, idleMs: 80 });
+    for (const key of "350") {
+      clock.t += 150;
+      d.keydown({ key, ctrlKey: false, metaKey: false, altKey: false }, { keypad: true });
+      vi.advanceTimersByTime(100);
+    }
+    expect(onRelease.mock.calls.map((c) => c[0]).join("")).toBe("350");
+    expect(onScan).not.toHaveBeenCalled();
+  });
+});
+
+function KeypadDemo({ onDigit }: { onDigit: (k: string) => void }) {
+  useScanner({ now: () => clock.t, onScan: () => {}, idleMs: 80 });
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => {
+      if (/^[0-9]$/.test(e.key)) onDigit(e.key);
+    };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [onDigit]);
+  return (
+    <div role="dialog" aria-label="Cobrar" data-keypad tabIndex={-1}>
+      teclado
+    </div>
+  );
+}
+
+describe("useScanner con un teclado de diálogo", () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  it("lo tipeado a mano llega al teclado; la pistola no", () => {
+    const onDigit = vi.fn();
+    render(<KeypadDemo onDigit={onDigit} />);
+    const box = screen.getByRole("dialog", { name: "Cobrar" });
+    box.focus();
+    for (const key of "10000") {
+      clock.t += 40;
+      fireEvent.keyDown(box, { key });
+    }
+    vi.advanceTimersByTime(100);
+    expect(onDigit.mock.calls.map((c) => c[0]).join("")).toBe("10000");
+    onDigit.mockClear();
+    clock.t += 500;
+    for (const key of "7790000001017") {
+      clock.t += 8;
+      fireEvent.keyDown(box, { key });
+    }
+    clock.t += 8;
+    fireEvent.keyDown(box, { key: "Enter" });
+    expect(onDigit).not.toHaveBeenCalled();
   });
 });

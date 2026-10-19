@@ -92,6 +92,7 @@ export function WeightDialog({
         role="dialog"
         aria-modal="true"
         aria-label={`Peso de ${product.name}`}
+        data-keypad
         className="grid w-full gap-6 rounded-t-2xl bg-superficie p-5 shadow-xl outline-none lg:max-w-[720px] lg:grid-cols-[1fr_300px] lg:rounded-card lg:p-7"
       >
         <div className="flex flex-col gap-4">

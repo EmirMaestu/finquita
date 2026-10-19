@@ -19,7 +19,7 @@ import { useNavigate, useParams } from "react-router";
 import { NoPermissionFor } from "../../app/guards";
 import { useCan } from "../../app/session";
 import { ApiError, api, credentials, downloadFile } from "../../data/api";
-import { useScanner } from "../../scan/useScanner";
+import { scanRouter } from "../../scan/GlobalScan";
 import { syncEngine } from "../../sync";
 import { Button } from "../../ui/Button";
 import { Chip } from "../../ui/Chip";
@@ -759,7 +759,8 @@ function DevicesSection() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["devices"] }),
   });
   const [last, setLast] = useState<string | null>(null);
-  useScanner({ onScan: (c) => setLast(c) });
+  // Mientras se prueba la pistola, el escaneo se muestra acá y no abre la ficha rápida.
+  useEffect(() => scanRouter.claim((c) => setLast(c)), []);
   return (
     <div className="flex flex-col gap-4">
       <ThisDevice />

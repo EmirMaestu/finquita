@@ -120,6 +120,7 @@ export function PinAuthorizer() {
         role="dialog"
         aria-modal="true"
         aria-label="Autorizá con tu PIN"
+        data-keypad
         className="flex w-full max-w-[360px] justify-center rounded-2xl bg-superficie px-5 py-6 shadow-xl"
       >
         <PinPad

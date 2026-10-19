@@ -217,6 +217,7 @@ export function PaymentDialog({
         role="dialog"
         aria-modal="true"
         aria-label="Cobrar"
+        data-keypad
         className="outline-none grid max-h-[96vh] w-full overflow-y-auto rounded-t-2xl bg-superficie shadow-xl lg:max-w-[960px] lg:grid-cols-[400px_1fr] lg:rounded-card"
       >
         <div className="flex flex-col gap-4 border-borde bg-fondo p-5 lg:border-r lg:p-7">
