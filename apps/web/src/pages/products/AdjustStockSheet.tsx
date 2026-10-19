@@ -50,19 +50,29 @@ export function AdjustStockSheet({
             ? "El stock real no puede ser negativo"
             : "La cantidad tiene que ser mayor que 0";
   const delta = mode === "real" ? n - (stock ?? 0) : mode === "in" ? n : -n;
+  const [busy, setBusy] = useState(false);
   const submit = async () => {
-    if (!me || !valid || stock === null) return;
-    await adjustStockLocal({
-      memberId: me.member.id,
-      productId,
-      ...(mode === "real" ? { realQty: n } : { qty: delta }),
-      reason,
-      note: note.trim() || null,
-      needsApproval: grant === "approval",
-      currentStock: stock,
-    });
-    toast({ text: grant === "approval" ? "Ajuste enviado: queda para aprobar" : "Stock ajustado" });
-    onClose();
+    if (!me || !valid || stock === null || busy) return;
+    setBusy(true);
+    try {
+      await adjustStockLocal({
+        memberId: me.member.id,
+        productId,
+        ...(mode === "real" ? { realQty: n } : { qty: delta }),
+        reason,
+        note: note.trim() || null,
+        needsApproval: grant === "approval",
+        currentStock: stock,
+      });
+      toast({
+        text: grant === "approval" ? "Ajuste enviado: queda para aprobar" : "Stock ajustado",
+      });
+      onClose();
+    } catch (e) {
+      toast({ text: e instanceof Error ? e.message : "No se pudo ajustar.", tone: "error" });
+    } finally {
+      setBusy(false);
+    }
   };
   return (
     <Sheet
@@ -70,7 +80,7 @@ export function AdjustStockSheet({
       onClose={onClose}
       title={`Ajustar stock · ${name}`}
       footer={
-        <Button className="flex-1" onClick={() => void submit()} disabled={!valid}>
+        <Button className="flex-1" onClick={() => submit()} disabled={!valid || busy}>
           {grant === "approval" ? "Enviar para aprobar" : "Ajustar"}
         </Button>
       }

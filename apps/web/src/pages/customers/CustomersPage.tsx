@@ -196,10 +196,15 @@ export function CollectSheet({ customer, onClose }: { customer: Detail; onClose:
   const [error, setError] = useState<string | null>(null);
   const amount = Number(typed || "0") * 100;
   const open = customer.movements.filter((m) => (m.openCents ?? 0) > 0).reverse();
+  // No se cobra más de lo que debe: un dedo de más no deja "saldo a favor" por error.
+  const owed = Math.max(0, customer.balanceCents);
+  const tooMuch = amount > owed;
   const pay = useMutation({
     mutationFn: async () => {
       if (!me) throw new Error("Sin sesión");
       if (amount <= 0) throw new Error("Tipeá cuánto paga.");
+      if (amount > owed)
+        throw new Error(`Debe ${formatMoney(owed)}: no se puede cobrar más que eso.`);
       if (method === "cash" && !reg.shift) throw new Error("Abrí la caja para cobrar en efectivo.");
       await collectCreditLocal(me.member.id, {
         customerId: customer.id,
@@ -259,7 +264,7 @@ export function CollectSheet({ customer, onClose }: { customer: Detail; onClose:
         <Button
           className="flex-1"
           size="lg"
-          disabled={!amount || pay.isPending}
+          disabled={!amount || tooMuch || pay.isPending}
           onClick={() => pay.mutate()}
         >
           Registrar pago y dar recibo

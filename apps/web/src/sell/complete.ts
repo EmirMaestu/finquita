@@ -42,16 +42,21 @@ export async function primeSaleNumbers(): Promise<void> {
 export async function nextSaleNumber(registerId: string): Promise<number> {
   const db = localDb();
   const key = `saleSeq:${registerId}`;
-  let last = (await db.getMeta<number>(key)) ?? 0;
-  if (!last) {
+  let fromServer = 0;
+  if (!(await db.getMeta<number>(key))) {
     try {
       const regs = await api<{ id: string; lastSaleNumber: number }[]>("/api/registers");
-      last = regs.find((r) => r.id === registerId)?.lastSaleNumber ?? 0;
+      fromServer = regs.find((r) => r.id === registerId)?.lastSaleNumber ?? 0;
     } catch {}
   }
-  const next = last + 1;
-  await db.setMeta(key, next);
-  return next;
+  // Leer y escribir el contador en una sola transacción: dos pestañas de la misma caja no
+  // pueden sacar el mismo número (IndexedDB serializa las transacciones de escritura).
+  return db.transaction("rw", db.meta, async () => {
+    const last = (await db.getMeta<number>(key)) ?? fromServer;
+    const next = last + 1;
+    await db.setMeta(key, next);
+    return next;
+  });
 }
 
 export type LocalSale = {

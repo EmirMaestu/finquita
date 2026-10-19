@@ -1,5 +1,5 @@
 import { Lock } from "lucide-react";
-import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { type ButtonHTMLAttributes, type MouseEvent, type ReactNode, useRef } from "react";
 import { cx } from "./cx";
 
 type Variant = "primary" | "secondary" | "ghost" | "danger";
@@ -24,7 +24,12 @@ export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   /** Acción que pide PIN: se muestra con candado, no se esconde. */
   locked?: boolean;
   icon?: ReactNode;
+  /** Permite clics seguidos (por defecto, un doble clic cuenta una sola vez). */
+  repeatable?: boolean;
 };
+
+/** Dos clics en menos de este tiempo son uno (el dedo nervioso o el doble clic). */
+const DOUBLE_CLICK_MS = 500;
 
 /** Botón del sistema de diseño: una acción principal por pantalla. */
 export function Button({
@@ -36,12 +41,35 @@ export function Button({
   children,
   disabled,
   type = "button",
+  repeatable,
+  onClick,
   ...rest
 }: ButtonProps) {
+  const last = useRef(0);
+  const pending = useRef<Promise<unknown> | null>(null);
+  // Un gesto, una operación: el segundo clic del doble clic no vuelve a disparar la acción,
+  // y si el manejador devuelve una promesa, tampoco se dispara hasta que termine.
+  const guarded = (e: MouseEvent<HTMLButtonElement>) => {
+    if (!onClick) return;
+    const now = Date.now();
+    if (!repeatable && (pending.current || now - last.current < DOUBLE_CLICK_MS)) {
+      e.preventDefault();
+      return;
+    }
+    last.current = now;
+    const r = (onClick as (ev: MouseEvent<HTMLButtonElement>) => unknown)(e);
+    if (r instanceof Promise) {
+      pending.current = r;
+      r.finally(() => {
+        pending.current = null;
+      });
+    }
+  };
   return (
     <button
       type={type}
       disabled={disabled}
+      onClick={guarded}
       className={cx(
         "inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-lg font-semibold whitespace-nowrap transition-colors duration-150",
         "disabled:cursor-not-allowed disabled:border-deshabilitado disabled:bg-deshabilitado disabled:text-texto-apagado",
