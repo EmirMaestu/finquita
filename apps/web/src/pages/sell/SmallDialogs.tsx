@@ -1,6 +1,6 @@
 import { formatMoney, formatTime, parseMoney } from "@mostrador/shared";
 import { TriangleAlert } from "lucide-react";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 import type { LocalProduct } from "../../data/types";
 import type { HeldSale } from "../../sell/store";
 import { Button } from "../../ui/Button";
@@ -19,9 +19,10 @@ export function MiscDialog({
   const [amount, setAmount] = useState("");
   const [desc, setDesc] = useState("");
   const cents = parseMoney(amount);
+  const valid = cents !== null && cents > 0;
   const submit = (e: FormEvent) => {
     e.preventDefault();
-    if (cents && cents > 0) onAdd(cents, desc);
+    if (valid) onAdd(cents, desc);
   };
   return (
     <Sheet open onClose={onClose} title="Producto varios">
@@ -32,7 +33,16 @@ export function MiscDialog({
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
           placeholder="1500"
-          hint={cents ? formatMoney(cents) : "Para lo que no está cargado."}
+          hint={
+            valid
+              ? formatMoney(cents)
+              : amount.trim() && cents !== null
+                ? "El monto tiene que ser mayor que $ 0."
+                : "Para lo que no está cargado."
+          }
+          error={
+            amount.trim() && !valid && cents !== null ? "Poné un monto mayor que $ 0." : undefined
+          }
         />
         <TextField
           label="Descripción"
@@ -40,7 +50,7 @@ export function MiscDialog({
           onChange={(e) => setDesc(e.target.value)}
           placeholder="Opcional"
         />
-        <Button type="submit" size="lg" disabled={!cents}>
+        <Button type="submit" size="lg" disabled={!valid}>
           Agregar · Enter
         </Button>
       </form>
@@ -60,6 +70,18 @@ export function UnknownCodeDialog({
   onMisc: () => void;
   onClose: () => void;
 }) {
+  // El botón promete F3: con la hoja abierta los atajos de Vender están apagados, así que se escucha acá.
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => {
+      if (e.key === "F3") {
+        e.preventDefault();
+        e.stopPropagation();
+        onMisc();
+      }
+    };
+    window.addEventListener("keydown", h, true);
+    return () => window.removeEventListener("keydown", h, true);
+  }, [onMisc]);
   return (
     <Sheet open onClose={onClose} title={`El código ${code} no está cargado`}>
       <div className="flex flex-col gap-4">

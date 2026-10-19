@@ -59,7 +59,7 @@ import {
 import { WeightDialog } from "./WeightDialog";
 
 type Dialog =
-  | { kind: "pay" }
+  | { kind: "pay"; tab?: "account" }
   | { kind: "misc" }
   | { kind: "unknown"; code: string }
   | { kind: "held" }
@@ -67,7 +67,7 @@ type Dialog =
   | { kind: "weight"; product: LocalProduct }
   | { kind: "discount" }
   | { kind: "cash" }
-  | { kind: "customer" }
+  | { kind: "customer"; back?: "pay" }
   | null;
 
 type Done = {
@@ -428,6 +428,10 @@ export function SellPage() {
         if (s.multiplier) return sale.set({ multiplier: null });
       }
       if (searching) return;
+      if (k === "Enter" && s.selected && warnings.some((w) => w.lineId === s.selected)) {
+        stop();
+        return setWarnings((w) => w.filter((x) => x.lineId !== s.selected));
+      }
       if (k === "ArrowDown" || k === "ArrowUp") {
         stop();
         const next =
@@ -453,6 +457,7 @@ export function SellPage() {
     query,
     results,
     active,
+    warnings,
     addToSale,
     focusSearch,
     openPay,
@@ -488,6 +493,8 @@ export function SellPage() {
               : null
           }
           busy={busy}
+          initialTab={dialog.tab}
+          onPickCustomer={() => setDialog({ kind: "customer", back: "pay" })}
           onConfirm={(p, s, o) => void finish(p, s, o)}
           onClose={() => {
             setDialog(null);
@@ -543,16 +550,17 @@ export function SellPage() {
       {dialog?.kind === "customer" && (
         <CustomerPicker
           current={cart.customerId}
-          onClose={() => setDialog(null)}
+          onClose={() => setDialog(dialog.back ? { kind: "pay", tab: "account" } : null)}
           onClear={() => {
             sale.setCart({ ...sale.get().cart, customerId: null });
-            setDialog(null);
+            setDialog(dialog.back ? { kind: "pay", tab: "account" } : null);
           }}
           onPick={(c) => {
             sale.setCart({ ...sale.get().cart, customerId: c.id });
-            setDialog(null);
+            // Desde el cobro (F5 adentro de Fiado) se vuelve al cobro con el cliente puesto.
+            setDialog(dialog.back ? { kind: "pay", tab: "account" } : null);
             if (c.overdueCents) toast({ text: `${c.name} tiene deuda vencida`, tone: "error" });
-            focusSearch();
+            if (!dialog.back) focusSearch();
           }}
         />
       )}
@@ -586,8 +594,10 @@ export function SellPage() {
       {done && (
         <SaleDone
           {...done}
-          onDone={() => {
+          onDone={(key) => {
             setDone(null);
+            // "2 *" tipeado sobre la pantalla verde: el 2 arranca la venta nueva, no se pierde.
+            if (key && /^[0-9a-zá-úñ]$/i.test(key)) setQuery(key);
             focusSearch();
           }}
         />
@@ -660,6 +670,7 @@ export function SellPage() {
           warnings={warnings}
           onQty={(id, dir) => sale.setCart(bumpQty(cart, id, dir))}
           onRemove={(id) => sale.setCart(removeLine(cart, id), null)}
+          onDismissWarning={(id) => setWarnings((w) => w.filter((x) => x.lineId !== id))}
         />
         <div className="px-4 pt-3.5 pb-1.5 text-xs font-semibold tracking-[.06em] text-texto-suave uppercase">
           Sin código

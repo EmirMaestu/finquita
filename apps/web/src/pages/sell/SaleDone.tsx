@@ -17,14 +17,16 @@ export function SaleDone({
   changeCents: number;
   method: string;
   ticket?: string | null;
-  onDone: () => void;
+  /** La tecla que cerró la pantalla (si fue una sola letra o número) sigue hacia la venta nueva. */
+  onDone: (key?: string) => void;
   ms?: number;
 }) {
   useEffect(() => {
-    const t = setTimeout(onDone, ms);
+    const t = setTimeout(() => onDone(), ms);
     const k = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
       e.preventDefault();
-      onDone();
+      onDone(e.key.length === 1 && e.key !== " " ? e.key : undefined);
     };
     const timer = setTimeout(() => window.addEventListener("keydown", k, { once: true }), 150);
     return () => {
@@ -36,7 +38,7 @@ export function SaleDone({
   return (
     <button
       type="button"
-      onClick={onDone}
+      onClick={() => onDone()}
       aria-label="Venta lista"
       className="fixed inset-0 z-[55] flex flex-col items-center justify-center gap-4 bg-primario px-6 text-center text-sobre-primario"
     >

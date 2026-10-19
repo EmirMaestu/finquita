@@ -16,12 +16,24 @@ import { NumPad } from "../../ui/NumPad";
 
 type Tab = "cash" | "card" | "transfer" | "account";
 
-const TABS: { id: Tab; label: string; icon: typeof Banknote }[] = [
-  { id: "cash", label: "Efectivo", icon: Banknote },
-  { id: "card", label: "Tarjeta", icon: CreditCard },
-  { id: "transfer", label: "Transferencia o QR", icon: QrCode },
-  { id: "account", label: "Fiado", icon: HandCoins },
+const TABS: { id: Tab; label: string; icon: typeof Banknote; key: string }[] = [
+  { id: "cash", label: "Efectivo", icon: Banknote, key: "E" },
+  { id: "card", label: "Tarjeta", icon: CreditCard, key: "T" },
+  { id: "transfer", label: "Transferencia o QR", icon: QrCode, key: "Q" },
+  { id: "account", label: "Fiado", icon: HandCoins, key: "F" },
 ];
+
+/** Pista de tecla solo en la compu (en el celular no hay teclado). */
+function Key({ children }: { children: string }) {
+  return (
+    <kbd
+      aria-hidden
+      className="hidden rounded border border-current/30 px-1.5 py-0.5 text-[11px] font-semibold opacity-70 lg:inline"
+    >
+      {children}
+    </kbd>
+  );
+}
 
 const BILLS = [100_000, 200_000, 1_000_000, 2_000_000];
 
@@ -46,6 +58,8 @@ export function PaymentDialog({
   onConfirm,
   onClose,
   busy,
+  initialTab,
+  onPickCustomer,
 }: {
   saleLabel: string;
   itemCount: number;
@@ -55,11 +69,15 @@ export function PaymentDialog({
   onConfirm: (payments: Tender[], surchargeCents: number, output: TicketOutput) => void;
   onClose: () => void;
   busy?: boolean;
+  /** Pestaña con la que abre (al volver de elegir cliente: Fiado). */
+  initialTab?: Tab;
+  /** F5 adentro del cobro: elegir el cliente sin cerrar la venta. */
+  onPickCustomer?: () => void;
 }) {
   const settings = useSettings();
   const methods = settings.payments.methods;
   const [payments, setPayments] = useState<Tender[]>([]);
-  const [tab, setTab] = useState<Tab>("cash");
+  const [tab, setTab] = useState<Tab>(initialTab ?? "cash");
   const [card, setCard] = useState<"debit" | "credit">("debit");
   const [transfer, setTransfer] = useState<"transfer" | "qr">("qr");
   const [verified, setVerified] = useState(false);
@@ -118,20 +136,64 @@ export function PaymentDialog({
     onConfirm(list, checkoutState(totalCents, list).surchargeCents, output);
   }, [busy, payments, remaining, blocked, pending, totalCents, onConfirm, output]);
 
-  // Teclado: dígitos al monto, Enter o Ctrl+Enter confirma, Esc vuelve a la venta.
+  const pickTab = useCallback(
+    (t: Tab) => {
+      if (t === "account" && !methods.account.enabled) return;
+      setTab(t);
+      setTyped(null);
+    },
+    [methods.account.enabled],
+  );
+
+  // Teclado: dígitos al monto; E, T, Q y F eligen el medio; V tilda "Verificada"; F5 elige
+  // cliente; Enter agrega el pago o confirma; Ctrl+Enter y F12 confirman; Esc vuelve a la venta.
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
+      const k = e.key;
+      if (k === "Escape") {
         e.preventDefault();
         onClose();
-      } else if (e.key === "Enter" || e.key === "F12") {
+        return;
+      }
+      if (k === "F5") {
+        e.preventDefault();
+        onPickCustomer?.();
+        return;
+      }
+      const letter = k.length === 1 ? k.toUpperCase() : "";
+      const t = TABS.find((x) => x.key === letter);
+      if (t && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        pickTab(t.id);
+        return;
+      }
+      if (letter === "V" && tab === "transfer") {
+        e.preventDefault();
+        setVerified((v) => !v);
+        return;
+      }
+      if (k === "Enter" || k === "F12") {
+        // Enter sobre un botón o una casilla enfocados los activa (eso es lo que uno espera al
+        // llegar con Tab hasta "Tarjeta"): no confirma el cobro.
+        const el = document.activeElement;
+        if (
+          k === "Enter" &&
+          !e.ctrlKey &&
+          !e.metaKey &&
+          el instanceof HTMLElement &&
+          el !== box.current &&
+          box.current?.contains(el) &&
+          (el.tagName === "BUTTON" || el.tagName === "INPUT" || el.tagName === "LABEL")
+        ) {
+          return;
+        }
         e.preventDefault();
         confirm();
       }
     };
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
-  }, [confirm, onClose]);
+  }, [confirm, onClose, onPickCustomer, pickTab, tab]);
 
   const onKey = useCallback((k: string) => {
     setTyped((t) => {
@@ -253,7 +315,9 @@ export function PaymentDialog({
         <div className="flex flex-col gap-4 p-5 lg:p-7">
           <div className="hidden items-center justify-between lg:flex">
             <span className="text-xl font-semibold">Cobrar</span>
-            <span className="text-[13px] text-texto-suave">Esc vuelve a la venta</span>
+            <span className="text-[13px] text-texto-suave">
+              Enter agrega el pago · Ctrl ⏎ cobra · Esc vuelve a la venta
+            </span>
           </div>
           <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
             {TABS.map((t) => (
@@ -261,11 +325,14 @@ export function PaymentDialog({
                 key={t.id}
                 type="button"
                 aria-pressed={tab === t.id}
+                aria-keyshortcuts={t.key}
                 disabled={t.id === "account" && !methods.account.enabled}
-                onClick={() => {
-                  setTab(t.id);
-                  setTyped(null);
-                }}
+                title={
+                  t.id === "account" && !methods.account.enabled
+                    ? "El fiado está apagado en Ajustes › Medios de pago"
+                    : undefined
+                }
+                onClick={() => pickTab(t.id)}
                 className={cx(
                   "flex h-14 items-center justify-center gap-2 rounded-lg text-sm font-semibold lg:h-[60px]",
                   tab === t.id
@@ -275,6 +342,7 @@ export function PaymentDialog({
               >
                 <t.icon size={20} aria-hidden />
                 {t.label}
+                <Key>{t.key}</Key>
               </button>
             ))}
           </div>
@@ -351,12 +419,13 @@ export function PaymentDialog({
                   onChange={(e) => setVerified(e.target.checked)}
                   className="size-6 accent-[var(--primario)]"
                 />
-                <span>
+                <span className="flex-1">
                   Verificada en el banco
                   <span className="block text-[13px] text-texto-suave">
                     No entregues contra una captura.
                   </span>
                 </span>
+                <Key>V</Key>
               </label>
             </div>
           )}
@@ -377,7 +446,13 @@ export function PaymentDialog({
                   )}
                 </div>
               ) : (
-                "Asigná un cliente con F5 para fiar."
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span>Para fiar hace falta un cliente.</span>
+                  <Button variant="secondary" onClick={() => onPickCustomer?.()}>
+                    Elegir cliente
+                    <Key>F5</Key>
+                  </Button>
+                </div>
               )}
             </div>
           )}
@@ -445,7 +520,9 @@ export function PaymentDialog({
             className="h-16 text-xl"
           >
             {remaining > 0 && current < remaining ? "Agregar pago" : "Confirmar cobro"}
-            <kbd className="rounded bg-white/20 px-1.5 py-0.5 text-xs">Ctrl ⏎</kbd>
+            <kbd aria-hidden className="hidden rounded bg-white/20 px-1.5 py-0.5 text-xs lg:inline">
+              Ctrl ⏎
+            </kbd>
           </Button>
         </div>
       </div>

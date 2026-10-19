@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { apiFromPage, ensureShiftOpen, loginWithPin } from "./helpers";
+import { apiFromPage, ensureShiftOpen, loginWithPin, scanWithGun } from "./helpers";
 
 test("vende 4 productos usando solo el teclado", async ({ page }) => {
   await loginWithPin(page, "Tomás", "4567");
@@ -11,6 +11,12 @@ test("vende 4 productos usando solo el teclado", async ({ page }) => {
   type Reg = { openShift: { id: string } | null; lastSaleNumber: number };
   type Shift = { summary: { salesCents: number; byMethod: { cash: { count: number } } } };
   const before = await (async () => {
+    // El turno recién abierto viaja por la cola: se espera a que el servidor lo tenga.
+    await expect
+      .poll(async () => (await apiFromPage<Reg[]>(page, "/api/registers"))[0]?.openShift?.id, {
+        timeout: 20_000,
+      })
+      .toBeTruthy();
     const [r] = await apiFromPage<Reg[]>(page, "/api/registers");
     const s = await apiFromPage<Shift>(page, `/api/shifts/${r?.openShift?.id}`);
     return {
@@ -67,4 +73,91 @@ test("vende 4 productos usando solo el teclado", async ({ page }) => {
   const shift = await apiFromPage<Shift>(page, `/api/shifts/${reg?.openShift?.id}`);
   expect(shift.summary.salesCents - before.sales).toBe(2_610_000);
   expect(shift.summary.byMethod.cash.count - before.cash).toBe(1);
+});
+
+test("cobro combinado solo con teclado: Enter sobre Tarjeta la elige, no cobra en efectivo", async ({
+  page,
+}) => {
+  await loginWithPin(page, "Tomás", "4567");
+  await page.goto("/vender");
+  await ensureShiftOpen(page);
+  await expect(page.getByRole("button", { name: /Pan francés/ })).toBeVisible({ timeout: 20_000 });
+  await scanWithGun(page, "7790000001017");
+  await scanWithGun(page, "7791234000012");
+  await expect(page.getByRole("status", { name: "Total" })).toHaveText("$ 11.500");
+
+  await page.keyboard.press("F12");
+  const pay = page.getByRole("dialog", { name: "Cobrar" });
+  await expect(pay).toBeVisible();
+  await page.keyboard.type("5000", { delay: 90 });
+  await page.keyboard.press("Enter");
+  await expect(pay.getByText("Falta").locator("..")).toContainText("$ 6.500");
+
+  // Llegar con Tab hasta "Tarjeta" y apretar Enter elige Tarjeta (antes cobraba todo en efectivo).
+  const card = pay.getByRole("button", { name: "Tarjeta" });
+  await card.focus();
+  await page.keyboard.press("Enter");
+  await expect(card).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("button", { name: "Venta lista" })).toBeHidden();
+  await expect(pay.getByRole("status", { name: "Monto" })).toHaveText("$ 6.500");
+  // Y también con la letra: Q elige Transferencia o QR, T vuelve a Tarjeta.
+  await page.keyboard.press("q");
+  await expect(pay.getByRole("button", { name: "Transferencia o QR" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await page.keyboard.press("t");
+  await expect(card).toHaveAttribute("aria-pressed", "true");
+  await page.keyboard.press("Control+Enter");
+  const done = page.getByRole("button", { name: "Venta lista" });
+  await expect(done).toContainText("$ 11.500");
+  await page.waitForTimeout(200);
+  await page.keyboard.press("Space");
+  await expect(done).toBeHidden();
+
+  type Sale = { number: number; totalCents: number; methods: string[] };
+  await expect
+    .poll(
+      async () => {
+        const list = await apiFromPage<Sale[]>(page, "/api/sales?limit=1");
+        return list[0]?.methods?.slice().sort().join("+");
+      },
+      { timeout: 25_000 },
+    )
+    .toBe("cash+debit");
+});
+
+test("la tecla que cierra la pantalla verde llega a la venta nueva: '2 *' multiplica", async ({
+  page,
+}) => {
+  await loginWithPin(page, "Tomás", "4567");
+  await page.goto("/vender");
+  await ensureShiftOpen(page);
+  await expect(page.getByRole("button", { name: /Pan francés/ })).toBeVisible({ timeout: 20_000 });
+  await scanWithGun(page, "7790000003028");
+  await page.keyboard.press("F12");
+  await page.keyboard.press("Enter");
+  const done = page.getByRole("button", { name: "Venta lista" });
+  await expect(done).toBeVisible();
+  await page.waitForTimeout(250);
+  // Sobre la pantalla verde se tipea "2" y "*": el 2 no se pierde.
+  await page.keyboard.press("2");
+  await expect(done).toBeHidden();
+  await page.keyboard.press("*");
+  await scanWithGun(page, "7791234000012");
+  const line = page.getByRole("list", { name: "Líneas de la venta" }).getByRole("listitem");
+  await expect(line).toHaveCount(1);
+  await expect(line.first()).toContainText("2");
+  await expect(page.getByRole("status", { name: "Total" })).toHaveText("$ 13.800");
+});
+
+test("código no cargado: F3 adentro del diálogo vende como varios", async ({ page }) => {
+  await loginWithPin(page, "Tomás", "4567");
+  await page.goto("/vender");
+  await ensureShiftOpen(page);
+  await expect(page.getByRole("button", { name: /Pan francés/ })).toBeVisible({ timeout: 20_000 });
+  await scanWithGun(page, "7798765432107");
+  await expect(page.getByRole("dialog", { name: /no está cargado/ })).toBeVisible();
+  await page.keyboard.press("F3");
+  await expect(page.getByRole("dialog", { name: "Producto varios" })).toBeVisible();
 });

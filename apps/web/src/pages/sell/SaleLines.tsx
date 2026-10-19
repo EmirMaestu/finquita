@@ -115,14 +115,14 @@ export function SaleTable({
                     onClick={() => onDismissWarning(l.id)}
                     className="h-7 rounded-md border border-current px-2.5 font-semibold"
                   >
-                    Vender igual
+                    Vender igual{selected === l.id ? " · Enter" : ""}
                   </button>
                   <button
                     type="button"
                     onClick={() => onRemove(l.id)}
                     className="h-7 px-2.5 font-semibold"
                   >
-                    Quitar
+                    Quitar{selected === l.id ? " · Supr" : ""}
                   </button>
                 </div>
               )}
@@ -146,11 +146,13 @@ export function SaleList({
   onQty,
   onRemove,
   warnings,
+  onDismissWarning,
 }: {
   lines: CartLine[];
   onQty: (id: string, dir: 1 | -1) => void;
   onRemove: (id: string) => void;
   warnings: LineWarning[];
+  onDismissWarning: (lineId: string) => void;
 }) {
   return (
     <ul className="m-0 list-none bg-superficie p-0" aria-label="Líneas de la venta">
@@ -199,8 +201,24 @@ export function SaleList({
               </span>
             </div>
             {w && (
-              <div className="bg-peligro-suave px-4 py-2 text-[13px] font-medium text-peligro">
-                {w.text}
+              <div className="flex flex-col gap-2 bg-peligro-suave px-4 py-2.5 text-[13px] font-medium text-peligro">
+                <span>{w.text}</span>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => onDismissWarning(l.id)}
+                    className="h-11 flex-1 rounded-lg border border-current font-semibold"
+                  >
+                    Vender igual
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onRemove(l.id)}
+                    className="h-11 flex-1 rounded-lg font-semibold"
+                  >
+                    Quitar
+                  </button>
+                </div>
               </div>
             )}
           </li>

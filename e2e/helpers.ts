@@ -19,13 +19,15 @@ export async function loginWithPin(page: Page, name: string, pin: string) {
   await page.goto("/");
   await page.getByRole("button", { name: new RegExp(`^${name.charAt(0)} ${name} `) }).click();
   for (const d of pin) await page.getByRole("button", { name: d, exact: true }).click();
-  // El cajero entra directo a Vender (modo mostrador, sin la barra de módulos).
+  // El cajero entra directo a Vender (modo mostrador, sin la barra de módulos); con la caja
+  // cerrada, Vender muestra "Abrir turno".
   await expect(
     page
       .getByRole("navigation", { name: "Módulos" })
       .or(page.getByLabel("Escaneá o buscá por nombre"))
+      .or(page.getByRole("region", { name: "Abrir turno" }))
       .first(),
-  ).toBeVisible();
+  ).toBeVisible({ timeout: 20_000 });
 }
 
 /**
