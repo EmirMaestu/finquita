@@ -3,6 +3,7 @@ import {
   formatDate,
   formatMoney,
   formatQty,
+  MAX_QTY,
   orderNumber,
   parseMoney,
   receiptSummary,
@@ -458,7 +459,15 @@ function Receiving({
       navigate("/compras/recepcion");
     },
   });
-  const tryConfirm = () => (sum.hasDifferences ? setSummary(true) : confirm.mutate());
+  const tryConfirm = () => {
+    const huge = touched.find((l) => num(l.received) > MAX_QTY || num(l.damaged) > MAX_QTY);
+    if (huge) {
+      toast({ text: `${huge.name}: la cantidad es demasiado grande, revisala.`, tone: "error" });
+      return;
+    }
+    if (sum.hasDifferences) setSummary(true);
+    else confirm.mutate();
+  };
 
   const lineCard = (l: Line) => {
     const rec = num(l.received);

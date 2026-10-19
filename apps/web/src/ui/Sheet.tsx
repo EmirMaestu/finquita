@@ -14,6 +14,7 @@ export function Sheet({
   children,
   footer,
   wide,
+  error,
 }: {
   open: boolean;
   onClose: () => void;
@@ -21,6 +22,8 @@ export function Sheet({
   children: ReactNode;
   footer?: ReactNode;
   wide?: boolean;
+  /** Error del formulario: se muestra junto al pie, siempre a la vista (sin bajar hasta el final). */
+  error?: string | null;
 }) {
   const { layout } = useViewport();
   const ref = useRef<HTMLDivElement>(null);
@@ -77,6 +80,14 @@ export function Sheet({
           </button>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto p-5">{children}</div>
+        {error && (
+          <div
+            role="alert"
+            className="border-t border-borde bg-peligro-suave px-5 py-2.5 text-[13px] font-semibold text-peligro"
+          >
+            {error}
+          </div>
+        )}
         {footer && <div className="flex gap-2 border-t border-borde p-4">{footer}</div>}
       </div>
     </div>

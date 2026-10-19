@@ -114,9 +114,11 @@ export function CustomerForm({
   });
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) =>
     setF((x) => ({ ...x, [k]: e.target.value }));
+  const [error, setError] = useState<string | null>(null);
   const save = useMutation({
     mutationFn: async () => {
       if (!me) throw new Error("Sin sesión");
+      setError(null);
       return saveCustomerLocal(me.member.id, customer?.id ?? null, {
         name: f.name.trim(),
         nickname: f.nickname.trim() || null,
@@ -132,12 +134,14 @@ export function CustomerForm({
       setTimeout(() => void qc.invalidateQueries({ queryKey: ["customer", id] }), 800);
       onClose(id);
     },
+    onError: (e) => setError(e instanceof Error ? e.message : "No se pudo guardar."),
   });
   return (
     <Sheet
       open
       onClose={() => onClose()}
       title={customer ? "Editar cliente" : "Nuevo cliente"}
+      error={error}
       footer={
         <Button
           className="flex-1"

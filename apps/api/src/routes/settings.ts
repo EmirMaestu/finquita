@@ -6,6 +6,7 @@ import {
   newId,
   PERMISSIONS,
   type Permission,
+  plainText,
   type SettingsMap,
   writeCsv,
 } from "@mostrador/shared";
@@ -15,7 +16,7 @@ import { z } from "zod";
 import type { AppEnv } from "../app";
 import { requireActor } from "../auth/actor";
 import { requireFull } from "../auth/permissions";
-import { hashPin } from "../auth/pin";
+import { hashPin, pinInUse } from "../auth/pin";
 import {
   barcodes,
   businesses,
@@ -245,8 +246,8 @@ settingsRoutes.get("/members", requireActor(), owner, async (c) => {
 
 const PIN_RE = /^\d{4,6}$/;
 const memberBody = z.object({
-  name: z.string().min(1).max(60),
-  nickname: z.string().max(30).nullable().optional(),
+  name: plainText(60),
+  nickname: plainText(30, 0).nullable().optional(),
   role: roles,
   email: z.email().nullable().optional(),
   phone: z.string().max(30).nullable().optional(),
@@ -270,6 +271,8 @@ settingsRoutes.post("/members", requireActor(), owner, validate("json", memberBo
       .where(eq(members.email, b.email.toLowerCase()));
     if (dup) throw conflict("Ya hay alguien con ese email.");
   }
+  if (b.pin && (await pinInUse(db, b.pin)))
+    throw new ApiError(400, "validation", "Ese PIN ya lo usa otra persona: elegí otro.");
   const id = newId();
   await db.insert(members).values({
     id,

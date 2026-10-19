@@ -4,6 +4,7 @@ import {
   effectiveGrant,
   marginOnCostBp,
   newId,
+  plainText,
   productFields,
   qty as qtySchema,
   stockState,
@@ -314,7 +315,7 @@ catalogRoutes.get("/products/:id", requireActor(), async (c) => {
 
 const createProduct = productFields.extend({
   id: z.uuid().optional(),
-  name: z.string().min(1).max(120),
+  name: plainText(120),
   priceCents: z.number().int().nonnegative(),
   barcodes: z.array(z.string().min(3).max(32)).max(20).optional(),
   initialStock: qtySchema.optional(),
@@ -488,7 +489,7 @@ catalogRoutes.get("/categories", requireActor(), async (c) => {
 });
 
 const categoryBody = z.object({
-  name: z.string().min(1).max(60),
+  name: plainText(60),
   parentId: z.uuid().nullable().optional(),
   defaultMarginBp: z.number().int().min(0).max(100000).nullable().optional(),
   ageRestricted: z.boolean().optional(),

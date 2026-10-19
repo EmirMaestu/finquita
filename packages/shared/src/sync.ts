@@ -3,6 +3,7 @@
  * Cada dispositivo manda lo que hizo como una cola de operaciones con op_id único.
  */
 import { z } from "zod";
+import { plainText } from "./validation";
 
 // ── Tipos base ───────────────────────────────────────────────────────────────
 
@@ -213,7 +214,7 @@ export const stockAdjust = z
 
 export const productFields = z
   .object({
-    name: z.string().min(1).max(120),
+    name: plainText(120),
     categoryId: uuid.nullable(),
     kind: z.enum(["product", "service"]),
     internalCode: z.string().max(20).nullable(),
@@ -261,8 +262,8 @@ export const customerUpsert = z.object({
   id: uuid,
   changes: z
     .object({
-      name: z.string().min(1).max(120),
-      nickname: z.string().max(60).nullable(),
+      name: plainText(120),
+      nickname: plainText(60, 0).nullable(),
       phone: z.string().max(30).nullable(),
       address: z.string().max(200).nullable(),
       dni: z.string().max(15).nullable(),

@@ -1,4 +1,4 @@
-import { effectiveGrant, newId } from "@mostrador/shared";
+import { effectiveGrant, newId, plainText } from "@mostrador/shared";
 import { and, asc, desc, eq, inArray, isNull, ne, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
@@ -143,7 +143,7 @@ supplierRoutes.get("/suppliers/:id", requireActor(), async (c) => {
 });
 
 const supplierBody = z.object({
-  name: z.string().min(1).max(80),
+  name: plainText(80),
   legalName: z.string().max(120).nullable().optional(),
   cuit: z.string().max(20).nullable().optional(),
   category: z.string().max(60).nullable().optional(),

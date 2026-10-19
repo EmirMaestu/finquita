@@ -8,6 +8,7 @@ import {
   METHOD_LABEL,
   PERMISSIONS,
   type Permission,
+  parseDecimal,
   parseMoney,
   type Role,
   type SettingsMap,
@@ -53,7 +54,13 @@ const ROLE_LABEL: Record<Role, string> = {
   stocker: "Repositor",
 };
 const pctText = (bp: number) => String(bp / 100).replace(".", ",");
-const pctBp = (s: string) => Math.round((Number(s.replace(",", ".")) || 0) * 100);
+/** "10" o "1,5" → puntos básicos; con basura devuelve null (y no se guarda un 0 en silencio). */
+const pctBp = (s: string): number | null => {
+  if (!s.trim()) return 0;
+  const n = parseDecimal(s);
+  return n === null ? null : Math.round(n * 100);
+};
+const badPct = () => toast({ text: "Poné un porcentaje, por ejemplo 10 o 1,5.", tone: "error" });
 
 function useSettingsServer() {
   return useQuery({
@@ -425,8 +432,10 @@ function RegistersSection({ s }: { s: SettingsMap }) {
               label="Nombre"
               defaultValue={r.name}
               onBlur={(e) =>
-                e.target.value !== r.name &&
-                upd.mutate({ id: r.id, body: { name: e.target.value } })
+                !e.target.value.trim()
+                  ? toast({ text: "La caja necesita un nombre.", tone: "error" })
+                  : e.target.value.trim() !== r.name &&
+                    upd.mutate({ id: r.id, body: { name: e.target.value.trim() } })
               }
             />
             <TextField
@@ -445,7 +454,12 @@ function RegistersSection({ s }: { s: SettingsMap }) {
               inputMode="decimal"
               defaultValue={String(r.toleranceCents / 100)}
               onBlur={(e) =>
-                upd.mutate({ id: r.id, body: { toleranceCents: parseMoney(e.target.value) ?? 0 } })
+                parseMoney(e.target.value) === null
+                  ? toast({ text: "Poné un monto, por ejemplo 500.", tone: "error" })
+                  : upd.mutate({
+                      id: r.id,
+                      body: { toleranceCents: parseMoney(e.target.value) ?? 0 },
+                    })
               }
               hint="Más que esto, pide comentario y avisa al dueño."
             />
@@ -520,8 +534,10 @@ function PaymentsSection({ s }: { s: SettingsMap }) {
                 inputMode="decimal"
                 defaultValue={pctText(cfg.surchargeBp)}
                 onBlur={(e) =>
-                  pctBp(e.target.value) !== cfg.surchargeBp &&
-                  save.mutate({ methods: { [m]: { surchargeBp: pctBp(e.target.value) } } })
+                  pctBp(e.target.value) === null
+                    ? badPct()
+                    : pctBp(e.target.value) !== cfg.surchargeBp &&
+                      save.mutate({ methods: { [m]: { surchargeBp: pctBp(e.target.value) } } })
                 }
                 hint="Negativo para descuento."
               />
@@ -530,8 +546,10 @@ function PaymentsSection({ s }: { s: SettingsMap }) {
                 inputMode="decimal"
                 defaultValue={pctText(cfg.feeBp)}
                 onBlur={(e) =>
-                  pctBp(e.target.value) !== cfg.feeBp &&
-                  save.mutate({ methods: { [m]: { feeBp: pctBp(e.target.value) } } })
+                  pctBp(e.target.value) === null
+                    ? badPct()
+                    : pctBp(e.target.value) !== cfg.feeBp &&
+                      save.mutate({ methods: { [m]: { feeBp: pctBp(e.target.value) } } })
                 }
                 hint="Para rentabilidad y resultado."
               />
@@ -597,7 +615,9 @@ function PricingSection({ s }: { s: SettingsMap }) {
   const blurPct =
     (k: "defaultMarginBp" | "minMarginBp" | "discountCapBp") =>
     (e: { target: { value: string } }) =>
-      pctBp(e.target.value) !== p[k] && save.mutate({ [k]: pctBp(e.target.value) });
+      pctBp(e.target.value) === null
+        ? badPct()
+        : pctBp(e.target.value) !== p[k] && save.mutate({ [k]: pctBp(e.target.value) });
   return (
     <Card>
       <div className="grid gap-3 sm:grid-cols-2">

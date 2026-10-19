@@ -108,13 +108,7 @@ function SupplierForm({ supplier, onClose }: { supplier?: Supplier | null; onClo
       await qc.invalidateQueries({ queryKey: ["supplier"] });
       onClose();
     },
-    onError: (e) =>
-      setError(
-        e instanceof ApiError
-          ? (((e.details as { message: string }[] | undefined)?.[0]?.message ??
-              e.message) as string)
-          : "No se pudo guardar.",
-      ),
+    onError: (e) => setError(e instanceof ApiError ? e.message : "No se pudo guardar."),
   });
   const dayPicker = (value: number[], onChange: (v: number[]) => void, label: string) => (
     <fieldset className="m-0 flex flex-col gap-1.5 border-0 p-0">
@@ -140,6 +134,7 @@ function SupplierForm({ supplier, onClose }: { supplier?: Supplier | null; onClo
       wide
       onClose={onClose}
       title={supplier ? "Editar proveedor" : "Nuevo proveedor"}
+      error={error}
       footer={
         <Button
           className="flex-1"
@@ -203,11 +198,6 @@ function SupplierForm({ supplier, onClose }: { supplier?: Supplier | null; onClo
         />
         {dayPicker(orderDays, setOrderDays, "Días de pedido")}
         {dayPicker(deliveryDays, setDeliveryDays, "Días de entrega")}
-        {error && (
-          <div role="alert" className="text-sm font-semibold text-peligro lg:col-span-2">
-            {error}
-          </div>
-        )}
       </div>
     </Sheet>
   );

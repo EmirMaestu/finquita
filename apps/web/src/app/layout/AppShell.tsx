@@ -11,6 +11,7 @@ import { CounterTopBar } from "./CounterTopBar";
 import { DesktopTopBar } from "./DesktopTopBar";
 import { MobileTopBar } from "./MobileTopBar";
 import { Rail } from "./Rail";
+import { SessionExpiredBar } from "./SessionExpiredBar";
 import { Sidebar } from "./Sidebar";
 
 function readCollapsed(): boolean {
@@ -36,6 +37,7 @@ export function AppShell() {
     return (
       <div className="flex min-h-full flex-col bg-fondo" data-layout="phone">
         <MobileTopBar title={title} />
+        <SessionExpiredBar />
         <main className="flex-1 pb-[96px]">
           <InstallGuide />
           <Outlet />
@@ -54,6 +56,7 @@ export function AppShell() {
         <Rail />
         <div className="flex min-w-0 flex-1 flex-col">
           <MobileTopBar title={title} />
+          <SessionExpiredBar />
           <main className="min-h-0 flex-1 overflow-y-auto">
             <Outlet />
           </main>

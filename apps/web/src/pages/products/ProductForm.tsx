@@ -144,6 +144,7 @@ export function ProductForm({ open, onClose, product, onSaved, initialCode }: Pr
       onClose={onClose}
       title={editing ? "Editar producto" : "Nuevo producto"}
       wide
+      error={error}
       footer={
         <>
           <Button variant="secondary" onClick={onClose} className="flex-1 lg:flex-none">
@@ -305,14 +306,6 @@ export function ProductForm({ open, onClose, product, onSaved, initialCode }: Pr
             onChange={setQuick}
           />
         </div>
-        {error && (
-          <div
-            role="alert"
-            className="rounded-lg bg-peligro-suave px-3 py-2 text-[13px] font-semibold text-peligro lg:col-span-2"
-          >
-            {error}
-          </div>
-        )}
       </form>
     </Sheet>
   );

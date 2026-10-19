@@ -1,4 +1,4 @@
-import type { z } from "zod";
+import { z } from "zod";
 import { formatMoney } from "./money";
 import { OP_PAYLOADS, type OpType } from "./sync";
 
@@ -183,6 +183,16 @@ export class OpValidationError extends Error {
     super(errors[0] ? `${errors[0].field}: ${errors[0].message}` : "Los datos no son válidos.");
     this.name = "OpValidationError";
   }
+}
+
+/** Un nombre o texto corto: sin espacios de más y sin < ni > (no es lugar para HTML). */
+export function plainText(max: number, min = 1) {
+  return z
+    .string()
+    .trim()
+    .min(min)
+    .max(max)
+    .refine((v) => !/[<>]/.test(v), "no puede tener < ni >");
 }
 
 /** Valida el payload de una operación con el mismo esquema que usa el servidor. */

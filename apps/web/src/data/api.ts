@@ -1,5 +1,24 @@
 /** Cliente HTTP de la API: agrega el token del dispositivo y la sesión con PIN. */
 
+import { sessionExpired } from "../app/sessionExpired";
+
+/** Se supo de una sesión (el /api/me respondió): a partir de ahí un 401 es sesión vencida. */
+let sessionKnown = false;
+export function markSessionKnown(v: boolean) {
+  sessionKnown = v;
+  if (v) sessionExpired.set(false);
+}
+
+/** Errores por campo de un 400 de validación: { "name": "como mucho 60 caracteres" }. */
+export function fieldErrorsFrom(e: unknown): Record<string, string> {
+  if (!(e instanceof ApiError) || !Array.isArray(e.details)) return {};
+  const out: Record<string, string> = {};
+  for (const d of e.details as { path?: string; message?: string }[]) {
+    if (d.path && d.message && !out[d.path]) out[d.path] = d.message;
+  }
+  return out;
+}
+
 export class ApiError extends Error {
   constructor(
     readonly status: number,
@@ -80,6 +99,10 @@ export async function api<T = unknown>(path: string, opts: RequestOptions = {}):
   }
   const text = await res.text();
   const data = text ? safeJson(text) : null;
+  if (res.status === 401 && !path.startsWith("/api/auth") && path !== "/api/me") {
+    // Había sesión y ya no: se avisa en pantalla, sin tirar lo que se estaba cargando.
+    if (pinToken || sessionKnown) sessionExpired.set(true);
+  }
   if (!res.ok) {
     const e = (data as { error?: { code?: string; message?: string; details?: unknown } } | null)
       ?.error;

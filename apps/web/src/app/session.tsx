@@ -1,7 +1,7 @@
 import type { Grant, Permission, Role } from "@mostrador/shared";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createContext, type ReactNode, useContext } from "react";
-import { ApiError, api, credentials, OfflineError } from "../data/api";
+import { ApiError, api, credentials, markSessionKnown, OfflineError } from "../data/api";
 
 export type Me = {
   business: { name: string; address?: string | null; city?: string | null };
@@ -36,6 +36,7 @@ export function useSessionQuery(): Session {
     queryFn: async () => {
       try {
         const me = await api<Me>("/api/me");
+        markSessionKnown(true);
         try {
           localStorage.setItem(CACHE, JSON.stringify(me));
         } catch {}

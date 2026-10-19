@@ -14,6 +14,19 @@ export function hashPin(pin: string): Promise<string> {
 
 export type Member = typeof members.$inferSelect;
 
+/** ¿Alguien más ya usa este PIN? (el PIN identifica a quien autoriza: no puede repetirse). */
+export async function pinInUse(db: Db, pin: string, exceptId?: string): Promise<boolean> {
+  const rows = await db
+    .select({ id: members.id, pinHash: members.pinHash })
+    .from(members)
+    .where(eq(members.active, true));
+  for (const m of rows) {
+    if (m.id === exceptId || !m.pinHash) continue;
+    if (await verify(m.pinHash, pin)) return true;
+  }
+  return false;
+}
+
 export type PinResult =
   | { ok: true; member: Member }
   | { ok: false; reason: "locked"; lockedUntil: Date }

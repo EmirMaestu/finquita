@@ -14,7 +14,7 @@ import { validate } from "../lib/validate";
 
 const body = z.object({
   rows: z
-    .array(z.array(z.string().max(300)))
+    .array(z.array(z.string().max(10_000)))
     .min(2)
     .max(20_001),
   mapping: z.record(z.string(), z.number().int().min(0).max(100)),

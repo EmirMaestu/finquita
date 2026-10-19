@@ -98,6 +98,8 @@ export function normalizeRow(cells: string[], mapping: ColumnMapping, line: numb
   const errors: string[] = [];
   const name = get("name");
   if (!name) errors.push("Falta el nombre");
+  else if (name.length > 120) errors.push("El nombre es muy largo (hasta 120 letras)");
+  else if (/[<>]/.test(name)) errors.push("El nombre no puede tener < ni >");
   const rawPrice = get("price");
   const priceCents = money(rawPrice);
   if (rawPrice && priceCents === null) errors.push(`El precio "${rawPrice}" no es un número`);
