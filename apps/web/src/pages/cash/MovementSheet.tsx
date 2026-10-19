@@ -126,6 +126,8 @@ export function MovementSheet({
       setAmount("");
       setReason("");
       onClose();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudo registrar.");
     } finally {
       setBusy(false);
     }

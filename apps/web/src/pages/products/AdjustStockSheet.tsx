@@ -1,4 +1,4 @@
-import { formatQty } from "@mostrador/shared";
+import { formatQty, MAX_QTY, parseDecimal } from "@mostrador/shared";
 import { useEffect, useState } from "react";
 import { useGrant, useMe } from "../../app/session";
 import { localStock } from "../../data/catalog";
@@ -36,8 +36,19 @@ export function AdjustStockSheet({
       setStock(await localStock(p));
     })();
   }, [productId]);
-  const n = Number(value.replace(",", "."));
-  const valid = value.trim() !== "" && Number.isFinite(n) && (mode === "real" ? n >= 0 : n > 0);
+  const n = parseDecimal(value) ?? Number.NaN;
+  const valid =
+    value.trim() !== "" && Number.isFinite(n) && n <= MAX_QTY && (mode === "real" ? n >= 0 : n > 0);
+  const invalidText =
+    value.trim() === "" || valid
+      ? null
+      : !Number.isFinite(n)
+        ? "Poné una cantidad, por ejemplo 12 o 1,5"
+        : n > MAX_QTY
+          ? "Es demasiado: revisá la cantidad"
+          : mode === "real"
+            ? "El stock real no puede ser negativo"
+            : "La cantidad tiene que ser mayor que 0";
   const delta = mode === "real" ? n - (stock ?? 0) : mode === "in" ? n : -n;
   const submit = async () => {
     if (!me || !valid || stock === null) return;
@@ -86,6 +97,7 @@ export function AdjustStockSheet({
           value={value}
           onChange={(e) => setValue(e.target.value)}
           placeholder={unit === "kg" ? "0,500" : "2"}
+          error={invalidText}
           hint={
             valid && stock !== null
               ? `Queda en ${formatQty(Math.round((stock + delta) * 1000) / 1000, unit)}`

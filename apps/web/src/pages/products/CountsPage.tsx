@@ -1,4 +1,4 @@
-import { formatDate, formatMoney, formatQty } from "@mostrador/shared";
+import { formatDate, formatMoney, formatQty, parseDecimal } from "@mostrador/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CircleCheck, ScanBarcode } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -250,7 +250,7 @@ function QtyEntry({
       ),
     [kg],
   );
-  const n = Number(typed.replace(",", "."));
+  const n = parseDecimal(typed) ?? 0;
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
       if (e.key === "Enter" && typed) {

@@ -1,10 +1,16 @@
-import { isClockSkewed, type OpResult, type PushResponse, parseOp } from "@mostrador/shared";
+import {
+  isClockSkewed,
+  OP_LABEL_ES,
+  type OpResult,
+  type PushResponse,
+  parseOp,
+} from "@mostrador/shared";
 import { eq } from "drizzle-orm";
 import type { Actor } from "../auth/actor";
 import type { Db } from "../db/client";
 import { syncOps } from "../db/schema/index";
 import { raiseAlert } from "../domain/alerts";
-import { applyOp, OP_LABEL } from "../domain/apply";
+import { applyOp } from "../domain/apply";
 import { ContextBuilder } from "../domain/context";
 import { Rejection } from "../domain/types";
 import { log } from "../lib/log";
@@ -55,11 +61,11 @@ async function reject(
         reason: a.reason,
         deviceAt: a.deviceAt,
       });
-      const label = OP_LABEL[a.type as keyof typeof OP_LABEL] ?? "operación";
+      const label = OP_LABEL_ES[a.type as keyof typeof OP_LABEL_ES] ?? "la operación";
       await raiseAlert(tx, {
         kind: "sync_rejected",
         severity: "danger",
-        title: `No se pudo registrar una ${label}`,
+        title: `No se pudo registrar ${label}`,
         body: `${a.reason}. Quedó guardada para revisarla.`,
         refType: "sync_op",
         refId: a.opId,

@@ -1,4 +1,5 @@
 import {
+  assertOp,
   type Cart,
   cartTotals,
   lineAmount,
@@ -132,6 +133,8 @@ export async function completeSale(a: {
     changeCents: change,
     receiptType: "ticket",
   };
+  // Lo que el servidor va a rechazar no se cobra: el ticket no sale y la numeración no se gasta.
+  assertOp("sale.create", payload);
 
   // Efectos locales: stock (del producto base en las presentaciones), saldo del fiado y caja.
   const deltas: Omit<Delta, "opId" | "id">[] = [];

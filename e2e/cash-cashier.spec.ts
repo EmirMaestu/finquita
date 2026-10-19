@@ -50,3 +50,31 @@ test("el cajero vende, va a Caja desde Vender y cierra el turno con su nombre", 
   await expect(page.getByText("CIERRE DE CAJA")).toBeVisible();
   await expect(page.getByText(/Cajero: Tomás/)).toBeVisible();
 });
+
+test("abrir la caja con un fondo negativo no deja una caja fantasma", async ({ page }) => {
+  await loginWithPin(page, "Tomás", "4567");
+  await page.goto("/caja");
+  const open = page.getByRole("region", { name: "Abrir turno" });
+  const closeBtn = page.getByRole("button", { name: "Arqueo y cierre" });
+  await expect(open.or(closeBtn).first()).toBeVisible({ timeout: 20_000 });
+  // Si el turno anterior quedó abierto por otro test, se cierra primero.
+  if (!(await open.isVisible().catch(() => false))) {
+    await page.getByRole("button", { name: "Arqueo y cierre" }).click();
+    await page.getByRole("button", { name: "Ver resultado" }).click();
+    const note = page.getByLabel(/Comentario/);
+    if (await note.isVisible()) await note.fill("Cierre para la prueba");
+    await page.getByRole("button", { name: /Cerrar turno/ }).click();
+    await expect(page.getByText("CIERRE DE CAJA")).toBeVisible();
+    await page.goto("/caja");
+  }
+  await expect(open).toBeVisible({ timeout: 20_000 });
+  await open.getByRole("button", { name: "Total directo" }).click();
+  await open.getByLabel("Fondo inicial").fill("-500");
+  const comment = open.getByLabel("Comentario");
+  if (await comment.isVisible().catch(() => false)) await comment.fill("Prueba");
+  await open.getByRole("button", { name: /^Abrir turno/ }).click();
+  await expect(open.getByRole("alert")).toHaveText("El fondo no puede ser negativo.");
+  // Sigue cerrada: la pantalla no dio por hecho lo que el servidor iba a rechazar.
+  await expect(open).toBeVisible();
+  await expect(page.getByText("Caja cerrada").first()).toBeVisible();
+});

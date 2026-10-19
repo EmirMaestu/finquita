@@ -41,6 +41,7 @@ export function OpenShift({
   const [note, setNote] = useState("");
   const [prev, setPrev] = useState<{ shift: LocalShift; name: string } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   useEffect(() => {
     void (async () => {
       const s = await lastClosedOf(registerId);
@@ -59,6 +60,8 @@ export function OpenShift({
 
   const open = async () => {
     if (!me) return;
+    setError(null);
+    if (counted < 0) return setError("El fondo no puede ser negativo.");
     setBusy(true);
     try {
       const id = await openShiftLocal({
@@ -69,6 +72,8 @@ export function OpenShift({
         note: note.trim() || null,
       });
       onOpened?.(id);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudo abrir la caja.");
     } finally {
       setBusy(false);
     }
@@ -168,6 +173,11 @@ export function OpenShift({
             <CircleCheck size={16} aria-hidden /> Coincide con lo que dejó {prev?.name}
           </div>
         ))}
+      {error && (
+        <div role="alert" className="text-[13px] font-semibold text-peligro">
+          {error}
+        </div>
+      )}
       <Button size="xl" onClick={() => void open()} disabled={busy || (differs && !note.trim())}>
         Abrir {shiftName(now)}
       </Button>

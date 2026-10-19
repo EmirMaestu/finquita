@@ -19,8 +19,40 @@ function saleOp(): SyncOp {
   };
 }
 
+/** Una venta válida (la cola valida con el esquema del servidor antes de guardar). */
 function sale(): SyncOp {
-  return { ...saleOp(), type: "sale.create" } as unknown as SyncOp;
+  const id = newId();
+  return {
+    ...saleOp(),
+    type: "sale.create",
+    payload: {
+      id,
+      registerId: newId(),
+      shiftId: newId(),
+      number: 1,
+      customerId: null,
+      lines: [
+        {
+          id: newId(),
+          kind: "product",
+          productId: YERBA,
+          description: "Yerba",
+          qty: 1,
+          unit: "unit",
+          unitPriceCents: 690000,
+          discountCents: 0,
+          totalCents: 690000,
+        },
+      ],
+      payments: [{ id: newId(), method: "cash", amountCents: 690000, tenderedCents: 690000 }],
+      subtotalCents: 690000,
+      discountCents: 0,
+      surchargeCents: 0,
+      totalCents: 690000,
+      changeCents: 0,
+      receiptType: "ticket",
+    },
+  } as unknown as SyncOp;
 }
 
 type FakeServer = {

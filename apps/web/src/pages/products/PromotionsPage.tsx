@@ -2,6 +2,7 @@ import {
   formatDate,
   PROMO_LABEL,
   type PromotionKind,
+  parseMoney,
   promoStatus,
   todayAR,
 } from "@mostrador/shared";
@@ -73,9 +74,7 @@ function PromoForm({ onClose }: { onClose: () => void }) {
             ...(usesCategory ? { percentBp: Math.round(Number(percent) * 100) } : {}),
             ...(kind === "combo"
               ? {
-                  comboPriceCents: Math.round(
-                    Number(combo.replace(/\./g, "").replace(",", ".")) * 100,
-                  ),
+                  comboPriceCents: parseMoney(combo) ?? 0,
                 }
               : {}),
           },

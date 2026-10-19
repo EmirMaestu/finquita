@@ -6,6 +6,7 @@ import {
   METHOD_LABEL,
   makeTender,
   type PaymentMethodCode,
+  plural,
 } from "@mostrador/shared";
 import { Banknote, CreditCard, HandCoins, QrCode, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -217,7 +218,7 @@ export function PaymentDialog({
         <div className="flex flex-col gap-4 border-borde bg-fondo p-5 lg:border-r lg:p-7">
           <div className="flex items-center justify-between text-[13px] text-texto-suave">
             <span>
-              {saleLabel} · {itemCount} ítems
+              {saleLabel} · {plural(itemCount, "ítem", "ítems")}
             </span>
             <button
               type="button"

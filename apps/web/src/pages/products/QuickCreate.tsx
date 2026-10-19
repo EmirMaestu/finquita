@@ -1,4 +1,4 @@
-import { formatMoney, parseMoney } from "@mostrador/shared";
+import { formatMoney, parseDecimal, parseMoney } from "@mostrador/shared";
 import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { useMe } from "../../app/session";
@@ -77,7 +77,7 @@ export function QuickCreateForm({
       try {
         localStorage.setItem(LAST_CATEGORY, categoryId);
       } catch {}
-      const n = stock.trim() ? Number(stock.replace(",", ".")) : null;
+      const n = stock.trim() ? parseDecimal(stock) : null;
       const p = await quickCreateProduct(me.member.id, {
         name,
         priceCents,

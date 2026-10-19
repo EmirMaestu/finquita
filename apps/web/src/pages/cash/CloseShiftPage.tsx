@@ -26,6 +26,7 @@ import { cx } from "../../ui/cx";
 import { TextField } from "../../ui/Field";
 import { Skeleton } from "../../ui/States";
 import { Stepper } from "../../ui/Stepper";
+import { toast } from "../../ui/toast";
 import { ClosingReceipt } from "./ClosingReceipt";
 
 const OTHER: { method: "debit" | "credit" | "qr" | "transfer"; label: string }[] = [
@@ -177,16 +178,25 @@ export function CloseShiftPage() {
         },
       ]),
     );
-    await closeShiftLocal({
-      memberId: me.member.id,
-      shiftId: shift.id,
-      countedCashCents: counted,
-      counts,
-      otherMedia,
-      expectedCashCents: v.summary.expectedCashCents,
-      note: note.trim() || null,
-      leftFloatCents: leftCents,
-    });
+    try {
+      await closeShiftLocal({
+        memberId: me.member.id,
+        shiftId: shift.id,
+        countedCashCents: counted,
+        counts,
+        otherMedia,
+        expectedCashCents: v.summary.expectedCashCents,
+        note: note.trim() || null,
+        leftFloatCents: leftCents,
+      });
+    } catch (e) {
+      toast({
+        text: `No se cerró: ${e instanceof Error ? e.message : "revisá los datos"}`,
+        tone: "error",
+        ms: 6000,
+      });
+      return;
+    }
     const cashier =
       ((await localDb().members.get(shift.memberId))?.name as string | undefined) ?? me.member.name;
     setLines(

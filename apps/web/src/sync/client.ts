@@ -1,4 +1,4 @@
-import { MAX_PUSH_BATCH, type OpResult, type SyncOp } from "@mostrador/shared";
+import { assertOp, MAX_PUSH_BATCH, type OpResult, type SyncOp } from "@mostrador/shared";
 import { type MostradorDB, PULL_TABLES, type PullTable } from "../data/db";
 import type { Delta } from "../data/types";
 
@@ -18,6 +18,7 @@ export type Transport = {
 };
 
 export type PushSummary = { sent: number; applied: number; rejected: number; stopped: boolean };
+export type Rejected = { opId: string; type: SyncOp["type"]; op: SyncOp; reason: string };
 
 const CURSOR = "sync.cursor";
 const isPullTable = (e: string): e is PullTable => (PULL_TABLES as readonly string[]).includes(e);
@@ -35,8 +36,16 @@ export class SyncClient {
     private now: () => Date = () => new Date(),
   ) {}
 
-  /** Agrega una operación a la cola y aplica sus efectos en la copia local. */
+  /** Qué hacer con una operación que el servidor rechazó (deshacer lo local y avisar). */
+  onRejected: ((r: Rejected) => Promise<void>) | null = null;
+
+  /**
+   * Agrega una operación a la cola y aplica sus efectos en la copia local. Antes la valida con
+   * el mismo esquema que usa el servidor: lo que no pasa no se guarda ni viaja (tira
+   * OpValidationError con el campo y qué corregir).
+   */
   async enqueue(op: SyncOp, deltas: Omit<Delta, "opId" | "id">[] = []): Promise<void> {
+    assertOp(op.type, op.payload);
     await this.db.transaction("rw", this.db.queue, this.db.deltas, async () => {
       await this.db.queue.add({
         opId: op.opId,
@@ -74,6 +83,7 @@ export class SyncClient {
       summary.sent += batch.length;
       const byId = new Map(res.results.map((r) => [r.opId, r]));
       let stopped = false;
+      const rejected: Rejected[] = [];
       await this.db.transaction("rw", this.db.queue, this.db.rejected, this.db.deltas, async () => {
         for (const item of batch) {
           const r = byId.get(item.opId);
@@ -100,9 +110,11 @@ export class SyncClient {
               at: this.now().toISOString(),
             });
             await this.db.deltas.where("opId").equals(item.opId).delete();
+            rejected.push({ opId: item.opId, type: item.type, op: item.op, reason: r.reason });
           }
         }
       });
+      for (const r of rejected) await this.onRejected?.(r).catch(() => {});
       if (stopped) {
         summary.stopped = true;
         return summary;

@@ -7,13 +7,19 @@ import { z } from "zod";
 // ── Tipos base ───────────────────────────────────────────────────────────────
 
 export const uuid = z.uuid();
+/** Tope de plata: $ 99.999.999 (más que eso es un dedo de más, no una venta). */
+export const MAX_CENTS = 9_999_999_900;
+/** Tope de cantidades: 1.000.000 unidades o kilos. */
+export const MAX_QTY = 1_000_000;
 /** Plata en centavos. */
-export const cents = z.number().int().safe();
+export const cents = z.number().int().safe().min(-MAX_CENTS).max(MAX_CENTS);
 export const positiveCents = cents.positive();
 /** Cantidades con hasta tres decimales (pesables). */
 export const qty = z
   .number()
   .finite()
+  .min(-MAX_QTY)
+  .max(MAX_QTY)
   .refine((v) => Math.abs(v * 1000 - Math.round(v * 1000)) < 1e-6, "Hasta tres decimales");
 export const dateStr = z.iso.date();
 export const isoDateTime = z.iso.datetime({ offset: true });

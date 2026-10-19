@@ -8,8 +8,10 @@ import {
   discountFor,
   formatMoney,
   METHOD_LABEL,
+  OpValidationError,
   overDiscountCap,
   parseMoney,
+  plural,
   removeLine,
   todayAR,
 } from "@mostrador/shared";
@@ -356,6 +358,12 @@ export function SellPage() {
         setWarnings([]);
         setAdultNotice(null);
         sale.reset();
+      } catch (e) {
+        if (e instanceof OpValidationError) {
+          toast({ text: `No se cobró: ${e.message}`, tone: "error", ms: 6000 });
+          return;
+        }
+        throw e;
       } finally {
         setBusy(false);
       }
@@ -544,7 +552,10 @@ export function SellPage() {
           canHold={cart.lines.length > 0}
           onClose={() => setDialog(null)}
           onHoldCurrent={() => {
-            heldSales.hold(cart, `${totals.itemCount} ítems · ${cart.lines[0]?.description ?? ""}`);
+            heldSales.hold(
+              cart,
+              `${plural(totals.itemCount, "ítem", "ítems")} · ${cart.lines[0]?.description ?? ""}`,
+            );
             sale.reset();
             setDialog(null);
             toast({ text: "Venta en espera" });
@@ -554,7 +565,7 @@ export function SellPage() {
             if (cart.lines.length)
               heldSales.hold(
                 cart,
-                `${totals.itemCount} ítems · ${cart.lines[0]?.description ?? ""}`,
+                `${plural(totals.itemCount, "ítem", "ítems")} · ${cart.lines[0]?.description ?? ""}`,
               );
             if (c) sale.setCart(c);
             setDialog(null);
@@ -728,7 +739,7 @@ export function SellPage() {
             className="flex h-[60px] w-full items-center justify-between rounded-lg bg-primario px-5 text-lg font-semibold text-sobre-primario disabled:bg-deshabilitado disabled:text-texto-apagado"
           >
             <span className="text-[15px] font-medium">
-              {totals.itemCount} ítems · {formatMoney(totals.totalCents)}
+              {plural(totals.itemCount, "ítem", "ítems")} · {formatMoney(totals.totalCents)}
             </span>
             <span>Cobrar</span>
           </button>
@@ -795,7 +806,7 @@ export function SellPage() {
       <aside aria-label="Total" className="flex flex-col gap-3.5 bg-superficie p-5">
         <div className="flex justify-between text-[13px] text-texto-suave">
           <span>Venta en curso</span>
-          <span>{totals.itemCount} ítems</span>
+          <span>{plural(totals.itemCount, "ítem", "ítems")}</span>
         </div>
         <div className="flex flex-col gap-1.5 text-sm">
           <div className="flex justify-between">
