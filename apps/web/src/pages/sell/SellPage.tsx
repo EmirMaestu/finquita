@@ -20,6 +20,7 @@ import { NoPermissionFor } from "../../app/guards";
 import { useCan, useGrant, useMe } from "../../app/session";
 import { useViewport } from "../../app/useViewport";
 import { requestPin } from "../../auth/pinAuth";
+import { OtherShiftNotice } from "../../cash/OtherShiftNotice";
 import { useRegister } from "../../cash/useRegister";
 import { localStock } from "../../data/catalog";
 import { localBalance } from "../../data/customers";
@@ -601,7 +602,7 @@ export function SellPage() {
           open
           onClose={() => setDialog(null)}
           shiftId={reg.shift.id}
-          expectedCashCents={0}
+          shift={reg.shift}
           registerName={reg.registerName}
         />
       )}
@@ -642,6 +643,7 @@ export function SellPage() {
 
   const notices = (
     <>
+      <OtherShiftNotice />
       {adultNotice && (
         <div className="flex items-center gap-2.5 rounded-lg bg-alerta-suave px-3.5 py-2.5 text-[13px] font-medium text-alerta">
           <ShieldAlert size={16} aria-hidden />
@@ -892,7 +894,7 @@ export function SellPage() {
           <button
             type="button"
             className="-my-1 inline-flex items-center gap-1.5 rounded-lg px-2 py-2 text-sm font-medium text-texto-suave hover:bg-borde/40 hover:text-texto"
-            onClick={() => navigate("/inicio")}
+            onClick={() => navigate(me?.member.role === "cashier" ? "/caja" : "/inicio")}
           >
             <Lock size={15} aria-hidden />
             Salir del modo mostrador

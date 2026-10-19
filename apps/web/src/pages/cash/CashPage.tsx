@@ -15,6 +15,7 @@ import { NoPermissionFor } from "../../app/guards";
 import { useCan } from "../../app/session";
 import { useViewport } from "../../app/useViewport";
 import { loadShiftView } from "../../cash/local";
+import { OtherShiftNotice } from "../../cash/OtherShiftNotice";
 import { useRegister } from "../../cash/useRegister";
 import { useSyncStatus } from "../../sync/status";
 import { Button } from "../../ui/Button";
@@ -222,6 +223,7 @@ export function CashPage() {
           <Button onClick={() => navigate("/caja/cierre")}>Arqueo y cierre</Button>
         </div>
       </div>
+      <OtherShiftNotice />
       {v?.offline && (
         <OfflineBanner>
           Sin conexión: lo de otros dispositivos se ve al volver internet. Lo tuyo ya está sumado.

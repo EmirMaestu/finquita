@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { arDateTime } from "./dates";
-import { ticketLines } from "./ticket";
+import { closingLines, ticketLines } from "./ticket";
 
 /** Venta 004187 del escenario (flujo 1). */
 const example = {
@@ -93,5 +93,33 @@ describe("ticket", () => {
     const lines = ticketLines(example, 80);
     expect(lines.every((l) => l.length <= 48)).toBe(true);
     expect(lines).toContain(`TOTAL${" ".repeat(48 - 5 - 8)}$ 18.550`);
+  });
+});
+
+describe("comprobante de cierre", () => {
+  const base = {
+    business: { name: "Almacén La Esquina" },
+    registerName: "Caja 1",
+    shiftLabel: "turno tarde",
+    cashier: "Carlos Díaz",
+    openedAt: arDateTime("2026-10-03", "14:00"),
+    closedAt: arDateTime("2026-10-03", "21:05"),
+    lines: [{ label: "Fondo inicial", amountCents: 2000000 }],
+    expectedCashCents: 2000000,
+    countedCashCents: 2000000,
+    differenceCents: 0,
+    byMethod: [],
+    salesCents: 0,
+    leftFloatCents: 2000000,
+    withdrawnCents: 0,
+  };
+  it("si cierra otra persona, lo dice: el turno es de quien lo abrió", () => {
+    const lines = closingLines({ ...base, closedBy: "Tomás" }, 58);
+    expect(lines).toContain("Cajero: Carlos Díaz");
+    expect(lines).toContain("Cerró: Tomás");
+  });
+  it("si cierra quien abrió, no repite el nombre", () => {
+    const lines = closingLines({ ...base, closedBy: "Carlos Díaz" }, 58);
+    expect(lines.some((l) => l.startsWith("Cerró:"))).toBe(false);
   });
 });

@@ -12,10 +12,11 @@ import {
 } from "@mostrador/shared";
 import { useQuery } from "@tanstack/react-query";
 import { CircleAlert, EyeOff, Minus, Plus } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { NoPermissionFor } from "../../app/guards";
 import { useCan, useMe } from "../../app/session";
+import { requestPin } from "../../auth/pinAuth";
 import { closeShiftLocal, loadShiftView } from "../../cash/local";
 import { useRegister } from "../../cash/useRegister";
 import { localDb } from "../../data/db";
@@ -34,6 +35,33 @@ const OTHER: { method: "debit" | "credit" | "qr" | "transfer"; label: string }[]
   { method: "transfer", label: "Transferencias" },
 ];
 
+type Draft = {
+  counts: Record<string, number>;
+  other: Record<string, string>;
+  note: string;
+  left: string | null;
+};
+const DRAFT_KEY = "mostrador.closeDraft";
+function loadDraft(shiftId: string | undefined): Draft | null {
+  if (!shiftId) return null;
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) return null;
+    const d = JSON.parse(raw) as Draft & { shiftId: string };
+    return d.shiftId === shiftId ? d : null;
+  } catch {
+    return null;
+  }
+}
+function saveDraft(shiftId: string, d: Draft) {
+  try {
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({ shiftId, ...d }));
+  } catch {}
+}
+function clearDraft(shiftId: string) {
+  if (loadDraft(shiftId)) localStorage.removeItem(DRAFT_KEY);
+}
+
 /** Arqueo ciego y cierre: se cuenta sin ver el esperado, se comparan los otros medios y se cierra. */
 export function CloseShiftPage() {
   const can = useCan("shift");
@@ -41,13 +69,29 @@ export function CloseShiftPage() {
   const navigate = useNavigate();
   const settings = useSettings();
   const reg = useRegister();
+  const shift = reg.shift;
   const [step, setStep] = useState<"count" | "result" | "done">("count");
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [other, setOther] = useState<Record<string, string>>({});
   const [note, setNote] = useState("");
   const [left, setLeft] = useState<string | null>(null);
   const [lines, setLines] = useState<string[] | null>(null);
-  const shift = reg.shift;
+  // Lo contado sobrevive una recarga de la página (queda en el dispositivo hasta cerrar).
+  const loadedFor = useRef<string | null>(null);
+  useEffect(() => {
+    if (!shift || loadedFor.current === shift.id) return;
+    loadedFor.current = shift.id;
+    const d = loadDraft(shift.id);
+    if (!d) return;
+    setCounts(d.counts);
+    setOther(d.other);
+    setNote(d.note);
+    setLeft(d.left);
+  }, [shift]);
+  useEffect(() => {
+    if (shift && loadedFor.current === shift.id && step !== "done")
+      saveDraft(shift.id, { counts, other, note, left });
+  }, [shift, step, counts, other, note, left]);
   const view = useQuery({
     queryKey: ["shift-close", shift?.id],
     queryFn: () => (shift ? loadShiftView(shift) : null),
@@ -81,6 +125,21 @@ export function CloseShiftPage() {
       parseMoney(other[o.method] ?? "") ?? 0,
     ]),
   );
+  // Un monto que no se entiende o es negativo se marca en su campo (y no deja ver el resultado).
+  const otherErrors = Object.fromEntries(
+    OTHER.map((o) => {
+      const t = (other[o.method] ?? "").trim();
+      if (!t) return [o.method, null];
+      const c = parseMoney(t);
+      return [
+        o.method,
+        c === null ? "Poné un monto, por ejemplo 12500" : c < 0 ? "No puede ser negativo" : null,
+      ];
+    }),
+  ) as Record<string, string | null>;
+  const otherInvalid = Object.values(otherErrors).some(Boolean);
+  const isCashier = me?.member.role === "cashier";
+  const othersShift = Boolean(me && shift.memberId !== me.member.id);
   const result = v
     ? closeResult({
         expectedCashCents: v.summary.expectedCashCents,
@@ -100,6 +159,15 @@ export function CloseShiftPage() {
   const close = async () => {
     if (!me || !v || !result) return;
     if (needsNote && !note.trim()) return;
+    // Un turno es de quien lo abrió: cerrarle el turno a otro, siendo cajero, pide PIN.
+    if (othersShift && isCashier) {
+      const a = await requestPin(
+        "cash_movement",
+        `Cerrar el turno que abrió ${reg.cashierName ?? "otra persona"} · pedido por ${me.member.name}.`,
+        "Cerrar el turno de otro",
+      );
+      if (!a) return;
+    }
     const otherMedia = Object.fromEntries(
       OTHER.map((o) => [
         o.method,
@@ -128,6 +196,7 @@ export function CloseShiftPage() {
           registerName: reg.registerName,
           shiftLabel: shiftName(new Date(shift.openedAt)),
           cashier,
+          closedBy: me.member.name,
           openedAt: new Date(shift.openedAt),
           closedAt: new Date(),
           lines: v.summary.lines,
@@ -149,6 +218,7 @@ export function CloseShiftPage() {
         settings.tickets.width,
       ),
     );
+    clearDraft(shift.id);
     setStep("done");
   };
 
@@ -224,13 +294,26 @@ export function CloseShiftPage() {
                   value={other[o.method] ?? ""}
                   onChange={(e) => setOther((x) => ({ ...x, [o.method]: e.target.value }))}
                   placeholder="0"
+                  error={otherErrors[o.method]}
                 />
               ))}
             </div>
             {step === "count" && (
-              <Button className="self-start" onClick={() => setStep("result")} disabled={!v}>
-                Ver resultado
-              </Button>
+              <div className="flex flex-wrap items-center gap-3">
+                <Button onClick={() => setStep("result")} disabled={!v || otherInvalid}>
+                  Ver resultado
+                </Button>
+                {!v && (
+                  <span className="text-[13px] text-texto-suave">
+                    {view.isError ? "No pudimos cargar el turno." : "Cargando el turno…"}
+                  </span>
+                )}
+                {v && otherInvalid && (
+                  <span className="text-[13px] font-semibold text-peligro">
+                    Revisá los montos de otros medios.
+                  </span>
+                )}
+              </div>
             )}
           </section>
 
@@ -323,8 +406,12 @@ export function CloseShiftPage() {
                 <Button variant="secondary" onClick={() => setStep("count")}>
                   Volver a contar
                 </Button>
-                <Button onClick={() => void close()} disabled={needsNote && !note.trim()}>
-                  Cerrar turno y avisar al dueño
+                <Button
+                  onClick={() => void close()}
+                  disabled={needsNote && !note.trim()}
+                  locked={othersShift && isCashier}
+                >
+                  {me?.member.role === "owner" ? "Cerrar turno" : "Cerrar turno y avisar al dueño"}
                 </Button>
               </div>
             </section>

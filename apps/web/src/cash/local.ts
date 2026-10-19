@@ -157,7 +157,14 @@ export async function loadShiftView(shift: LocalShift): Promise<ShiftView> {
   const db = localDb();
   let offline = false;
   let meta = { registerName: "Caja", memberName: "", toleranceCents: 50000 };
+  // La apertura viaja por la cola: hasta que llegue, el servidor no conoce el turno (404).
+  const stillOpening = await db.queue
+    .where("type")
+    .equals("cash.shift_open")
+    .filter((q) => (q.op.payload as { shiftId?: string }).shiftId === shift.id)
+    .count();
   try {
+    if (stillOpening) throw new OfflineError();
     const r = await api<ServerShift>(`/api/shifts/${shift.id}`);
     meta = {
       registerName: r.shift.registerName,

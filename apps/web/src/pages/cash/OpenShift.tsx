@@ -9,6 +9,7 @@ import {
 import { CircleCheck, Lock, TriangleAlert } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useMe } from "../../app/session";
+import { useViewport } from "../../app/useViewport";
 import { lastClosedOf, openShiftLocal } from "../../cash/local";
 import { localDb } from "../../data/db";
 import { useSettings } from "../../data/settings";
@@ -30,7 +31,11 @@ export function OpenShift({
 }) {
   const me = useMe();
   const settings = useSettings();
-  const [mode, setMode] = useState<"bills" | "total">("bills");
+  const { layout } = useViewport();
+  // En el celular, el total directo primero: contar por billete son dos pantallas de + y −.
+  const [mode, setMode] = useState<"bills" | "total">(
+    layout === "desktop" || layout === "wide" ? "bills" : "total",
+  );
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [total, setTotal] = useState("");
   const [note, setNote] = useState("");
@@ -47,7 +52,9 @@ export function OpenShift({
 
   const counted = mode === "bills" ? countTotal(counts) : (parseMoney(total) ?? 0);
   const left = prev?.shift.leftFloatCents ?? null;
-  const differs = left !== null && counted !== left;
+  // Se compara recién cuando se contó algo: con el contador en cero no hay nada que no coincida.
+  const started = mode === "bills" ? Object.values(counts).some((n) => n > 0) : total.trim() !== "";
+  const differs = left !== null && started && counted !== left;
   const now = new Date();
 
   const open = async () => {
@@ -142,6 +149,7 @@ export function OpenShift({
         </span>
       </div>
       {left !== null &&
+        started &&
         (differs ? (
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-2 text-sm font-semibold text-alerta">

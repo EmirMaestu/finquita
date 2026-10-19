@@ -3,8 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useGrant, useMe } from "../../app/session";
 import { requestPin } from "../../auth/pinAuth";
-import { addCashMoveLocal, type ManualMove } from "../../cash/local";
+import { addCashMoveLocal, loadShiftView, type ManualMove } from "../../cash/local";
 import { api } from "../../data/api";
+import type { LocalShift } from "../../data/types";
 import { Button } from "../../ui/Button";
 import { FilterChip } from "../../ui/Chip";
 import { SelectField, TextField } from "../../ui/Field";
@@ -48,13 +49,16 @@ export function MovementSheet({
   onClose,
   shiftId,
   expectedCashCents,
+  shift,
   registerName,
   initialKind = "withdrawal",
 }: {
   open: boolean;
   onClose: () => void;
   shiftId: string;
-  expectedCashCents: number;
+  /** Efectivo esperado ya calculado; si falta, se calcula del turno. */
+  expectedCashCents?: number;
+  shift?: LocalShift;
   registerName: string;
   initialKind?: Kind;
 }) {
@@ -74,13 +78,27 @@ export function MovementSheet({
   });
   const k = KINDS.find((x) => x.id === kind) ?? KINDS[0];
   const cents = parseMoney(amount);
-  const after = expectedCashCents + (kind === "income" ? 1 : -1) * (cents ?? 0);
+  // Desde Vender la hoja no trae el esperado: se calcula del turno (lo que hay en la caja).
+  const view = useQuery({
+    queryKey: ["shift-view-sheet", shift?.id],
+    queryFn: () => (shift ? loadShiftView(shift) : null),
+    enabled: open && expectedCashCents === undefined && Boolean(shift),
+  });
+  const expected = expectedCashCents ?? view.data?.summary.expectedCashCents ?? null;
+  const after = expected === null ? null : expected + (kind === "income" ? 1 : -1) * (cents ?? 0);
+  const outflow = kind !== "income";
 
   const submit = async () => {
     if (!me || !k) return;
     setError(null);
-    if (!cents || cents <= 0) return setError("Poné el monto.");
+    if (cents === null || cents <= 0) return setError("El monto tiene que ser mayor que $ 0.");
+    if (outflow && expected !== null && cents > expected)
+      return setError(
+        `No hay tanto efectivo en ${registerName}: hay ${formatMoney(Math.max(0, expected))}.`,
+      );
     if (!reason.trim()) return setError("Contá el motivo: es obligatorio.");
+    if (reason.trim().length > 200)
+      return setError("El motivo tiene que ser corto: hasta 200 letras.");
     if (kind === "supplier_payment" && !invoiceId) return setError("Elegí la factura que pagás.");
     let auth = null;
     if (grant === "pin") {
@@ -198,8 +216,8 @@ export function MovementSheet({
         />
         <div className="flex justify-between rounded-lg bg-fondo px-3 py-2 text-[13px] text-texto-suave">
           <span>
-            {kind === "income" ? "Entra al" : "Sale del"} efectivo de {registerName} · queda{" "}
-            {formatMoney(after)}
+            {kind === "income" ? "Entra al" : "Sale del"} efectivo de {registerName}
+            {after !== null ? ` · queda ${formatMoney(after)}` : ""}
           </span>
           <span>Pedido por {me?.member.name}</span>
         </div>

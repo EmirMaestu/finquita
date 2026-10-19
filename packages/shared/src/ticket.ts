@@ -106,6 +106,8 @@ export type ClosingData = {
   registerName: string;
   shiftLabel: string;
   cashier: string;
+  /** Quien cierra, si no es quien abrió. */
+  closedBy?: string | null;
   openedAt: Date;
   closedAt: Date;
   lines: { label: string; amountCents: number }[];
@@ -128,6 +130,7 @@ export function closingLines(c: ClosingData, width: TicketWidth = 58): string[] 
   const out = [center(c.business.name.toUpperCase(), w), center("CIERRE DE CAJA", w), rule];
   out.push(`${c.registerName} · ${c.shiftLabel}`);
   out.push(`Cajero: ${c.cashier}`);
+  if (c.closedBy && c.closedBy !== c.cashier) out.push(`Cerró: ${c.closedBy}`);
   out.push(lr("Apertura", `${formatDate(c.openedAt)} ${formatTime(c.openedAt)}`, w));
   out.push(lr("Cierre", `${formatDate(c.closedAt)} ${formatTime(c.closedAt)}`, w));
   out.push(rule);

@@ -226,10 +226,18 @@ export async function closeShift(tx: DbOrTx, ctx: OpContext, p: OpPayload<"cash.
     .select({ name: members.name })
     .from(members)
     .where(eq(members.id, s.memberId));
+  const [closer] =
+    ctx.memberId === s.memberId
+      ? [cashier]
+      : await tx.select({ name: members.name }).from(members).where(eq(members.id, ctx.memberId));
   const moves = await tx.select().from(cashMovements).where(eq(cashMovements.shiftId, s.id));
+  const who =
+    closer?.name && closer.name !== cashier?.name
+      ? `${cashier?.name ?? ""} · cerró ${closer.name}`
+      : (cashier?.name ?? "");
   const notice = closeNotice({
     shiftLabel: shiftName(s.openedAt),
-    cashier: cashier?.name ?? "",
+    cashier: who,
     salesCents: summarizeShift(s.openingFloatCents, moves).salesCents,
     countedCents: p.countedCashCents,
     differenceCents: difference,
