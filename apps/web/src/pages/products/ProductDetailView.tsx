@@ -154,7 +154,7 @@ export function ProductDetailView({
         <div className="flex min-w-0 flex-col gap-1">
           <h2 className="m-0 text-base font-semibold">{p.name}</h2>
           <div className="text-xs text-texto-suave">
-            {[p.categoryName, p.barcodes[0] ?? (p.internalCode ? `PLU ${p.internalCode}` : null)]
+            {[p.categoryName, p.barcodes[0] ?? (p.internalCode ? `código ${p.internalCode}` : null)]
               .filter(Boolean)
               .join(" · ")}
           </div>

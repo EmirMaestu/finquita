@@ -54,7 +54,7 @@ export const DAYS = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Vier
 export const CHANNEL = {
   whatsapp: "WhatsApp",
   manual: "Manual",
-  wholesale: "Compra en persona",
+  wholesale: "Compra en mayorista",
 } as const;
 
 export function daysLabel(d: number[] | null, note?: string | null) {

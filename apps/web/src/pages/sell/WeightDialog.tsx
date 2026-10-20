@@ -106,7 +106,7 @@ export function WeightDialog({
               <div className="text-xl font-semibold">{product.name}</div>
               <div className="text-texto-suave">
                 {formatMoney(product.priceCents)} / kg
-                {product.internalCode ? ` · PLU ${product.internalCode}` : ""}
+                {product.internalCode ? ` · código ${product.internalCode}` : ""}
               </div>
             </div>
           </div>

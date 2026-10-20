@@ -1,7 +1,9 @@
 /** Recepción de mercadería: aviso de costo que cambió y resumen de diferencias. */
+
 import { formatMoney } from "./money";
 import { priceFromMargin } from "./pricing";
 import { formatQty } from "./qty";
+import { plural } from "./text";
 
 export type CostChange = {
   /** Porcentaje entero con signo: +12 o −5. */
@@ -66,7 +68,8 @@ export function receiptSummary(lines: ReceiptLineInput[]): ReceiptSummary {
   const text: string[] = [];
   for (const l of lines) {
     const u = l.unit ?? "unit";
-    const f = (n: number) => (u === "unit" ? `${formatQty(n, "unit")} u` : formatQty(n, "kg"));
+    const f = (n: number) =>
+      u === "unit" ? plural(n, "unidad", "unidades", formatQty(n, "unit")) : formatQty(n, "kg");
     if (l.ordered != null && l.received < l.ordered) {
       const q = r3(l.ordered - l.received);
       missing.push({ name: l.name, qty: q });

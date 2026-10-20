@@ -26,7 +26,7 @@ describe("layout", () => {
       "Más",
     ]);
     expect(screen.getByRole("heading", { level: 1, name: "Inicio" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Escanear" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Escanear/ })).toBeInTheDocument();
   });
 
   it("en iPhone oculta Vender si el rol no vende", () => {

@@ -263,7 +263,7 @@ export function ProductForm({ open, onClose, product, onSaved, initialCode }: Pr
           )}
         </div>
         <TextField
-          label="Código interno o PLU"
+          label="Código interno (el de la planilla)"
           value={plu}
           onChange={(e) => setPlu(e.target.value)}
           placeholder="Ej.: 1042"

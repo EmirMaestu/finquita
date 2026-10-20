@@ -399,7 +399,7 @@ export function ProductsPage() {
                   <span className="truncate text-[13px] font-medium">{p.name}</span>
                   <span className="truncate text-[11px] text-texto-suave">
                     {[
-                      p.barcodes[0] ?? (p.internalCode ? `PLU ${p.internalCode}` : null),
+                      p.barcodes[0] ?? (p.internalCode ? `código ${p.internalCode}` : null),
                       p.supplierName,
                     ]
                       .filter(Boolean)

@@ -51,9 +51,9 @@ describe("recepción", () => {
       { name: "Queso cremoso", ordered: null, received: 1.2, damaged: 0, unit: "kg" },
     ]);
     expect(s.lines).toEqual([
-      "Faltan 2 u de Yogur bebible 1 L",
-      "Dañados: 1 u de Ricota 500 g",
-      "Sobran 2 u de Manteca 200 g",
+      "Faltan 2 unidades de Yogur bebible 1 L",
+      "Dañados: 1 unidad de Ricota 500 g",
+      "Sobran 2 unidades de Manteca 200 g",
       "Llegó sin pedir: 1,200 kg de Queso cremoso",
     ]);
     expect(

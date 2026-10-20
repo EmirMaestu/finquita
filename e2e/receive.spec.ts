@@ -52,7 +52,7 @@ test("recepción del pedido 0042 en el iPhone: falta yogur y el dueño completa 
   await nico.getByRole("button", { name: "Confirmar recepción" }).click();
   const diff = nico.getByRole("dialog", { name: "Recepción con diferencias" });
   await expect(diff.getByRole("list", { name: "Diferencias" })).toHaveText(
-    "Faltan 2 u de Yogur bebible 1 L",
+    "Faltan 2 unidades de Yogur bebible 1 L",
   );
   await diff.getByRole("button", { name: "Confirmar igual" }).click();
   await expect(nico.getByText("Recepción confirmada: entró el stock")).toBeVisible();

@@ -35,7 +35,8 @@ export function MobileTopBar({ title }: { title: string }) {
       </button>
       <button
         type="button"
-        aria-label="Escanear"
+        aria-label="Escanear un código con la cámara"
+        title="Escanear un código"
         onClick={() => scanRouter.openCamera()}
         className="inline-flex size-12 items-center justify-center text-primario"
       >

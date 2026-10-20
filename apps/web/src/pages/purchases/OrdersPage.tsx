@@ -267,7 +267,7 @@ function OrderView({ id }: { id: string }) {
             <tr className="text-left text-xs text-texto-suave">
               <th className="py-1.5 font-semibold">Producto</th>
               <th className="py-1.5 text-right font-semibold">Pedido</th>
-              <th className="py-1.5 text-right font-semibold">Confirm.</th>
+              <th className="py-1.5 text-right font-semibold">Confirmado</th>
               <th className="py-1.5 text-right font-semibold">Recibido</th>
             </tr>
           </thead>

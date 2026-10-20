@@ -27,7 +27,7 @@ describe("pedidos", () => {
     expect(text.split("\n")[0]).toMatch(
       /^Hola Marcelo, te paso el pedido 0042 de Almacén La Esquina para el jueves \d+\/10:$/,
     );
-    expect(text).toContain("• Leche entera 1 L sachet [LE-1L]: 24 u (2 cajones)");
+    expect(text).toContain("• Leche entera 1 L sachet [LE-1L]: 24 unidades (2 cajones)");
     expect(text).toContain("14 productos, total estimado $ 186.400.");
     expect(url).toBe(`https://wa.me/5492614000002?text=${encodeURIComponent(text)}`);
   });
