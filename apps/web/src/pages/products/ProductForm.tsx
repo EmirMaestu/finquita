@@ -7,11 +7,14 @@ import {
   priceFromMargin,
 } from "@mostrador/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { type FormEvent, useState } from "react";
+import { Camera } from "lucide-react";
+import { type FormEvent, useEffect, useState } from "react";
 import { useCan } from "../../app/session";
+import { useViewport } from "../../app/useViewport";
 import { ApiError, api } from "../../data/api";
 import { fetchCategories, type ProductDetail, type ProductItem } from "../../data/products";
-import { Button } from "../../ui/Button";
+import { scanRouter } from "../../scan/GlobalScan";
+import { Button, IconButton } from "../../ui/Button";
 import { SelectField, TextField, Toggle } from "../../ui/Field";
 import { Sheet } from "../../ui/Sheet";
 import { toast } from "../../ui/toast";
@@ -28,6 +31,21 @@ type Props = {
 
 /** Alta y edición de producto: nombre, categoría, precio (y costo con permiso), códigos y stock. */
 export function ProductForm({ open, onClose, product, onSaved, initialCode }: Props) {
+  const phone = useViewport().layout === "phone";
+  // Mientras la hoja está abierta, lo escaneado (pistola o cámara) va al campo de códigos.
+  useEffect(() => {
+    if (!open) return;
+    return scanRouter.claim((code) => {
+      scanRouter.closeCamera();
+      setCodes((c) => {
+        const list = c
+          .split(",")
+          .map((x) => x.trim())
+          .filter(Boolean);
+        return list.includes(code) ? c : [...list, code].join(", ");
+      });
+    });
+  }, [open]);
   const qc = useQueryClient();
   const seeCosts = useCan("view_costs");
   const cats = useQuery({ queryKey: ["categories"], queryFn: fetchCategories, enabled: open });
@@ -168,7 +186,7 @@ export function ProductForm({ open, onClose, product, onSaved, initialCode }: Pr
           label="Nombre y presentación"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Yerba Playadito 1 kg"
+          placeholder="Ej.: Yerba Playadito 1 kg"
           className="lg:col-span-2"
         />
         <SelectField
@@ -202,7 +220,7 @@ export function ProductForm({ open, onClose, product, onSaved, initialCode }: Pr
             inputMode="decimal"
             value={cost}
             onChange={(e) => setCost(e.target.value)}
-            placeholder="4850"
+            placeholder="Ej.: 4850"
             hint={
               costCents
                 ? `Con 40 % de ganancia: ${formatMoney(priceFromMargin(costCents, 4000, 5000))}`
@@ -215,24 +233,40 @@ export function ProductForm({ open, onClose, product, onSaved, initialCode }: Pr
           inputMode="decimal"
           value={price}
           onChange={(e) => setPrice(e.target.value)}
-          placeholder="6900"
+          placeholder="Ej.: 6900"
           hint={margin !== null ? `Ganancia ${formatPercent(margin)} sobre el costo` : undefined}
           error={
             margin !== null && margin < 0 ? "El precio está debajo del costo: pierde plata." : null
           }
         />
-        <TextField
-          label="Códigos de barras"
-          value={codes}
-          onChange={(e) => setCodes(e.target.value)}
-          placeholder="7791234000012"
-          hint="Si tiene varios, separalos con coma."
-        />
+        <div className="flex items-end gap-2">
+          <TextField
+            label="Códigos de barras"
+            value={codes}
+            onChange={(e) => setCodes(e.target.value)}
+            placeholder="Ej.: 7791234000012"
+            hint={
+              phone
+                ? "Escanealo con la cámara o escribilo."
+                : "Escanealo con la pistola o escribilo. Si tiene varios, separalos con coma."
+            }
+            className="flex-1"
+          />
+          {phone && (
+            <IconButton
+              label="Escanear el código con la cámara"
+              onClick={() => scanRouter.openCamera()}
+              className="mb-6 size-12 rounded-lg bg-primario text-sobre-primario"
+            >
+              <Camera size={22} />
+            </IconButton>
+          )}
+        </div>
         <TextField
           label="Código interno o PLU"
           value={plu}
           onChange={(e) => setPlu(e.target.value)}
-          placeholder="1042"
+          placeholder="Ej.: 1042"
           hint="Para pesables y botones rápidos."
         />
         {!editing && canLink && (
@@ -258,7 +292,7 @@ export function ProductForm({ open, onClose, product, onSaved, initialCode }: Pr
               label="Código del proveedor"
               value={supplierCode}
               onChange={(e) => setSupplierCode(e.target.value)}
-              placeholder="YPL-1K"
+              placeholder="Ej.: YPL-1K"
               maxLength={40}
               disabled={!supplierId}
               hint={supplierId ? "Opcional." : "Elegí primero el proveedor."}
@@ -270,7 +304,7 @@ export function ProductForm({ open, onClose, product, onSaved, initialCode }: Pr
           inputMode="decimal"
           value={minStock}
           onChange={(e) => setMinStock(e.target.value)}
-          placeholder="8"
+          placeholder="Ej.: 8"
         />
         {!editing && (
           <TextField
@@ -285,7 +319,7 @@ export function ProductForm({ open, onClose, product, onSaved, initialCode }: Pr
           label="Ubicación"
           value={location}
           onChange={(e) => setLocation(e.target.value)}
-          placeholder="Góndola 3"
+          placeholder="Ej.: Góndola 3"
         />
         <div className="flex flex-col lg:col-span-2">
           <Toggle

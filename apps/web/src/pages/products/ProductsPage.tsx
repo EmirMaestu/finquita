@@ -1,7 +1,7 @@
 import { formatDate, formatMoney, formatPercent } from "@mostrador/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FileSpreadsheet, Plus, ScanBarcode, Search, ShoppingCart } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import { useCan } from "../../app/session";
 import { useViewport } from "../../app/useViewport";
@@ -14,7 +14,7 @@ import {
   type ProductItem,
 } from "../../data/products";
 import { useSettings } from "../../data/settings";
-import { Button, IconButton } from "../../ui/Button";
+import { Button } from "../../ui/Button";
 import { Checkbox } from "../../ui/Checkbox";
 import { FilterChip } from "../../ui/Chip";
 import { cx } from "../../ui/cx";
@@ -22,6 +22,7 @@ import { SelectField } from "../../ui/Field";
 import { Menu } from "../../ui/Menu";
 import { Sheet } from "../../ui/Sheet";
 import { EmptyState, ErrorState, OfflineBanner, SkeletonList } from "../../ui/States";
+import { toast } from "../../ui/toast";
 import { ProductDetailView } from "./ProductDetailView";
 import { ProductForm } from "./ProductForm";
 import { ProductChips, StockChip } from "./StockChip";
@@ -167,6 +168,11 @@ export function ProductsPage() {
     placeholderData: (prev) => prev,
   });
   const items = list.data?.items ?? [];
+  // El total del catálogo (sin búsqueda ni filtro), para que el buscador no diga "0 productos".
+  const [catalogTotal, setCatalogTotal] = useState(0);
+  useEffect(() => {
+    if (list.data && !q && !filter) setCatalogTotal(list.data.total);
+  }, [list.data, q, filter]);
   const allChecked = items.length > 0 && items.every((i) => selected.has(i.id));
   const ids = useMemo(() => [...selected], [selected]);
 
@@ -195,6 +201,38 @@ export function ProductsPage() {
     );
   }
 
+  // Las mismas acciones en la compu y en el celular (el celular no las tenía).
+  const actions = [
+    { label: "Modo carga", onSelect: () => navigate("/productos/carga") },
+    {
+      label: "Importar desde Excel",
+      onSelect: () => navigate("/productos/importar"),
+      hidden: !canEdit,
+    },
+    {
+      label: "Cambio masivo de precios",
+      onSelect: () => navigate("/productos/precios"),
+      hidden: !canEdit,
+    },
+    { label: "Etiquetas de góndola", onSelect: () => navigate("/productos/etiquetas") },
+    { label: "Planilla de códigos", onSelect: () => navigate("/productos/planilla") },
+    { label: "Movimientos de stock", onSelect: () => navigate("/productos/movimientos") },
+    {
+      label: "Conteos de inventario",
+      onSelect: () => navigate("/productos/conteos"),
+      hidden: !features.counts,
+    },
+    {
+      label: "Promociones",
+      onSelect: () => navigate("/productos/promociones"),
+      hidden: !features.promotions || !canEdit,
+    },
+    {
+      label: "Vencimientos",
+      onSelect: () => navigate("/productos/vencimientos"),
+      hidden: !features.lots,
+    },
+  ];
   const header = desktop ? (
     <div className="flex items-center gap-3">
       <h1 className="m-0 text-[22px] font-semibold">Productos</h1>
@@ -212,40 +250,7 @@ export function ProductsPage() {
           className="min-w-0 flex-1 bg-transparent text-texto outline-none"
         />
       </label>
-      <Menu
-        label="Más acciones"
-        items={[
-          { label: "Modo carga", onSelect: () => navigate("/productos/carga") },
-          {
-            label: "Importar desde Excel",
-            onSelect: () => navigate("/productos/importar"),
-            hidden: !canEdit,
-          },
-          {
-            label: "Cambio masivo de precios",
-            onSelect: () => navigate("/productos/precios"),
-            hidden: !canEdit,
-          },
-          { label: "Etiquetas de góndola", onSelect: () => navigate("/productos/etiquetas") },
-          { label: "Planilla de códigos", onSelect: () => navigate("/productos/planilla") },
-          { label: "Movimientos de stock", onSelect: () => navigate("/productos/movimientos") },
-          {
-            label: "Conteos de inventario",
-            onSelect: () => navigate("/productos/conteos"),
-            hidden: !features.counts,
-          },
-          {
-            label: "Promociones",
-            onSelect: () => navigate("/productos/promociones"),
-            hidden: !features.promotions || !canEdit,
-          },
-          {
-            label: "Vencimientos",
-            onSelect: () => navigate("/productos/vencimientos"),
-            hidden: !features.lots,
-          },
-        ]}
-      />
+      <Menu label="Más acciones" items={actions} />
       {canEdit && (
         <Button className="h-9 text-[13px]" onClick={() => setForm({ product: null })}>
           Nuevo producto
@@ -261,17 +266,23 @@ export function ProductsPage() {
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder={
-            list.data
-              ? `Buscar en ${list.data.total.toLocaleString("es-AR")} productos`
+            catalogTotal
+              ? `Buscar en ${catalogTotal.toLocaleString("es-AR")} productos`
               : "Nombre o código"
           }
           className="min-w-0 flex-1 bg-transparent text-base text-texto outline-none"
         />
       </label>
+      <Menu label="Más acciones" items={actions} />
       {canEdit && (
-        <IconButton label="Nuevo producto" onClick={() => setForm({ product: null })}>
-          <Plus size={24} />
-        </IconButton>
+        <Button
+          className="h-12 px-3"
+          icon={<Plus size={20} aria-hidden />}
+          onClick={() => setForm({ product: null })}
+          aria-label="Nuevo producto"
+        >
+          Nuevo
+        </Button>
       )}
     </div>
   );
@@ -491,7 +502,15 @@ export function ProductsPage() {
           open
           product={form.product}
           onClose={() => setForm(null)}
-          onSaved={(p) => desktop && setSearch({ p: p.id })}
+          onSaved={(p) => {
+            if (desktop) setSearch({ p: p.id });
+            else
+              toast({
+                text: `Guardado: ${p.name}`,
+                action: { label: "Ver", run: () => navigate(`/productos/${p.id}`) },
+                ms: 5000,
+              });
+          }}
         />
       )}
       <ChangeCategory ids={ids} open={catSheet} onClose={() => setCatSheet(false)} />

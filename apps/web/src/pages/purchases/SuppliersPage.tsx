@@ -1,4 +1,4 @@
-import { formatDate, formatMoney, formatQty } from "@mostrador/shared";
+import { formatDate, formatMoney, formatQty, ORDER_STATUS } from "@mostrador/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { MessageCircle, Star } from "lucide-react";
 import { useState } from "react";
@@ -334,7 +334,9 @@ function SupplierDetailView({ id, onEdit }: { id: string; onEdit: (s: Supplier) 
           {s.orders.slice(0, 5).map((o) => (
             <div key={o.id} className="flex justify-between border-t border-borde py-1.5">
               <span>Pedido {String(o.number).padStart(4, "0")}</span>
-              <span className="text-texto-suave">{o.status}</span>
+              <span className="text-texto-suave">
+                {ORDER_STATUS[o.status as keyof typeof ORDER_STATUS]?.label ?? o.status}
+              </span>
             </div>
           ))}
         </>
@@ -361,10 +363,10 @@ export function SuppliersPage() {
   return (
     <div className="flex flex-col gap-4 p-4 lg:p-6">
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="m-0 text-[22px] font-semibold">Compras</h1>
+        <h1 className="m-0 hidden text-[22px] font-semibold lg:block">Compras</h1>
         <PurchasesTabs />
       </div>
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <h2 className="m-0 text-lg font-semibold">Proveedores</h2>
         <span className="text-texto-suave">· {q.data?.length ?? 0}</span>
         <span className="flex-1" />

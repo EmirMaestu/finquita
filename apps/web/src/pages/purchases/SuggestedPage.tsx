@@ -1,4 +1,4 @@
-import { formatDate, formatMoney, formatQty } from "@mostrador/shared";
+import { formatDate, formatMoney, formatQty, orderNumber } from "@mostrador/shared";
 import { useQuery } from "@tanstack/react-query";
 import { CircleAlert, CircleCheck } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -37,6 +37,7 @@ export type SuggestedOrder = {
   daysToCover: number;
   minOrderCents: number | null;
   count: number;
+  openOrders?: number[];
   totalCents?: number;
   lines?: SuggestedLine[];
 };
@@ -59,6 +60,8 @@ export function SuggestedPage({
     enabled: can,
   });
   const withLines = (summary.data ?? []).filter((o) => o.count > 0);
+  // Proveedores sin nada para pedir porque su pedido está en camino: se dicen, no se esconden.
+  const inTransit = (summary.data ?? []).filter((o) => !o.count && o.openOrders?.length);
   const supplierId = params.get("proveedor") ?? withLines[0]?.supplierId ?? null;
   const detail = useQuery({
     queryKey: ["suggested", supplierId],
@@ -123,7 +126,7 @@ export function SuggestedPage({
   return (
     <div className="flex flex-col gap-4 p-4 lg:p-6">
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="m-0 text-[22px] font-semibold">Compras</h1>
+        <h1 className="m-0 hidden text-[22px] font-semibold lg:block">Compras</h1>
         <PurchasesTabs />
       </div>
       {summary.isPending ? (
@@ -148,6 +151,18 @@ export function SuggestedPage({
               </FilterChip>
             ))}
           </nav>
+          {inTransit.length > 0 && (
+            <p className="m-0 text-[13px] text-texto-suave">
+              Sin nada para pedir porque ya hay un pedido en camino:{" "}
+              {inTransit
+                .map(
+                  (o) =>
+                    `${o.supplierName} (pedido ${(o.openOrders ?? []).map(orderNumber).join(", ")})`,
+                )
+                .join(" · ")}
+              .
+            </p>
+          )}
           {detail.isPending || !order ? (
             <SkeletonList />
           ) : (

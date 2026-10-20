@@ -105,7 +105,7 @@ export function QuickCreateForm({
         label="Nombre"
         value={name}
         onChange={(e) => setName(e.target.value)}
-        placeholder="Galletitas de agua 200 g"
+        placeholder="Ej.: Galletitas de agua 200 g"
         hint={
           off.isFetching
             ? "Buscando el nombre en Open Food Facts…"
@@ -120,7 +120,7 @@ export function QuickCreateForm({
           inputMode="decimal"
           value={price}
           onChange={(e) => setPrice(e.target.value)}
-          placeholder="1500"
+          placeholder="Ej.: 1500"
           hint={priceCents ? formatMoney(priceCents) : undefined}
         />
         {withStock ? (

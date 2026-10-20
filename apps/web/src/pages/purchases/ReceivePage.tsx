@@ -153,10 +153,16 @@ function Start() {
                   Pedido {orderNumber(o.number)} · {o.supplierName}
                 </span>
                 <span className="block text-[13px] text-texto-suave">
-                  {o.expectedOn ? `Entrega ${formatDate(o.expectedOn).slice(0, 5)}` : "Sin fecha"}
+                  {o.status === "partial"
+                    ? "Recibido parcial: falta parte del pedido"
+                    : o.expectedOn
+                      ? `Entrega ${formatDate(o.expectedOn).slice(0, 5)}`
+                      : "Sin fecha"}
                 </span>
               </span>
-              <span className="font-semibold text-primario">Recibir</span>
+              <span className="font-semibold text-primario">
+                {o.status === "partial" ? "Recibir lo que falta" : "Recibir"}
+              </span>
             </button>
           ))
         )}
@@ -524,7 +530,7 @@ function Receiving({
             aria-label={`Recibido ${l.name}`}
             inputMode="decimal"
             value={l.received}
-            placeholder={l.ordered != null ? String(l.ordered).replace(".", ",") : "0"}
+            placeholder=""
             onChange={(e) => set(l.key, { received: e.target.value.replace(/[^\d,]/g, "") })}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
@@ -557,7 +563,11 @@ function Receiving({
             type="button"
             onClick={() => setExtras((x) => ({ ...x, [l.key]: { ...ex, lot: !ex.lot } }))}
           >
-            <Chip size="md" tone={ex.lot || l.tracksExpiry ? "info" : "neutro"}>
+            <Chip
+              size="md"
+              tone={ex.lot || l.tracksExpiry ? "info" : "neutro"}
+              className={settings.features.lots || l.tracksExpiry ? "" : "hidden"}
+            >
               Lote y vencimiento
             </Chip>
           </button>
@@ -801,7 +811,7 @@ export function ReceivePage() {
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-4 p-4 lg:max-w-3xl lg:p-6">
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="m-0 text-[22px] font-semibold">Compras</h1>
+        <h1 className="m-0 hidden text-[22px] font-semibold lg:block">Compras</h1>
         <PurchasesTabs />
       </div>
       {!kind ? (

@@ -35,31 +35,32 @@ export function CameraScanner({
     let stop: (() => void) | null = null;
     let cancelled = false;
     const accept = createRepeatFilter();
+    // En este bundle, ZXing no reconoce sus propias excepciones de "no encontré nada" y las
+    // loguea como advertencia en cada cuadro sin código. Mientras la cámara está abierta, esas
+    // advertencias (y solo esas) no van a la consola.
+    const warn = console.warn;
+    console.warn = (...args: unknown[]) => {
+      if (
+        typeof args[0] === "string" &&
+        args[0].startsWith("MultiFormatReader: non-ReaderException")
+      )
+        return;
+      warn(...args);
+    };
     (async () => {
       try {
         const [
           { BrowserMultiFormatReader, HTMLCanvasElementLuminanceSource },
           { BarcodeFormat, DecodeHintType },
         ] = await Promise.all([import("@zxing/browser"), import("@zxing/library")]);
-        // Con TRY_HARDER, ZXing intenta leer el cuadro rotado; en esta versión el canvas auxiliar
-        // nunca se crea (el campo arranca undefined y se compara con null) y cada intento tira
-        // "Could not create a Canvas element" a la consola. Se arregla acá.
+        // Con TRY_HARDER, ZXing intenta leer el cuadro rotado, y la rotación de esta versión está
+        // rota (el canvas auxiliar nunca se crea y, si se crea, el tamaño del cuadro no se actualiza):
+        // cada intento tiraba un aviso a la consola y nada se leía. Se declara no soportada: ZXing
+        // la saltea sin ruido.
         const proto = HTMLCanvasElementLuminanceSource.prototype as unknown as {
-          getTempCanvasElement: () => HTMLCanvasElement;
-          tempCanvasElement?: HTMLCanvasElement | null;
-          canvas: HTMLCanvasElement;
+          isRotateSupported: () => boolean;
         };
-        proto.getTempCanvasElement = function (this: typeof proto) {
-          if (!this.tempCanvasElement) {
-            const c = this.canvas.ownerDocument.createElement("canvas");
-            c.width = this.canvas.width;
-            c.height = this.canvas.height;
-            this.tempCanvasElement = c;
-          }
-          return this.tempCanvasElement;
-        };
-        // Solo los formatos de productos (EAN/UPC en el almacén) y con más esfuerzo por
-        // cuadro: buscar todos los formatos hacía que los códigos chicos no se leyeran nunca.
+        proto.isRotateSupported = () => false;
         const hints = new Map<HintType, unknown>([
           [
             DecodeHintType.POSSIBLE_FORMATS,
@@ -105,6 +106,7 @@ export function CameraScanner({
     return () => {
       cancelled = true;
       stop?.();
+      console.warn = warn;
     };
   }, []);
 

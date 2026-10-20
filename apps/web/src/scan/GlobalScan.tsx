@@ -13,6 +13,8 @@ import { useScanner } from "./useScanner";
  * la ficha rápida. Las pantallas que escanean registran su propio manejador.
  */
 type Handler = (code: string) => void;
+/** Pila de manejadores: el último que reclamó (la hoja abierta encima) recibe el escaneo. */
+const handlers: Handler[] = [];
 let handler: Handler | null = null;
 let cameraOpen = false;
 /** Texto chico dentro del visor ("3 ítems · $ 18.550") y flash de la última lectura. */
@@ -26,9 +28,12 @@ const emit = () => {
 export const scanRouter = {
   /** Una pantalla toma los escaneos (devuelve la función para soltarlos). */
   claim(h: Handler): () => void {
+    handlers.push(h);
     handler = h;
     return () => {
-      if (handler === h) handler = null;
+      const i = handlers.lastIndexOf(h);
+      if (i >= 0) handlers.splice(i, 1);
+      handler = handlers[handlers.length - 1] ?? null;
     };
   },
   openCamera() {

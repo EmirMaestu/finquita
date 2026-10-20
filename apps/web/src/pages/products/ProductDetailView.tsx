@@ -4,6 +4,7 @@ import { ChevronLeft, Star } from "lucide-react";
 import { useState } from "react";
 import { useCan } from "../../app/session";
 import { fetchProduct, type ProductDetail } from "../../data/products";
+import { ADJUST_REASONS } from "../../data/stock";
 import { Button } from "../../ui/Button";
 import { Chip } from "../../ui/Chip";
 import { ErrorState, Skeleton } from "../../ui/States";
@@ -241,10 +242,14 @@ export function ProductDetailView({
                 )}
               </div>
             </div>
-            <div className="flex justify-between text-xs text-texto-suave">
-              <span>Costo y precio</span>
-            </div>
-            <PriceChart p={p} />
+            {seeCosts && (
+              <>
+                <div className="flex justify-between text-xs text-texto-suave">
+                  <span>Costo y precio</span>
+                </div>
+                <PriceChart p={p} />
+              </>
+            )}
             <div>
               <Row label="IVA">{formatPercent(p.vatBp, { decimals: 1 })} · para fase 2</Row>
               <Row label="Precio fijo">
@@ -295,7 +300,12 @@ export function ProductDetailView({
                   </span>
                   <span className="text-xs text-texto-suave">
                     {formatDate(new Date(m.createdAt))} {formatTime(new Date(m.createdAt))}
-                    {m.reason ? ` · ${m.reason}` : ""}
+                    {m.reason
+                      ? ` · ${ADJUST_REASONS[m.reason as keyof typeof ADJUST_REASONS] ?? m.reason}`
+                      : ""}
+                    {(m as { note?: string | null }).note
+                      ? ` · ${(m as { note?: string | null }).note}`
+                      : ""}
                   </span>
                 </div>
                 <span className={`tnum font-semibold ${m.qty < 0 ? "text-peligro" : "text-exito"}`}>

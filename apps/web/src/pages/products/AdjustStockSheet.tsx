@@ -106,7 +106,7 @@ export function AdjustStockSheet({
           inputMode="decimal"
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          placeholder={unit === "kg" ? "0,500" : "2"}
+          placeholder={unit === "kg" ? "Ej.: 0,500" : "Ej.: 2"}
           error={invalidText}
           hint={
             valid && stock !== null

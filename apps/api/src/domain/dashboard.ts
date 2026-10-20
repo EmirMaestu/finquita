@@ -24,6 +24,7 @@ import {
   supplierInvoices,
   suppliers,
 } from "../db/schema/index";
+import { currentSettings } from "../routes/settings";
 import { expectedCash } from "./cash";
 
 const HOUR = 3_600_000;
@@ -370,7 +371,8 @@ export async function stockerTasks(db: Db, memberId: string, now = new Date()) {
             : "llega mañana",
       path: `/compras/recepcion?pedido=${o.id}`,
     })),
-    ...(exp?.n
+    // Con "Lotes y vencimientos" apagado no se habla de lotes.
+    ...(exp?.n && (await currentSettings(db)).features.lots
       ? [
           {
             key: "expiry",

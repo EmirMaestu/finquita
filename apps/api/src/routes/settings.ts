@@ -122,7 +122,7 @@ function merge<T>(base: T, patch: unknown): T {
   return out as T;
 }
 
-async function current(db: AppEnv["Variables"]["db"]): Promise<SettingsMap> {
+export async function currentSettings(db: AppEnv["Variables"]["db"]): Promise<SettingsMap> {
   const rows = await db.select().from(settings);
   const out = structuredClone(DEFAULT_SETTINGS);
   for (const r of rows)
@@ -136,7 +136,7 @@ async function current(db: AppEnv["Variables"]["db"]): Promise<SettingsMap> {
 
 /** Todas las secciones, con los valores por defecto para lo que falte. */
 settingsRoutes.get("/settings", requireActor(), owner, async (c) =>
-  c.json(await current(c.get("db"))),
+  c.json(await currentSettings(c.get("db"))),
 );
 
 /** Cambiar una sección. Los cambios quedan en Actividad. */
@@ -153,7 +153,7 @@ settingsRoutes.put("/settings/:key", requireActor(), owner, async (c) => {
       parsed.error.issues,
     );
   const db = c.get("db");
-  const before = (await current(db))[key];
+  const before = (await currentSettings(db))[key];
   const after = merge(before, parsed.data);
   if (
     key === "payments" &&

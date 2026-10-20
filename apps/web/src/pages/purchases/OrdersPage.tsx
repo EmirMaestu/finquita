@@ -319,6 +319,18 @@ function OrderView({ id }: { id: string }) {
             Enviar por WhatsApp
           </Button>
         )}
+        {o.status === "draft" && (
+          <Button
+            variant="secondary"
+            busy={step.isPending}
+            onClick={() =>
+              // El camión llegó sin que el pedido saliera por acá: queda enviado y se recibe.
+              step.mutateAsync("sent").then(() => navigate(`/compras/recepcion?pedido=${o.id}`))
+            }
+          >
+            Ya llegó: recibir
+          </Button>
+        )}
         {o.nextSteps.includes("confirmed") && (
           <Button onClick={() => step.mutate("confirmed")}>Marcar confirmado</Button>
         )}
@@ -578,7 +590,7 @@ export function OrdersPage() {
   return (
     <div className="flex flex-col gap-4 p-4 lg:p-6">
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="m-0 text-[22px] font-semibold">Compras</h1>
+        <h1 className="m-0 hidden text-[22px] font-semibold lg:block">Compras</h1>
         <PurchasesTabs />
       </div>
       {showList && (
@@ -629,9 +641,11 @@ export function OrdersPage() {
                           {o.lineCount} productos
                         </span>
                       </span>
-                      <Chip tone={ORDER_STATUS[o.status].tone}>{ORDER_STATUS[o.status].label}</Chip>
+                      <Chip className="shrink-0" tone={ORDER_STATUS[o.status].tone}>
+                        {ORDER_STATUS[o.status].label}
+                      </Chip>
                       {o.totalCents !== undefined && (
-                        <span className="tnum min-w-20 text-right font-semibold">
+                        <span className="tnum shrink-0 text-right font-semibold whitespace-nowrap">
                           {formatMoney(o.totalCents)}
                         </span>
                       )}

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createApp } from "../src/app";
+import { seedId } from "../src/seed/ids";
 import { as } from "./helpers/actors";
 import { TEST_AUTH } from "./helpers/client";
 import { useSeededDb } from "./helpers/seeded";
@@ -37,5 +38,19 @@ describe("errores que se entienden", () => {
     expect(r.body.error.message).toBe("Ese PIN ya lo usa otra persona: elegí otro.");
     const ok = await carlos.post("/api/members", { name: "Paola", role: "cashier", pin: "7391" });
     expect(ok.status).toBe(201);
+  });
+});
+
+describe("el escenario de ejemplo", () => {
+  it("no tiene fechas en el futuro en la línea de tiempo de los pedidos", async () => {
+    const carlos = await as(app(), ref.t.db, "carlos");
+    const now = Date.now();
+    for (const key of ["order:0041", "order:0042"]) {
+      const d = await carlos.get(`/api/orders/${seedId(key)}`);
+      expect(d.status).toBe(200);
+      for (const t of d.body.timeline as { at: string }[]) {
+        expect(new Date(t.at).getTime()).toBeLessThanOrEqual(now + 1000);
+      }
+    }
   });
 });

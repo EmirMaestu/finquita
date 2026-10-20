@@ -1,6 +1,8 @@
 import { formatDate, formatMoney, formatQty, formatTime } from "@mostrador/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ChevronLeft } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router";
 import { useGrant } from "../../app/session";
 import { api } from "../../data/api";
 import { ADJUST_REASONS } from "../../data/stock";
@@ -40,6 +42,7 @@ const KINDS = ["sale", "receipt", "adjustment", "waste", "return", "count"] as c
 
 /** Movimientos de stock, general; y los ajustes del repositor para aprobar. */
 export function MovementsPage() {
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const canApprove = useGrant("adjust_stock") === "allow";
   const { version } = useSyncStatus();
@@ -66,7 +69,16 @@ export function MovementsPage() {
     `${m.qty > 0 ? "+" : "−"}${formatQty(Math.abs(m.qty), m.saleUnit === "unit" ? "unit" : "kg")}`;
   return (
     <div className="flex flex-col gap-4 p-4 lg:p-6">
-      <h1 className="m-0 text-[22px] font-semibold">Movimientos de stock</h1>
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => navigate("/productos")}
+          className="inline-flex h-10 items-center gap-1 rounded-lg px-2 text-sm font-semibold text-primario hover:bg-primario-suave"
+        >
+          <ChevronLeft size={18} aria-hidden /> Productos
+        </button>
+        <h1 className="m-0 text-[22px] font-semibold">Movimientos de stock</h1>
+      </div>
       {canApprove && (pending.data?.length ?? 0) > 0 && (
         <section
           aria-label="Para aprobar"

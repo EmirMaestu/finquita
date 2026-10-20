@@ -125,6 +125,9 @@ describe("panel del día", () => {
     });
     await julian.post(`/api/orders/${seedId("order:0042")}/status`, { status: "sent" });
     await julian.patch(`/api/orders/${seedId("order:0042")}`, { expectedOn: todayAR() });
+    // Los lotes solo aparecen con la función prendida (modo simple: apagada).
+    const carlos = await as(app(), ref.t.db, "carlos");
+    await carlos.put("/api/settings/features", { lots: true });
     const nico = await as(app(), ref.t.db, "nico");
     const t = (await nico.get("/api/dashboard/tasks")).body.tasks;
     expect(t.map((x: { text: string }) => x.text)).toEqual([

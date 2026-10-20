@@ -118,7 +118,7 @@ export function PriceListPage() {
   return (
     <div className="flex flex-col gap-4 p-4 lg:p-6">
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="m-0 text-[22px] font-semibold">Compras</h1>
+        <h1 className="m-0 hidden text-[22px] font-semibold lg:block">Compras</h1>
         <PurchasesTabs />
       </div>
       <h2 className="m-0 text-lg font-semibold">Lista de precios del proveedor</h2>
