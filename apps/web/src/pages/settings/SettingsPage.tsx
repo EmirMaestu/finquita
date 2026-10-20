@@ -321,7 +321,12 @@ function UsersSection() {
       <Card
         title="Invitar"
         footer={
-          <Button disabled={!f.name.trim() || invite.isPending} onClick={() => invite.mutate()}>
+          <Button
+            disabled={!f.name.trim()}
+            busy={invite.isPending}
+            busyLabel="Invitando…"
+            onClick={() => invite.mutate()}
+          >
             Invitar
           </Button>
         }

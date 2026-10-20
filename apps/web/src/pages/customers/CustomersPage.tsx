@@ -145,7 +145,9 @@ export function CustomerForm({
       footer={
         <Button
           className="flex-1"
-          disabled={!f.name.trim() || save.isPending}
+          disabled={!f.name.trim()}
+          busy={save.isPending}
+          busyLabel="Guardando…"
           onClick={() => save.mutate()}
         >
           Guardar
@@ -268,7 +270,9 @@ export function CollectSheet({ customer, onClose }: { customer: Detail; onClose:
         <Button
           className="flex-1"
           size="lg"
-          disabled={!amount || tooMuch || pay.isPending}
+          disabled={!amount || tooMuch}
+          busy={pay.isPending}
+          busyLabel="Registrando el pago…"
           onClick={() => pay.mutate()}
         >
           Registrar pago y dar recibo

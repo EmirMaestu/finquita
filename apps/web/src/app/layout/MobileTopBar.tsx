@@ -7,7 +7,10 @@ import { useShell } from "../shell";
 export function MobileTopBar({ title }: { title: string }) {
   const shell = useShell();
   const navigate = useNavigate();
-  const showConnection = !shell.connection.online || shell.connection.pending > 0;
+  const showConnection =
+    !shell.connection.online ||
+    shell.connection.pending > 0 ||
+    Boolean(shell.connection.justSynced);
   return (
     <header
       data-print-hide

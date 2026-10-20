@@ -10,6 +10,8 @@ type Env = {
   clearInterval: (id: unknown) => void;
   addEventListener: (type: "online" | "offline", fn: () => void) => void;
   removeEventListener: (type: "online" | "offline", fn: () => void) => void;
+  /** Lo que dice el navegador (sin internet, una respuesta del service worker no cuenta). */
+  isOnline?: () => boolean;
 };
 
 const browserEnv = (): Env => ({
@@ -17,6 +19,7 @@ const browserEnv = (): Env => ({
   clearInterval: (id) => window.clearInterval(id as number),
   addEventListener: (t, fn) => window.addEventListener(t, fn),
   removeEventListener: (t, fn) => window.removeEventListener(t, fn),
+  isOnline: () => navigator.onLine,
 });
 
 /**
@@ -83,7 +86,10 @@ export class SyncEngine {
     try {
       await this.client.sync();
       await uploadPendingFiles().catch(() => undefined);
-      setSyncStatus({ online: true, lastSyncAt: new Date().toISOString() });
+      setSyncStatus({
+        online: this.env.isOnline?.() ?? true,
+        lastSyncAt: new Date().toISOString(),
+      });
       bumpLocalVersion();
     } catch (err) {
       if (err instanceof OfflineError) setSyncStatus({ online: false });

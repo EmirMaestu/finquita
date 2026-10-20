@@ -26,6 +26,10 @@ export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   icon?: ReactNode;
   /** Permite clics seguidos (por defecto, un doble clic cuenta una sola vez). */
   repeatable?: boolean;
+  /** Está trabajando: se deshabilita y lo dice ("Guardando…"). */
+  busy?: boolean;
+  /** Texto mientras trabaja (si no, el texto del botón con puntos suspensivos). */
+  busyLabel?: string;
 };
 
 /** Dos clics en menos de este tiempo son uno (el dedo nervioso o el doble clic). */
@@ -42,6 +46,8 @@ export function Button({
   disabled,
   type = "button",
   repeatable,
+  busy,
+  busyLabel,
   onClick,
   ...rest
 }: ButtonProps) {
@@ -68,7 +74,8 @@ export function Button({
   return (
     <button
       type={type}
-      disabled={disabled}
+      disabled={disabled || busy}
+      aria-busy={busy || undefined}
       onClick={guarded}
       className={cx(
         "inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-lg font-semibold whitespace-nowrap transition-colors duration-150",
@@ -80,8 +87,14 @@ export function Button({
       {...rest}
     >
       {locked && <Lock size={16} aria-label="Pide PIN" />}
+      {busy && (
+        <span
+          aria-hidden
+          className="size-4 shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent"
+        />
+      )}
       {icon}
-      {children}
+      {busy ? (busyLabel ?? <>{children}…</>) : children}
     </button>
   );
 }

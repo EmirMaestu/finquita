@@ -84,7 +84,12 @@ export function LoginPage({ onLockScreen }: { onLockScreen?: () => void }) {
             {error}
           </div>
         )}
-        <Button type="submit" size="lg" disabled={busy}>
+        <Button
+          type="submit"
+          size="lg"
+          busy={busy}
+          busyLabel={mode === "in" ? "Entrando…" : "Creando la cuenta…"}
+        >
           {mode === "in" ? "Entrar" : "Crear cuenta"}
         </Button>
         <button

@@ -138,7 +138,9 @@ function SupplierForm({ supplier, onClose }: { supplier?: Supplier | null; onClo
       footer={
         <Button
           className="flex-1"
-          disabled={!f.name.trim() || save.isPending}
+          disabled={!f.name.trim()}
+          busy={save.isPending}
+          busyLabel="Guardando…"
           onClick={() => save.mutate()}
         >
           Guardar

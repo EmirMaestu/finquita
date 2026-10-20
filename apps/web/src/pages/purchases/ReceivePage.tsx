@@ -25,6 +25,7 @@ import { confirmReceiptLocal } from "../../data/receive";
 import { useSettings } from "../../data/settings";
 import { beep } from "../../scan/beep";
 import { scanRouter } from "../../scan/GlobalScan";
+import { getSyncStatus } from "../../sync/status";
 import { Button } from "../../ui/Button";
 import { Chip } from "../../ui/Chip";
 import { cx } from "../../ui/cx";
@@ -467,9 +468,16 @@ function Receiving({
       });
     },
     onSuccess: () => {
-      toast({ text: "Recepción confirmada: entró el stock" });
+      toast({
+        text: getSyncStatus().online
+          ? "Recepción confirmada: entró el stock"
+          : "Recepción guardada en el dispositivo: entró el stock y se manda al volver internet",
+        ms: getSyncStatus().online ? 2500 : 6000,
+      });
       navigate("/compras/recepcion");
     },
+    onError: (e) =>
+      toast({ text: e instanceof Error ? e.message : "No se pudo confirmar.", tone: "error" }),
   });
   const tryConfirm = () => {
     const huge = touched.find((l) => num(l.received) > MAX_QTY || num(l.damaged) > MAX_QTY);
@@ -738,7 +746,9 @@ function Receiving({
         <span className="flex-1" />
         <Button
           size="lg"
-          disabled={!touched.some((l) => num(l.received) > 0) || confirm.isPending}
+          disabled={!touched.some((l) => num(l.received) > 0)}
+          busy={confirm.isPending}
+          busyLabel="Confirmando…"
           onClick={tryConfirm}
         >
           Confirmar recepción

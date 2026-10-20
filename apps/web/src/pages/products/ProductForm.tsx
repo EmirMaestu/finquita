@@ -154,7 +154,8 @@ export function ProductForm({ open, onClose, product, onSaved, initialCode }: Pr
           <Button
             type="submit"
             form="product-form"
-            disabled={save.isPending}
+            busy={save.isPending}
+            busyLabel="Guardando…"
             className="flex-1 lg:flex-none"
           >
             Guardar
