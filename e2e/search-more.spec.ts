@@ -4,6 +4,7 @@ import { ensureShiftOpen, loginOwner, loginWithPin } from "./helpers";
 test("búsqueda global: Ctrl+K encuentra productos, clientes y acciones", async ({ page }) => {
   await loginOwner(page);
   await page.goto("/inicio");
+  await expect(page.getByRole("button", { name: /^Buscar/ }).first()).toBeVisible();
   await page.keyboard.press("Control+k");
   const dialog = page.getByRole("dialog", { name: "Buscar" });
   await expect(dialog).toBeVisible();

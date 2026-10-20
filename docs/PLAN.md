@@ -160,7 +160,7 @@ Cinco usuarios nuevos recorrieron la app (docs/QA-USUARIOS.md). Las tareas agrup
   Listo cuando: test de reportes (categorías + recargos = total) y e2e de importación con vista previa de precios.
 - [x] T60 · **Lenguaje de mostrador.** Un nombre por cosa (Ajustar stock, Recibir, Escanear, Sumar al pedido, Mayorista…), palabras técnicas con ayuda o traducidas (breakage, sent, PLU, u, Confirm.), íconos con texto (campana, escanear, nuevo). §Sistema de diseño. Cierra Q54, Q55, Q56.
   Listo cuando: un test busca en apps/web las palabras en inglés de la lista y no las encuentra.
-- [ ] T61 · **Auditoría UI: lo que bloquea.** Búsqueda global (Ctrl+K y lupa); el bloqueo por inactividad no se destraba sin PIN; cliente e historial desde Vender en el celular; pantalla de categorías; errores visibles en Cambiar categoría; "Elegir tickets" con texto. Cierra Q92 a Q98.
+- [x] T61 · **Auditoría UI: lo que bloquea.** Búsqueda global (Ctrl+K y lupa); el bloqueo por inactividad no se destraba sin PIN; cliente e historial desde Vender en el celular; pantalla de categorías; errores visibles en Cambiar categoría; "Elegir tickets" con texto. Cierra Q92 a Q98.
   Listo cuando: cada uno tiene su test.
 - [ ] T62 · **Auditoría UI y cámara: lo que confunde.** Los Q99 a Q159 de docs/QA-USUARIOS.md, por pantalla, en el orden de la tabla.
   Listo cuando: cada Q tildado en QA-USUARIOS.md con su test.
