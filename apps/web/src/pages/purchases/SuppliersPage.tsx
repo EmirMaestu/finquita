@@ -2,6 +2,7 @@ import { formatDate, formatMoney, formatQty, ORDER_STATUS } from "@mostrador/sha
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { MessageCircle, Star } from "lucide-react";
 import { useState } from "react";
+import { NoPermissionFor } from "../../app/guards";
 import { useCan } from "../../app/session";
 import { ApiError, api } from "../../data/api";
 import { Button } from "../../ui/Button";
@@ -355,11 +356,13 @@ function SupplierDetailView({ id, onEdit }: { id: string; onEdit: (s: Supplier) 
 
 /** Proveedores: lista con rubro, días, WhatsApp, saldo y último pedido; ficha en panel. */
 export function SuppliersPage() {
+  const canSee = useCan("count_receive");
   const canEdit = useCan("build_orders");
   const [open, setOpen] = useState<string | null>(null);
   const [form, setForm] = useState<{ s: Supplier | null } | null>(null);
   const q = useQuery({ queryKey: ["suppliers"], queryFn: () => api<Supplier[]>("/api/suppliers") });
   const total = (q.data ?? []).reduce((s, x) => s + (x.balanceCents ?? 0), 0);
+  if (!canSee) return <NoPermissionFor perm="count_receive" />;
   return (
     <div className="flex flex-col gap-4 p-4 lg:p-6">
       <div className="flex flex-wrap items-center gap-3">

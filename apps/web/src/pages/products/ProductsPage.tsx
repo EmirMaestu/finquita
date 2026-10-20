@@ -275,8 +275,8 @@ export function ProductsPage() {
       )}
     </div>
   ) : (
-    <div className="flex items-center gap-2 border-b border-borde bg-superficie px-4 py-3">
-      <label className="flex h-12 min-w-0 flex-1 items-center gap-2.5 rounded-lg border border-borde bg-fondo px-3 text-texto-suave">
+    <div className="flex flex-wrap items-center gap-2 border-b border-borde bg-superficie px-4 py-3">
+      <label className="flex h-12 min-w-0 basis-full items-center gap-2.5 rounded-lg border border-borde bg-fondo px-3 text-texto-suave sm:basis-0 sm:flex-1">
         <Search size={22} aria-hidden />
         <input
           aria-label="Buscar productos"

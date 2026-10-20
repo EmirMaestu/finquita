@@ -1,6 +1,6 @@
 import type { Grant, Permission, Role } from "@mostrador/shared";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { createContext, type ReactNode, useContext } from "react";
+import { createContext, type ReactNode, useContext, useEffect, useRef } from "react";
 import { ApiError, api, credentials, markSessionKnown, OfflineError } from "../data/api";
 
 export type Me = {
@@ -62,6 +62,16 @@ export function useSessionQuery(): Session {
 const SessionContext = createContext<Me | null>(null);
 
 export function SessionProvider({ me, children }: { me: Me | null; children: ReactNode }) {
+  const qc = useQueryClient();
+  const last = useRef<string | null>(null);
+  const memberId = me?.member.id ?? null;
+  // Al cambiar de persona, lo que la anterior tenía en pantalla (avisos, reportes, costos)
+  // no queda en memoria para la siguiente (ronda 3: la cajera vio el aviso del dueño).
+  useEffect(() => {
+    if (last.current && memberId && last.current !== memberId)
+      qc.removeQueries({ predicate: (q) => q.queryKey[0] !== "me" });
+    last.current = memberId;
+  }, [memberId, qc]);
   return <SessionContext.Provider value={me}>{children}</SessionContext.Provider>;
 }
 

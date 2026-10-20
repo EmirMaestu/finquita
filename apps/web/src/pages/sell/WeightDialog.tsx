@@ -72,7 +72,24 @@ export function WeightDialog({
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
+      // P cambia a "Por plata" y K a "Por peso", sin tabular (ronda 3).
+      const k = e.key.toLowerCase();
+      if ((k === "p" || k === "k") && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        const m = k === "p" ? "money" : "weight";
+        setMode(m);
+        setField(m === "money" ? "money" : "grams");
+        return;
+      }
       if (e.key === "Enter") {
+        // Enter sobre un botón enfocado ("Por plata") lo activa: no agrega con el modo viejo.
+        const el = document.activeElement;
+        if (
+          el instanceof HTMLButtonElement &&
+          el.hasAttribute("aria-pressed") &&
+          box.current?.contains(el)
+        )
+          return;
         e.preventDefault();
         next();
       } else if (e.key === "Escape") {
@@ -113,8 +130,8 @@ export function WeightDialog({
           <div className="inline-flex w-max overflow-hidden rounded-lg border border-borde text-[13px] font-semibold">
             {(
               [
-                ["weight", "Por peso"],
-                ["money", "Por plata"],
+                ["weight", "Por peso (K)"],
+                ["money", "Por plata (P)"],
               ] as const
             ).map(([m, label]) => (
               <button

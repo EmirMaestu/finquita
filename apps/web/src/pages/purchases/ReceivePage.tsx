@@ -97,6 +97,7 @@ function Start() {
   const { version } = useSyncStatus();
   const expected = useQuery({
     queryKey: ["receipts-expected", version],
+    placeholderData: (prev) => prev,
     queryFn: () => api<Expected[]>("/api/receipts/expected"),
   });
   const pending = useQuery({
@@ -837,9 +838,11 @@ export function ReceivePage() {
   const orderId = params.get("pedido");
   const kind =
     (params.get("tipo") as "no_order" | "wholesale" | null) ?? (orderId ? "order" : null);
-  const { version } = useSyncStatus();
+  // Sin la versión de sincronización en la clave: si cambiara, la pantalla se volvería a montar
+  // y se perdería lo cargado (ronda 3). Se refresca al confirmar.
   const order = useQuery({
-    queryKey: ["receive-order", orderId, version],
+    queryKey: ["receive-order", orderId],
+    staleTime: Number.POSITIVE_INFINITY,
     queryFn: () => api<OrderData>(`/api/receipts/order/${orderId}`),
     enabled: can && !!orderId,
   });

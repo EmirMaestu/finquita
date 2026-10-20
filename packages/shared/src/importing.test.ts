@@ -94,3 +94,37 @@ describe("Excel", () => {
     await expect(readXlsx(new Uint8Array([1, 2, 3]))).rejects.toThrow("No es un archivo de Excel");
   });
 });
+
+describe("PLU en la columna del código (ronda 3)", () => {
+  it("un código de 4 números es el PLU de un pesable, no un error", () => {
+    const rows = normalizeSheet(
+      [
+        ["Nombre", "Código", "Precio", "Unidad"],
+        ["Jamón cocido", "1001", "21000", "kg"],
+        ["Yerba 1 kg", "7791234000012", "6900", ""],
+        ["Raro", "12AB", "100", ""],
+      ],
+      guessMapping(["Nombre", "Código", "Precio", "Unidad"]),
+    );
+    expect(rows[0]).toMatchObject({ barcode: null, plu: "1001", unit: "kg", errors: [] });
+    expect(rows[1]).toMatchObject({ barcode: "7791234000012", unit: "unit", errors: [] });
+    expect(rows[2]?.errors[0]).toContain("Código interno o PLU");
+  });
+});
+
+describe("stock al importar (ronda 3)", () => {
+  it("un producto por unidad no carga stock 2,5 ni negativo", () => {
+    const rows = normalizeSheet(
+      [
+        ["Nombre", "Precio", "Stock"],
+        ["Galletitas", "1500", "2,5"],
+        ["Fideos", "1900", "-3"],
+        ["Jamón x kg", "21000", "2,5"],
+      ],
+      guessMapping(["Nombre", "Precio", "Stock"]),
+    );
+    expect(rows[0]?.errors[0]).toContain("número entero");
+    expect(rows[1]?.errors).toContain("El stock no puede ser negativo");
+    expect(rows[2]?.errors).toEqual([]);
+  });
+});

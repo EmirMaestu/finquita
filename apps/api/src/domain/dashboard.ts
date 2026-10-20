@@ -344,12 +344,10 @@ export async function stockerTasks(db: Db, memberId: string, now = new Date()) {
     .select({ o: purchaseOrders, supplier: suppliers.name })
     .from(purchaseOrders)
     .innerJoin(suppliers, eq(suppliers.id, purchaseOrders.supplierId))
-    .where(
-      and(
-        inArray(purchaseOrders.status, ["sent", "confirmed", "changed", "partial"]),
-        lte(purchaseOrders.expectedOn, addDays(today, 1)),
-      ),
-    );
+    .where(and(inArray(purchaseOrders.status, ["sent", "confirmed", "changed", "partial"])))
+    // Todas las recepciones esperadas, la más próxima primero (ronda 3: "no tenés tareas" con un
+    // pedido para recibir el jueves).
+    .orderBy(purchaseOrders.expectedOn);
   const [exp] = await db
     .select({ n: sql<number>`count(*)::int` })
     .from(lots)
@@ -358,7 +356,7 @@ export async function stockerTasks(db: Db, memberId: string, now = new Date()) {
     ...counts.map(({ c, total }) => ({
       key: `count:${c.id}`,
       text: `Contar ${c.name}`,
-      detail: `${total} productos`,
+      detail: `${total} ${total === 1 ? "producto" : "productos"}`,
       path: `/productos/conteos/${c.id}`,
     })),
     ...receipts.map(({ o, supplier }) => ({
@@ -369,7 +367,11 @@ export async function stockerTasks(db: Db, memberId: string, now = new Date()) {
           ? "llega hoy"
           : o.expectedOn && o.expectedOn < today
             ? "atrasado"
-            : "llega mañana",
+            : o.expectedOn === addDays(today, 1)
+              ? "llega mañana"
+              : o.expectedOn
+                ? `llega el ${o.expectedOn.slice(8, 10)}/${o.expectedOn.slice(5, 7)}`
+                : "sin fecha",
       path: `/compras/recepcion?pedido=${o.id}`,
     })),
     // Con "Lotes y vencimientos" apagado no se habla de lotes.

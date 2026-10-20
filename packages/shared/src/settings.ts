@@ -126,6 +126,8 @@ export function surchargeFor(amountCents: number, bp: number): number {
 
 /** "20000, 10000, 2.000" → [20000, 10000, 2000]; "1.000,50" o "abc" → null. */
 export function parseDenominations(text: string): number[] | null {
+  // "1,5" (coma entre números, sin espacio) es un decimal: no se parte en dos billetes.
+  if (/\d,\d/.test(text)) return null;
   const out: number[] = [];
   for (const raw of text.split(/[,;\n]+/)) {
     const t = raw.trim();

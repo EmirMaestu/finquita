@@ -270,7 +270,7 @@ settingsRoutes.post("/members", requireActor(), owner, validate("json", memberBo
     if (dup) throw conflict("Ya hay alguien con ese email.");
   }
   if (b.pin && (await pinInUse(db, b.pin)))
-    throw new ApiError(400, "validation", "Ese PIN ya lo usa otra persona: elegí otro.");
+    throw new ApiError(400, "validation", "Ese PIN no se puede usar: elegí otro.");
   const id = newId();
   await db.insert(members).values({
     id,

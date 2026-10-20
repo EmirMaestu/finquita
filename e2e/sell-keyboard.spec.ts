@@ -161,3 +161,17 @@ test("código no cargado: F3 adentro del diálogo vende como varios", async ({ p
   await page.keyboard.press("F3");
   await expect(page.getByRole("dialog", { name: "Producto varios" })).toBeVisible();
 });
+
+test("efectivo rápido con el teclado: Ctrl+3 suma $ 10.000", async ({ page }) => {
+  await loginWithPin(page, "Tomás", "4567");
+  await page.goto("/vender");
+  await ensureShiftOpen(page);
+  await expect(page.getByRole("button", { name: /Pan francés/ })).toBeVisible({ timeout: 20_000 });
+  await scanWithGun(page, "7790000001017");
+  await page.keyboard.press("F12");
+  const pay = page.getByRole("dialog", { name: "Cobrar" });
+  await expect(pay).toBeVisible();
+  await page.keyboard.press("Control+3");
+  await expect(pay.getByRole("status", { name: "Monto" })).toHaveText("$ 10.000");
+  await page.keyboard.press("Escape");
+});

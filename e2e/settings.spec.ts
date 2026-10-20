@@ -42,6 +42,6 @@ test("Ajustes › Usuarios: invitar con el PIN de otra persona avisa y no crea e
   await invite.getByLabel("Rol").selectOption("cashier");
   await invite.getByLabel("PIN").fill("1234");
   await invite.getByRole("button", { name: "Invitar" }).click();
-  await expect(page.getByText("Ese PIN ya lo usa otra persona: elegí otro.")).toBeVisible();
+  await expect(page.getByText("Ese PIN no se puede usar: elegí otro.")).toBeVisible();
   await expect(page.getByText("Listo: ya puede entrar con su PIN")).toHaveCount(0);
 });

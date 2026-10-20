@@ -113,6 +113,7 @@ export function ImportPage() {
   const headers = rows[0] ?? [];
   const recognized = Object.keys(mapping).length;
   const items = preview.data?.items.filter((i) => i.action === tab) ?? [];
+  const renamed = preview.data?.items.filter((i) => i.changes?.name).length ?? 0;
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-4 p-4 lg:p-6">
@@ -246,7 +247,11 @@ export function ImportPage() {
             {(
               [
                 ["new", `${preview.data.summary.new} nuevos`, "ok"],
-                ["update", `${preview.data.summary.updated} actualizados`, "info"],
+                [
+                  "update",
+                  `${preview.data.summary.updated} actualizados${renamed ? ` (${renamed} cambian de nombre)` : ""}`,
+                  renamed ? "alerta" : "info",
+                ],
                 ["unchanged", `${preview.data.summary.unchanged} sin cambios`, "neutro"],
                 ["error", `${preview.data.summary.errors} con error`, "peligro"],
               ] as const

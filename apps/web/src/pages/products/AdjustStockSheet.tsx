@@ -47,7 +47,7 @@ export function AdjustStockSheet({
     !wholeOnly &&
     !noteLong;
   const invalidText =
-    value.trim() === "" || valid
+    value.trim() === "" || valid || (noteLong && Number.isFinite(n) && !wholeOnly)
       ? null
       : !Number.isFinite(n)
         ? "Poné una cantidad, por ejemplo 12 o 1,5"
@@ -62,6 +62,12 @@ export function AdjustStockSheet({
   const [busy, setBusy] = useState(false);
   const submit = async () => {
     if (!me || !valid || stock === null || busy) return;
+    const after = Math.round((stock + delta) * 1000) / 1000;
+    if (
+      after < 0 &&
+      !window.confirm(`El stock queda en ${formatQty(after, unit)} (negativo). ¿Ajustar igual?`)
+    )
+      return;
     setBusy(true);
     try {
       await adjustStockLocal({

@@ -37,11 +37,9 @@ export function MiscDialog({
           onChange={(e) => setAmount(e.target.value)}
           placeholder="1500"
           hint={
-            valid
+            cents !== null && cents > 0 && !tooBig
               ? formatMoney(cents)
-              : amount.trim() && cents !== null
-                ? "El monto tiene que ser mayor que $ 0."
-                : "Para lo que no está cargado."
+              : "Para lo que no está cargado."
           }
           error={
             tooBig
@@ -56,6 +54,7 @@ export function MiscDialog({
           value={desc}
           onChange={(e) => setDesc(e.target.value)}
           placeholder="Opcional"
+          error={descLong ? "Descripción: como mucho 200 caracteres." : undefined}
         />
         <Button type="submit" size="lg" disabled={!valid}>
           Agregar <Key>Enter</Key>

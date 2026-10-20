@@ -1,5 +1,6 @@
 import { Minus, Plus } from "lucide-react";
 import { cx } from "./cx";
+import { toast } from "./toast";
 
 /** Stepper − / + (conteo por billete, cantidad en Vender). */
 export function Stepper({
@@ -34,6 +35,16 @@ export function Stepper({
         aria-label={label}
         inputMode="numeric"
         value={value}
+        onKeyDown={(e) => {
+          if (e.key.length === 1 && /[^\d]/.test(e.key) && !e.ctrlKey && !e.metaKey) {
+            e.preventDefault();
+            toast({
+              text: "Solo números enteros: cuántos hay de ese billete.",
+              tone: "error",
+              ms: 2500,
+            });
+          }
+        }}
         onChange={(e) => {
           // "1,5", "-5" o "1e2" no son cantidades de billetes: se ignoran, no se adivinan.
           if (/\D/.test(e.target.value)) return;

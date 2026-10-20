@@ -111,29 +111,46 @@ export function normalizeRow(cells: string[], mapping: ColumnMapping, line: numb
   const rawCost = get("cost");
   const costCents = money(rawCost);
   if (rawCost && costCents === null) errors.push(`El costo "${rawCost}" no es un número`);
-  const barcode = get("barcode").replace(/\s/g, "") || null;
-  if (barcode && !/^\d{6,14}$/.test(barcode)) errors.push(`El código "${barcode}" no es válido`);
+  let barcode = get("barcode").replace(/\s/g, "") || null;
+  let plu = get("plu") || null;
+  // Un código de 1 a 5 números es un PLU (el código corto de los pesables), no un código de
+  // barras: si no hay PLU en su columna, va ahí (ronda 3: "El código 1001 no es válido").
+  if (barcode && /^\d{1,5}$/.test(barcode) && (!plu || plu === barcode)) {
+    plu = barcode;
+    barcode = null;
+  }
+  if (barcode && !/^\d{6,14}$/.test(barcode))
+    errors.push(
+      `El código "${barcode}" no es un código de barras (van de 6 a 14 números). Si es un PLU, ponelo en la columna "Código interno o PLU".`,
+    );
   const rawStock = get("stock");
   const stock = quantity(rawStock);
   if (rawStock && stock === null) errors.push(`El stock "${rawStock}" no es un número`);
+  if (stock !== null && stock < 0) errors.push("El stock no puede ser negativo");
   const rawMin = get("minStock");
   const minStock = quantity(rawMin);
   const unitCell = get("unit").toLowerCase();
   // "Jamón cocido x kg", "Pan por kilo": si no hay columna de unidad, el nombre lo dice.
   // "Jamón x kg" o "Pan por kilo" sí; "Yerba 1 kg" o "Azúcar 1 kg" no (es el envase).
   const kgByName = /(\bx\s*kg\b|\bpor\s*kilo\b|\bpor\s*kg\b|\bal\s*kilo\b)/i.test(name);
+  const unit = /kg|kilo|pes/.test(unitCell) ? "kg" : !unitCell && kgByName ? "kg" : "unit";
+  // Lo que se vende por unidad no tiene medias unidades (ronda 3: stock 2,5 de un paquete).
+  if (unit === "unit" && stock !== null && !Number.isInteger(stock))
+    errors.push(
+      `El stock "${rawStock}" tiene decimales y se vende por unidad: poné un número entero`,
+    );
   return {
     line,
     name,
     barcode,
-    plu: get("plu") || null,
+    plu,
     priceCents,
     costCents,
     category: get("category") || null,
     stock,
     minStock,
     supplier: get("supplier") || null,
-    unit: /kg|kilo|pes/.test(unitCell) ? "kg" : !unitCell && kgByName ? "kg" : "unit",
+    unit,
     unitGuessed: !unitCell && kgByName,
     errors,
   };

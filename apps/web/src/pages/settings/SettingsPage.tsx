@@ -225,7 +225,9 @@ function UsersSection() {
         text:
           f.email && (f.role === "manager" || f.role === "owner")
             ? "Listo: que cree su cuenta con ese email desde el ingreso"
-            : "Listo: ya puede entrar con su PIN",
+            : credentials.get().deviceToken
+              ? "Listo: ya puede entrar con su PIN en este dispositivo"
+              : "Listo. Para que entre con su PIN, habilitá la Mac del mostrador en Ajustes › Dispositivos.",
       });
       setF({ name: "", role: "cashier", email: "", phone: "", pin: "" });
       await refresh();

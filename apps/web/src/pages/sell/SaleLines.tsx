@@ -74,7 +74,10 @@ export function SaleTable({
                       type="button"
                       aria-label={`Restar ${l.description}`}
                       onClick={() => onQty(l.id, -1)}
-                      className={STEP}
+                      // Con una sola unidad, "−" no borra la línea: para eso está Quitar (ronda 3).
+                      disabled={l.qty <= 1}
+                      title={l.qty <= 1 ? "Para sacarlo, Quitar o Supr" : undefined}
+                      className={cx(STEP, "disabled:opacity-30")}
                     >
                       <Minus size={16} />
                     </button>
@@ -144,12 +147,15 @@ export function SaleTable({
 export function SaleList({
   lines,
   onQty,
+  onEditQty,
   onRemove,
   warnings,
   onDismissWarning,
 }: {
   lines: CartLine[];
   onQty: (id: string, dir: 1 | -1) => void;
+  /** Tocar el número: teclado para poner la cantidad de una. */
+  onEditQty?: (id: string) => void;
   onRemove: (id: string) => void;
   warnings: LineWarning[];
   onDismissWarning: (lineId: string) => void;
@@ -172,12 +178,20 @@ export function SaleList({
                   <button
                     type="button"
                     aria-label={`Restar ${l.description}`}
+                    disabled={l.qty <= 1}
                     onClick={() => onQty(l.id, -1)}
                     className="inline-flex size-11 items-center justify-center"
                   >
                     <Minus size={20} />
                   </button>
-                  <span className="tnum w-7 text-center font-semibold">{l.qty}</span>
+                  <button
+                    type="button"
+                    aria-label={`Cantidad de ${l.description}: ${l.qty}. Tocá para cambiarla`}
+                    onClick={() => onEditQty?.(l.id)}
+                    className="tnum h-11 min-w-9 px-1 text-center font-semibold"
+                  >
+                    {l.qty}
+                  </button>
                   <button
                     type="button"
                     aria-label={`Sumar ${l.description}`}

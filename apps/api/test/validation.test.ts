@@ -35,7 +35,7 @@ describe("errores que se entienden", () => {
     const carlos = await as(app(), ref.t.db, "carlos");
     const r = await carlos.post("/api/members", { name: "Paola", role: "cashier", pin: "1234" });
     expect(r.status).toBe(400);
-    expect(r.body.error.message).toBe("Ese PIN ya lo usa otra persona: elegí otro.");
+    expect(r.body.error.message).toBe("Ese PIN no se puede usar: elegí otro.");
     const ok = await carlos.post("/api/members", { name: "Paola", role: "cashier", pin: "7391" });
     expect(ok.status).toBe(201);
   });

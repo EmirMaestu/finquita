@@ -47,12 +47,21 @@ test("recepción del pedido 0042 en el iPhone: falta yogur y el dueño completa 
   await yogur.getByLabel("Recibido Yogur bebible 1 L").fill("10");
   await expect(yogur.getByText("Faltan 2")).toBeVisible();
   await yogur.getByLabel("Recibido Yogur bebible 1 L").press("Enter");
+  await expect(nico.getByRole("status", { name: "Avance" })).toHaveText("1 de 14");
+  // Un corte de red (y la sincronización al volver) no borra lo cargado (ronda 3).
+  await nico.context().setOffline(true);
+  await nico.waitForTimeout(3000);
+  await nico.context().setOffline(false);
+  await nico.waitForTimeout(4000);
+  await expect(nico.getByRole("status", { name: "Avance" })).toHaveText("1 de 14");
 
   const leche = await scan("7790000002014", "Leche entera 1 L sachet");
   await leche.getByLabel("Recibido Leche entera 1 L sachet").fill("24");
   await leche.getByRole("button", { name: "Lote y vencimiento" }).click();
   await leche.getByLabel("Lote").fill("L-881");
-  await leche.getByLabel("Vence").fill("2026-10-20");
+  // Una fecha que no vence nunca en la prueba (las de más de 30 días atrás se rechazan).
+  const vence = new Date(Date.now() + 60 * 86_400_000).toISOString().slice(0, 10);
+  await leche.getByLabel("Vence").fill(vence);
   await leche.getByRole("button", { name: "Listo" }).click();
 
   await nico.getByRole("button", { name: "Todo lo demás como pedido" }).click();

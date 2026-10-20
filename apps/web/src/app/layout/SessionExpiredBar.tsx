@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { LogIn } from "lucide-react";
 import { useEffect } from "react";
 import { useNavigate } from "react-router";
@@ -8,6 +9,7 @@ import { useSessionExpired } from "../sessionExpired";
 /** Franja fija cuando la sesión venció: lo cargado se conserva y se vuelve a entrar desde acá. */
 export function SessionExpiredBar() {
   const expired = useSessionExpired();
+  const qc = useQueryClient();
   const navigate = useNavigate();
   const device = Boolean(credentials.get().deviceToken);
   // En la Mac con PIN, la pantalla de "¿Quién sos?" aparece sola: nadie sigue trabajando sin sesión.
@@ -25,7 +27,12 @@ export function SessionExpiredBar() {
       </span>
       <button
         type="button"
-        onClick={() => (device ? lockScreen.open() : navigate("/"))}
+        onClick={() => {
+          if (device) return lockScreen.open();
+          // Sin dispositivo habilitado (el celular del dueño): la pantalla de entrar con email.
+          qc.setQueryData(["me"], null);
+          navigate("/");
+        }}
         className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-alerta px-3 font-semibold text-white"
       >
         <LogIn size={16} aria-hidden /> Entrar de nuevo

@@ -159,11 +159,26 @@ export function PaymentDialog({
         onPickCustomer?.();
         return;
       }
+      // Ctrl+1 a Ctrl+4: los billetes de efectivo rápido ($ 1.000, $ 2.000, $ 10.000, $ 20.000).
+      if ((e.ctrlKey || e.metaKey) && /^[1-4]$/.test(k) && tab === "cash") {
+        e.preventDefault();
+        const b = BILLS[Number(k) - 1] ?? 0;
+        setTyped((t) => String((Number(t ?? "0") || 0) + b / 100));
+        return;
+      }
       const letter = k.length === 1 ? k.toUpperCase() : "";
       const t = TABS.find((x) => x.key === letter);
       if (t && !e.ctrlKey && !e.metaKey) {
         e.preventDefault();
         pickTab(t.id);
+        return;
+      }
+      // D y C: tarjeta de débito o de crédito, sin tabular hasta el botón (ronda 3).
+      if ((letter === "D" || letter === "C") && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        pickTab("card");
+        setCard(letter === "D" ? "debit" : "credit");
+        box.current?.focus();
         return;
       }
       if (letter === "V" && tab === "transfer") {
@@ -355,7 +370,11 @@ export function PaymentDialog({
                   key={c}
                   type="button"
                   aria-pressed={card === c}
-                  onClick={() => setCard(c)}
+                  onClick={() => {
+                    setCard(c);
+                    // El foco vuelve al cobro: el Enter siguiente cobra.
+                    box.current?.focus();
+                  }}
                   className={cx(
                     "h-10 rounded-full px-3 text-xs font-semibold lg:h-8",
                     card === c ? "bg-texto text-fondo" : "border border-borde bg-superficie",
@@ -363,6 +382,9 @@ export function PaymentDialog({
                 >
                   {METHOD_LABEL[c]}
                   {methods[c].surchargeBp ? ` +${methods[c].surchargeBp / 100} %` : ""}
+                  <span className="ml-1 hidden opacity-70 lg:inline">
+                    ({c === "debit" ? "D" : "C"})
+                  </span>
                 </button>
               ))}
               <span className="ml-auto text-texto-suave">
@@ -483,14 +505,20 @@ export function PaymentDialog({
                   <div className="text-xs font-semibold tracking-[.06em] text-texto-suave uppercase">
                     Efectivo rápido
                   </div>
-                  {BILLS.map((b) => (
+                  {BILLS.map((b, i) => (
                     <button
                       key={b}
                       type="button"
                       onClick={() => setTyped((t) => String((Number(t ?? "0") || 0) + b / 100))}
-                      className="h-12 rounded-lg border border-borde bg-superficie text-[15px] font-semibold hover:bg-neutro-suave"
+                      className="flex h-12 items-center justify-center gap-2 rounded-lg border border-borde bg-superficie text-[15px] font-semibold hover:bg-neutro-suave"
                     >
                       {formatMoney(b)}
+                      <kbd
+                        aria-hidden
+                        className="hidden rounded bg-neutro-suave px-1 py-0.5 text-[11px] font-medium text-texto-suave lg:inline"
+                      >
+                        Ctrl {i + 1}
+                      </kbd>
                     </button>
                   ))}
                   <button

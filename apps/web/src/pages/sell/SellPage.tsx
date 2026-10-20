@@ -3,6 +3,7 @@ import {
   addProduct,
   applyPromotions,
   bumpQty,
+  type CartLine,
   cartTotals,
   creditNeedsPin,
   discountFor,
@@ -48,6 +49,7 @@ import { cx } from "../../ui/cx";
 import { TextField } from "../../ui/Field";
 import { Key } from "../../ui/Key";
 import { Menu } from "../../ui/Menu";
+import { NumPad } from "../../ui/NumPad";
 import { Sheet } from "../../ui/Sheet";
 import { toast } from "../../ui/toast";
 import { MovementSheet } from "../cash/MovementSheet";
@@ -75,6 +77,7 @@ type Dialog =
   | { kind: "help" }
   | { kind: "weight"; product: LocalProduct }
   | { kind: "discount" }
+  | { kind: "qty"; lineId: string }
   | { kind: "cash" }
   | { kind: "customer"; back?: "pay" }
   | null;
@@ -88,6 +91,37 @@ type Done = {
 };
 
 /** Descuento general (F4): porcentaje o monto; por encima del tope, el cajero necesita PIN. */
+/** Cantidad de una línea, tocando el número en el celular. */
+function QtyDialog({
+  line,
+  onApply,
+  onClose,
+}: {
+  line: CartLine | null;
+  onApply: (n: number) => void;
+  onClose: () => void;
+}) {
+  const [typed, setTyped] = useState("");
+  const n = typed ? Number(typed) : null;
+  if (!line) return null;
+  return (
+    <Sheet open onClose={onClose} title={line.description}>
+      <div className="flex flex-col gap-4" data-keypad>
+        <output aria-label="Cantidad" className="tnum text-center text-[40px] font-semibold">
+          {typed || line.qty}
+        </output>
+        <NumPad
+          big
+          onKey={(k) => setTyped((t) => (k === "back" ? t.slice(0, -1) : (t + k).slice(0, 3)))}
+        />
+        <Button size="xl" onClick={() => onApply(n ?? line.qty)}>
+          {n === 0 ? "Quitar de la venta" : `Dejar en ${n ?? line.qty}`}
+        </Button>
+      </div>
+    </Sheet>
+  );
+}
+
 function DiscountDialog({
   currentCents,
   subtotalCents,
@@ -523,6 +557,12 @@ export function SellPage() {
       }
       if ((k === "+" || k === "-") && s.selected) {
         stop();
+        const sel = s.cart.lines.find((l) => l.id === s.selected);
+        // "−" con una unidad no borra: se quita con Supr (ronda 3).
+        if (k === "-" && sel && sel.qty <= 1) {
+          toast({ text: "Para sacarlo de la venta, Supr.", ms: 2000 });
+          return;
+        }
         return sale.setCart(bumpQty(s.cart, s.selected, k === "+" ? 1 : -1));
       }
       if (k === "Delete" && s.selected) {
@@ -660,6 +700,23 @@ export function SellPage() {
           }}
         />
       )}
+      {dialog?.kind === "qty" && (
+        <QtyDialog
+          line={cart.lines.find((l) => l.id === dialog.lineId) ?? null}
+          onApply={(n) => {
+            const line = sale.get().cart.lines.find((l) => l.id === dialog.lineId);
+            if (line && n > 0 && n <= 999) {
+              let c = sale.get().cart;
+              for (let i = 0; i < Math.abs(n - line.qty); i++)
+                c = bumpQty(c, line.id, n > line.qty ? 1 : -1);
+              sale.setCart(c, line.id);
+            }
+            if (line && n === 0) sale.setCart(removeLine(sale.get().cart, line.id), null);
+            setDialog(null);
+          }}
+          onClose={() => setDialog(null)}
+        />
+      )}
       {dialog?.kind === "discount" && (
         <DiscountDialog
           currentCents={totals.discountCents}
@@ -766,6 +823,7 @@ export function SellPage() {
           lines={cart.lines}
           warnings={warnings}
           onQty={(id, dir) => sale.setCart(bumpQty(cart, id, dir))}
+          onEditQty={(id) => setDialog({ kind: "qty", lineId: id })}
           onRemove={(id) => sale.setCart(removeLine(cart, id), null)}
           onDismissWarning={(id) => setWarnings((w) => w.filter((x) => x.lineId !== id))}
         />

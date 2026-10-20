@@ -148,7 +148,7 @@ const supplierBody = z.object({
   cuit: z
     .string()
     .max(20)
-    .regex(/^[\d-]*$/, "El CUIT son números, con o sin guiones")
+    .regex(/^(\d{2}-?\d{8}-?\d)?$/, "El CUIT tiene 11 números, por ejemplo 30-71234567-8")
     .nullable()
     .optional(),
   category: plainText(60, 0).nullable().optional(),
@@ -177,6 +177,14 @@ supplierRoutes.post(
   validate("json", supplierBody),
   async (c) => {
     const b = c.req.valid("json");
+    // Dos proveedores con el mismo nombre confunden pedidos y facturas (ronda 3).
+    const [same] = await c
+      .get("db")
+      .select({ id: suppliers.id })
+      .from(suppliers)
+      .where(sql`lower(${suppliers.name}) = lower(${b.name.trim()})`)
+      .limit(1);
+    if (same) throw new ApiError(409, "conflict", `Ya hay un proveedor "${b.name.trim()}".`);
     const id = newId();
     await c
       .get("db")

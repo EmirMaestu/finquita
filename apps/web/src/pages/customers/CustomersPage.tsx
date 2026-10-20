@@ -319,17 +319,19 @@ export function CollectSheet({ customer, onClose }: { customer: Detail; onClose:
             {amountHint}
           </div>
         )}
-        <NumPad
-          onKey={(k) =>
-            setTyped((t) =>
-              k === "back"
-                ? t.slice(0, -1)
-                : k === ","
-                  ? t
-                  : (t + k).replace(/^0+/, "").slice(0, 9),
-            )
-          }
-        />
+        <div data-keypad>
+          <NumPad
+            onKey={(k) =>
+              setTyped((t) =>
+                k === "back"
+                  ? t.slice(0, -1)
+                  : k === ","
+                    ? t
+                    : (t + k).replace(/^0+/, "").slice(0, 9),
+              )
+            }
+          />
+        </div>
         <fieldset className="m-0 flex flex-wrap gap-2 border-0 p-0" aria-label="Medio de pago">
           <FilterChip active={method === "cash"} onClick={() => setMethod("cash")}>
             Efectivo
@@ -515,7 +517,7 @@ function CustomerView({ id, onEdit }: { id: string; onEdit: (d: Detail) => void 
                   : ""}
                 {m.openCents != null && m.openCents > 0 && m.openCents < m.amountCents ? (
                   <span className="block text-xs text-texto-suave">
-                    queda {formatMoney(m.openCents)}
+                    falta pagar {formatMoney(m.openCents)} de esta compra
                   </span>
                 ) : null}
               </span>
@@ -525,7 +527,7 @@ function CustomerView({ id, onEdit }: { id: string; onEdit: (d: Detail) => void 
                     ? `−${formatMoney(-m.amountCents)}`
                     : formatMoney(m.amountCents)}
                 </span>
-                <span className="tnum text-xs text-texto-suave">queda {money(m.balanceCents)}</span>
+                <span className="tnum text-xs text-texto-suave">saldo {money(m.balanceCents)}</span>
               </span>
               {canReverse && !m.reversed && m.kind !== "reversal" && (
                 <button

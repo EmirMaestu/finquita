@@ -32,3 +32,21 @@ test("cobro en el iPhone: Confirmar cobro se ve sin bajar y los textos no hablan
   await expect(done).toContainText("Tocá para la próxima venta", { useInnerText: true });
   await expect(done).not.toContainText("Cualquier tecla", { useInnerText: true });
 });
+
+test("en el iPhone, tocar la cantidad abre el teclado y la deja en 3", async ({ page }) => {
+  await loginOwner(page);
+  await page.goto("/vender");
+  await ensureShiftOpen(page);
+  await expect(page.getByRole("button", { name: /Huevos maple/ })).toBeVisible({
+    timeout: 20_000,
+  });
+  await page.getByRole("button", { name: /Huevos maple/ }).click();
+  await page.getByRole("button", { name: /Cantidad de Huevos maple/ }).click();
+  const dialog = page.getByRole("dialog", { name: /Huevos maple/ });
+  await dialog.getByRole("button", { name: "3", exact: true }).click();
+  await dialog.getByRole("button", { name: "Dejar en 3" }).click();
+  await expect(
+    page.getByRole("button", { name: /Cantidad de Huevos maple x 30: 3/ }),
+  ).toBeVisible();
+  await expect(page.getByRole("button", { name: /Cobrar/ })).toContainText("$ 24.600");
+});

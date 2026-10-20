@@ -70,7 +70,9 @@ export async function applyStock(tx: DbOrTx, ch: StockChange): Promise<StockResu
       .update(products)
       .set({ stockQty: resulting, updatedAt: new Date() })
       .where(eq(products.id, target.id));
-    if (resulting < 0) {
+    // Un producto recién cargado desde el mostrador (sin stock todavía, "Completar ficha") no
+    // avisa "stock negativo" al venderlo: el aviso es la ficha por completar (ronda 3).
+    if (resulting < 0 && !target.needsReview) {
       await raiseAlert(tx, {
         kind: "negative_stock",
         severity: "danger",

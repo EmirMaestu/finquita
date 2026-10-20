@@ -22,6 +22,8 @@ export function NumPad({
     if (!keyboard) return;
     const h = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      // Ctrl+número es un atajo (efectivo rápido), no un dígito.
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
       if (/^[0-9]$/.test(e.key)) onKey(e.key);
       else if (e.key === "Backspace") onKey("back");
       else if (decimal && (e.key === "," || e.key === ".")) onKey(",");

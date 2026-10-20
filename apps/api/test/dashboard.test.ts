@@ -134,12 +134,14 @@ describe("panel del día", () => {
     expect(t.map((x: { text: string }) => x.text)).toEqual([
       "Contar Góndola 3, Infusiones",
       "Recibir el pedido 0042 de Lácteos del Sur",
+      // Aunque llegue después de mañana, es una recepción esperada (ronda 3).
+      "Recibir el pedido 0041 de Distribuidora Andina",
       "Revisar vencimientos",
     ]);
     expect(t[0].path).toBe(`/productos/conteos/${count.body.id}`);
     expect(t[1].detail).toBe("llega hoy");
     // El jamón cocido del escenario vence en estos días.
-    expect(t[2]).toMatchObject({
+    expect(t[3]).toMatchObject({
       detail: "1 lote vence en 7 días",
       path: "/productos/vencimientos",
     });

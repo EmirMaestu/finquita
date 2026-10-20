@@ -725,7 +725,13 @@ export async function cashReport(db: Db, o: ReportOpts): Promise<Report> {
         value: [...exp.values()].reduce((a, z) => a + z, 0),
         kind: "money",
       },
-      { label: "Retiros", value: withdrawals, kind: "money" },
+      { label: "Retiros durante el turno", value: withdrawals, kind: "money" },
+      {
+        // Lo que sale del cajón al cerrar (lo contado menos el fondo que queda): ronda 3.
+        label: "A la caja fuerte al cerrar",
+        value: closes.reduce((a, c) => a + (c.s.withdrawnCents ?? 0), 0),
+        kind: "money",
+      },
     ],
     tables: [
       {

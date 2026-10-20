@@ -1158,6 +1158,67 @@ Problemas por usuario: apurado 11 · desconfiado 13 · celular 12 · literal 13 
 - **Cómo debería ser:** Mostrar el aplicado.
 - **Capturas:** `qa/ronda-2/destructor/mac/…`
 
+## Ronda 3 (20/10/2026)
+
+Instalaciones nuevas, los mismos cinco usuarios y el mismo recorrido, después de T64. Informes en `qa/ronda-3/<usuario>.md`. Problemas por usuario: apurado 13 · desconfiado 16 · celular 13 · literal 17 · destructor 37 (96 en total; 12 bloquean, 46 confunden, 38 molestan).
+
+- **Primer éxito:** los cinco lo lograron (turno cerrado, primera venta, venta con cámara sin red, recepción confirmada y todos los formularios recorridos).
+- **Lo que bloqueó:** casi todo fue una regresión de T62 en Recepción (la pantalla se reiniciaba con cada sincronización). Se arregló en T66 con un e2e que corta la red en medio de la recepción.
+- **Q de rondas anteriores que volvieron:** Q22 (conteos escondidos), Q237 (título cortado), Q55 (íconos sin texto), Q231 (Ganancia contra Margen), Q212 (importar pisa nombres, ahora con aviso), Q227 y Q65 (billetes), Q62 (avisos en memoria). Los demás Q de la ronda 2 no volvieron a aparecer.
+- **Estado:** la meta pedía una ronda sin bloquea ni confunde. La ronda 3 no lo logró; era la última ronda permitida. Lo arreglado en T66 no tuvo otra ronda de usuarios: queda verificado por tests y e2e. Lo abierto está en BLOCKERS.md.
+
+### Arreglados en T66 (verificados con tests, sin otra ronda de usuarios)
+
+| Q | Gravedad | Qué pasaba | Quiénes |
+| --- | --- | --- | --- |
+| Q242 | bloquea | Recepción se reinicia sola y borra lo cargado (regresión de T62: la clave de la consulta cambiaba con cada sincronización) | literal P01, P02, P03 · celular P01, P02, P03 · destructor P01 |
+| Q243 | bloquea | "Por plata" en el peso no se activa con Enter: la plata se carga como peso | apurado P01 |
+| Q244 | bloquea | Con "Crédito" elegido, Enter no cobra; crédito sin atajo | apurado P02, P03 |
+| Q245 | bloquea | "Entrar de nuevo" con la sesión vencida en el celular no lleva al login | destructor P02 |
+| Q246 | bloquea | Los conteos no están en ningún menú y la pantalla vacía no dice que están apagados ni quién los crea | literal P05, P06 |
+| Q247 | confunde | "−" con una unidad borra la línea sin aviso | apurado P04 |
+| Q248 | confunde | Inicio del repositor: "No tenés tareas" con un pedido para recibir el jueves | literal P07 |
+| Q249 | confunde | Íconos de la barra del celular sin texto y título cortado | literal P11, P17 |
+| Q250 | confunde | El producto creado al vuelo dispara "stock negativo" | celular P06 |
+| Q251 | confunde | La nota "pedido en camino" de un proveedor aparece en el pedido de otro | celular P08 |
+| Q252 | confunde | Cuenta corriente: dos "queda" en el mismo renglón | celular P12 · desconfiado P12 |
+| Q253 | confunde | Cliente nuevo "sin límite" y a la vez "límite $ 0" | desconfiado P07 |
+| Q254 | confunde | Reportes › Caja: "Retiros $ 0" con $ 21.000 a la caja fuerte al cerrar | desconfiado P15 |
+| Q255 | confunde | La cajera ve en memoria el aviso del dueño al entrar con su PIN | desconfiado P16 · destructor P23 |
+| Q256 | confunde | "Listo: ya puede entrar con su PIN" sin dispositivo habilitado | desconfiado P04 |
+| Q257 | confunde | El importador rechaza los PLU de los pesables sin decir qué hacer | desconfiado P01 |
+| Q258 | confunde | Billetes "1,5, 20000" se guardan como tres billetes; contar "1,5" billetes da 15 | destructor P03, P04 |
+| Q259 | confunde | Tipear el monto en Cobrar fiado se toma como escaneo | destructor P05 |
+| Q260 | confunde | Proveedor repetido y CUIT "123" se guardan | destructor P06, P07 |
+| Q261 | confunde | Importar acepta stock 2,5 en un producto por unidad | destructor P10 |
+| Q262 | confunde | Ajustar stock deja −94 sin preguntar y con la nota larga el error sale en otro campo | destructor P12, P13 |
+| Q263 | confunde | "defaultMarginBp" en un error y en Varios el error de la descripción habla del monto | destructor P17, P18 |
+| Q264 | confunde | El cajero en Proveedores por URL ve "Algo falló" en vez de "sin permiso" | destructor P24 |
+| Q265 | confunde | "Ese PIN ya lo usa otra persona" delata un PIN ajeno | destructor P27 |
+
+### Abiertos (van a BLOCKERS.md)
+
+| Q | Gravedad | Qué pasa | Quiénes |
+| --- | --- | --- | --- |
+| Q266 | confunde | Arqueo y cierre con teclado: sin atajo, foco y Enter (y sin "Total directo") | apurado P05, P06 |
+| Q267 | confunde | Los pesables dan totales que no se pagan justo en efectivo (redondeo) | apurado P07 |
+| Q268 | confunde | Repositor: no hay lugar para cargar productos y nada lo explica | literal P04 |
+| Q269 | confunde | "12 → …" en la recepción no se entiende | literal P08 |
+| Q270 | confunde | "Entrar con email" no hace nada la primera vez | literal P09 |
+| Q271 | confunde | En "Nuevo producto" la categoría solo ofrece "Sin categoría" | literal P10 |
+| Q272 | confunde | Ajustes con palabras técnicas (Funciones, conteo ciego) | literal P12 |
+| Q273 | confunde | Al volver internet nada dice que la venta o la recepción se subió | celular P04 |
+| Q274 | confunde | El sugerido no avisa que ya hay un borrador igual (y deja crear otro) | celular P07 · destructor P08 |
+| Q275 | confunde | Márgenes que no cierran: % de Inicio, recargo fuera del margen, Ganancia contra Margen | desconfiado P08, P09 |
+| Q276 | confunde | Lista de clientes con dos montos sin encabezado; nombre del dispositivo mezclado | desconfiado P05, P11 |
+| Q277 | confunde | Pedido sugerido acepta cantidades raras sin avisar en la pantalla | destructor P09 |
+| Q278 | confunde | Conteo de 99.999 unidades se muestra en verde y se aprueba (con la confirmación) | destructor P14 |
+| Q279 | confunde | Recepción: costo negativo propone un precio de venta negativo | destructor P15 |
+| Q280 | confunde | "*99999 Enter" abre el alta rápida; "-5*" y "1,5*" se ignoran sin aviso | destructor P19 |
+| Q281 | confunde | Sesión vencida en la Mac con PIN no dice cómo seguir | destructor P21 |
+| Q282 | confunde | Medios de pago: los interruptores se guardan solos y los campos no | destructor P29 |
+| Q283 | molesta | Detalles de la ronda 3: doble signo en la diferencia, cobro encimado con la ayuda, QR que no entra en 800 px, ticket que corta textos, encabezados pegados, "PAGOS" vacío, "1 productos", y el resto de lo marcado como molesta | apurado P08–P13 · literal P13–P16 · celular P05, P09–P11, P13 · desconfiado P02, P03, P06, P10, P13, P14 · destructor P11, P16, P20, P22, P25, P26, P28, P30–P37 |
+
 ## Hallazgos de las auditorías que ningún usuario volvió a ver
 
 Entran a la fusión con su ID original (C = cámara, U = UI). El detalle completo, con archivo y línea, está en `docs/auditoria/camara.md` y `docs/auditoria/ui.md`.

@@ -62,6 +62,7 @@ export const FIELD_LABELS: Record<string, string> = {
   contactName: "Contacto",
   dni: "DNI",
   countedQty: "Cantidad contada",
+  defaultMarginBp: "Ganancia por defecto",
   blindCount: "Conteo ciego",
   reserveDays: "Días de reserva",
   discountCapBp: "Tope de descuento",

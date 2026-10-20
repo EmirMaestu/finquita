@@ -8,6 +8,7 @@ import { useCan, useGrant } from "../../app/session";
 import { ApiError, api } from "../../data/api";
 import { localDb } from "../../data/db";
 import { fetchCategories } from "../../data/products";
+import { useSettings } from "../../data/settings";
 import { beep } from "../../scan/beep";
 import { scanRouter } from "../../scan/GlobalScan";
 import { Button } from "../../ui/Button";
@@ -169,6 +170,8 @@ function NewCount({ onClose }: { onClose: (id?: string) => void }) {
 export function CountsPage() {
   const can = useCan("count_receive");
   const canCreate = useGrant("adjust_stock") === "allow";
+  const canSettings = useCan("settings");
+  const countsOn = useSettings().features.counts;
   const navigate = useNavigate();
   const [creating, setCreating] = useState(false);
   const q = useQuery({ queryKey: ["counts"], queryFn: () => api<CountRow[]>("/api/counts") });
@@ -186,7 +189,18 @@ export function CountsPage() {
       ) : !q.data.length ? (
         <EmptyState
           title="Todavía no hay conteos"
-          body="Creá uno por categoría o por góndola y asignáselo a alguien."
+          body={
+            !countsOn
+              ? canSettings
+                ? "Los conteos están apagados. Prendelos en Ajustes › Funciones y creá el primero."
+                : "Los conteos están apagados: los prende el dueño en Ajustes › Funciones."
+              : canCreate
+                ? "Creá uno por categoría o por góndola y asignáselo a alguien."
+                : "Los conteos los crea un encargado o el dueño y te los asigna: cuando haya uno para vos, aparece acá y en Inicio."
+          }
+          action={
+            canCreate ? <Button onClick={() => setCreating(true)}>Nuevo conteo</Button> : undefined
+          }
         />
       ) : (
         <ul

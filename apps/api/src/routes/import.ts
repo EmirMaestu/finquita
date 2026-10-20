@@ -102,6 +102,10 @@ async function plan(
     if (r.name !== match.name && r.barcode && byCode.has(r.barcode))
       changes.name = [match.name, r.name];
     const warnings: string[] = [];
+    if (changes.name)
+      warnings.push(
+        `Cambia el nombre: "${match.name}" pasa a llamarse "${r.name}". Si no es lo que querés, revisá el código.`,
+      );
     if (r.stock !== null && r.stock !== match.stockQty)
       warnings.push("El stock de los productos que ya existen no se toca: hacé un conteo.");
     if (match.fixedPrice && changes.priceCents)
