@@ -35,10 +35,10 @@ test("el encargado abre Modo carga desde Productos y carga un producto con la c�
   const form = page.getByRole("region", { name: "Producto a cargar" });
   await expect(form.getByLabel("Nombre")).toBeVisible({ timeout: 10_000 });
   await show(page, null);
-  await form.getByLabel("Nombre").fill("Galletitas surtidas 300 g");
+  await form.getByLabel("Nombre").fill("Alfajores surtidos 300 g");
   await form.getByLabel("Precio").fill("2100");
   await form.getByRole("button", { name: "Guardar y escanear otro" }).click();
-  await expect(page.getByText("Cargado: Galletitas surtidas 300 g")).toBeVisible();
+  await expect(page.getByText("Cargado: Alfajores surtidos 300 g")).toBeVisible();
   // La cámara vuelve sola para el próximo.
   await expect(page.getByRole("button", { name: "Cerrar cámara" })).toBeVisible();
 });

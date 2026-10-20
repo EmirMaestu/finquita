@@ -35,8 +35,10 @@ export function Stepper({
         inputMode="numeric"
         value={value}
         onChange={(e) => {
-          const n = Number(e.target.value.replace(/\D/g, ""));
-          onChange(Number.isFinite(n) ? Math.max(min, n) : min);
+          // "1,5", "-5" o "1e2" no son cantidades de billetes: se ignoran, no se adivinan.
+          if (/\D/.test(e.target.value)) return;
+          const n = Number(e.target.value || "0");
+          onChange(Number.isFinite(n) ? Math.min(9999, Math.max(min, n)) : min);
         }}
         className="tnum w-12 bg-transparent text-center font-semibold outline-none"
       />

@@ -120,3 +120,61 @@ describe("números tipeados a la argentina (y con punto decimal)", () => {
     expect(plural(3, "ítem", "ítems")).toBe("3 ítems");
   });
 });
+
+describe("lo que pegó el destructor en la ronda 2", () => {
+  it("el fondo que queda no puede pasar lo contado", () => {
+    const errors = checkOp("cash.shift_close", {
+      shiftId: uuid,
+      countedCashCents: 14_227_000,
+      counts: null,
+      otherMedia: null,
+      expectedCashCents: 14_227_000,
+      differenceCents: 0,
+      note: null,
+      leftFloatCents: 99_999_900,
+      withdrawnCents: 0,
+    });
+    expect(errors).toEqual([
+      {
+        path: "leftFloatCents",
+        field: "Fondo que queda",
+        message: "No puede quedar más de lo contado",
+      },
+    ]);
+  });
+
+  it("un producto por unidad no tiene stock 1,5 ni mínimo −2 ni código abc", () => {
+    const errors = checkOp("product.upsert", {
+      id: uuid,
+      changes: { name: "Nuevo", saleUnit: "unit", priceCents: 100, minStock: -2 },
+      barcodes: ["abc", "123"],
+      initialStock: 1.5,
+    });
+    expect(errors.map((e) => `${e.field}: ${e.message}`)).toEqual([
+      "Stock mínimo: No puede ser negativo",
+      "Códigos de barras: Un código de barras tiene de 4 a 14 números",
+      "Códigos de barras: Un código de barras tiene de 4 a 14 números",
+      "Stock inicial: Se vende por unidad: tiene que ser un número entero",
+    ]);
+  });
+
+  it("recepción: no hay más dañados que recibidos ni vencimiento en 2020", () => {
+    const errors = checkOp("receipt.confirm", {
+      id: uuid,
+      kind: "order",
+      lines: [{ id: uuid, productId: uuid, qty: 5, damagedQty: 10, expiresOn: "2020-01-01" }],
+    });
+    expect(errors.map((e) => `${e.field}: ${e.message}`)).toEqual([
+      "Ítem 1 · Dañados: No puede haber más dañados que recibidos",
+      "Ítem 1 · Vencimiento: Ya pasó: revisá la fecha",
+    ]);
+  });
+
+  it("cliente: teléfono 'abc-123' y DNI 'abc' no se guardan", () => {
+    const errors = checkOp("customer.upsert", {
+      id: uuid,
+      changes: { name: "Cliente", phone: "abc-123", dni: "abc" },
+    });
+    expect(errors.map((e) => e.field)).toEqual(["Teléfono", "DNI"]);
+  });
+});

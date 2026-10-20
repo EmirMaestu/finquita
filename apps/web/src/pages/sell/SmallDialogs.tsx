@@ -1,4 +1,4 @@
-import { formatMoney, formatTime, parseMoney } from "@mostrador/shared";
+import { formatMoney, formatTime, MAX_CENTS, parseMoney } from "@mostrador/shared";
 import { TriangleAlert } from "lucide-react";
 import { type FormEvent, useEffect, useState } from "react";
 import type { LocalProduct } from "../../data/types";
@@ -20,7 +20,9 @@ export function MiscDialog({
   const [amount, setAmount] = useState("");
   const [desc, setDesc] = useState("");
   const cents = parseMoney(amount);
-  const valid = cents !== null && cents > 0;
+  const tooBig = cents !== null && cents > MAX_CENTS;
+  const descLong = desc.length > 200;
+  const valid = cents !== null && cents > 0 && !tooBig && !descLong;
   const submit = (e: FormEvent) => {
     e.preventDefault();
     if (valid) onAdd(cents, desc);
@@ -42,7 +44,11 @@ export function MiscDialog({
                 : "Para lo que no está cargado."
           }
           error={
-            amount.trim() && !valid && cents !== null ? "Poné un monto mayor que $ 0." : undefined
+            tooBig
+              ? `No puede pasar de ${formatMoney(MAX_CENTS)}.`
+              : amount.trim() && cents !== null && cents <= 0
+                ? "Poné un monto mayor que $ 0."
+                : undefined
           }
         />
         <TextField

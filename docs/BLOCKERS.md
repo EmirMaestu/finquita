@@ -2,3 +2,8 @@
 
 Lo que necesita una decisión o una acción de Emir.
 Formato: AAAA-MM-DD · Tarea · Qué se probó · Qué falta
+2026-10-20 · QA ronda 2 · Q209 (apurado P10, desconfiado P04): el "conteo ciego" del arqueo se hace después de ver "Sistema $ 58.850" en Caja. El spec (§ Caja) pide a la vez el turno en curso con la cuenta del efectivo esperado y el arqueo ciego; el diseño también. No se tocó · Decidir si el cajero ve el esperado en Caja o solo el dueño y el encargado.
+2026-10-20 · QA ronda 2 · Q213 (desconfiado P02): "Volver" en "¿Quién sos?" a pedido devuelve la sesión anterior sin PIN. T61 bloquea sin salida solo por inactividad; cambiar de usuario a pedido es voluntario y Volver no abre nada que no estuviera abierto. Se dejó así · Si se quiere PIN también ahí, es un cambio de spec.
+2026-10-20 · QA ronda 2 · Q231 (desconfiado P07): "Ganancia 44 %" (sobre el costo) en Productos y "Margen 30 %" (sobre el precio) en Rentabilidad para el mismo producto. Es lo que define el spec (§ Productos, datos de la ficha); la columna ahora dice "Ganancia" con la aclaración · Si se quiere un solo número, hay que cambiar el spec.
+2026-10-20 · QA ronda 2 · Q22 (literal P04): los conteos arrancan apagados (spec: modo simple) y una repositora no llega a Ajustes para prenderlos. La búsqueda global ahora dice dónde se prenden. · Decidir si "Conteos" arranca prendido cuando hay un repositor cargado.
+2026-10-20 · QA ronda 2 · Q235 (celular P12): el enlace de WhatsApp en Chromium sin la app da 404 de api.whatsapp.com. Solo se comprueba en un iPhone real: está en PRUEBA-MANUAL.md.

@@ -3,6 +3,7 @@ import {
   formatPercent,
   marginOnCostBp,
   moneyInput,
+  parseDecimal,
   parseMoney,
   priceFromMargin,
 } from "@mostrador/shared";
@@ -153,6 +154,26 @@ export function ProductForm({ open, onClose, product, onSaved, initialCode }: Pr
     setError(null);
     if (!name.trim()) return setError("Poné el nombre del producto.");
     if (priceCents === null) return setError("Poné un precio válido, por ejemplo 6900.");
+    if (/[<>]/.test(name)) return setError("Nombre: no puede tener < ni >.");
+    const badCode = codes
+      .split(/[,\s]+/)
+      .map((c) => c.trim())
+      .filter(Boolean)
+      .find((c) => !/^\d{4,14}$/.test(c));
+    if (badCode)
+      return setError(`Código "${badCode}": un código de barras tiene de 4 a 14 números.`);
+    if (cost.trim() && (parseMoney(cost) === null || (parseMoney(cost) ?? 0) < 0))
+      return setError("Costo: poné un monto, por ejemplo 4500.");
+    const ms = minStock.trim() ? parseDecimal(minStock) : null;
+    if (minStock.trim() && (ms === null || ms < 0))
+      return setError("Stock mínimo: no puede ser negativo.");
+    if (ms !== null && unit === "unit" && !Number.isInteger(ms))
+      return setError("Stock mínimo: se vende por unidad, poné un número entero.");
+    const is = initialStock.trim() ? parseDecimal(initialStock) : null;
+    if (initialStock.trim() && (is === null || is < 0))
+      return setError("Stock inicial: no puede ser negativo.");
+    if (is !== null && unit === "unit" && !Number.isInteger(is))
+      return setError("Stock inicial: se vende por unidad, poné un número entero.");
     save.mutate();
   };
 

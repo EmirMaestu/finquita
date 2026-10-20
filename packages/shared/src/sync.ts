@@ -170,21 +170,26 @@ export const cashMovement = z.object({
   invoiceId: uuid.nullable().optional(),
 });
 
-export const shiftClose = z.object({
-  shiftId: uuid,
-  countedCashCents: cents.nonnegative(),
-  counts: denominations.nullable().optional(),
-  otherMedia: z
-    .record(z.string(), z.object({ counted: cents.nonnegative(), expected: cents.nonnegative() }))
-    .nullable()
-    .optional(),
-  /** Lo que calculó el dispositivo (el servidor lo recalcula). */
-  expectedCashCents: cents,
-  differenceCents: cents,
-  note: z.string().max(500).nullable().optional(),
-  leftFloatCents: cents.nonnegative(),
-  withdrawnCents: cents.nonnegative(),
-});
+export const shiftClose = z
+  .object({
+    shiftId: uuid,
+    countedCashCents: cents.nonnegative(),
+    counts: denominations.nullable().optional(),
+    otherMedia: z
+      .record(z.string(), z.object({ counted: cents.nonnegative(), expected: cents.nonnegative() }))
+      .nullable()
+      .optional(),
+    /** Lo que calculó el dispositivo (el servidor lo recalcula). */
+    expectedCashCents: cents,
+    differenceCents: cents,
+    note: z.string().max(500).nullable().optional(),
+    leftFloatCents: cents.nonnegative(),
+    withdrawnCents: cents.nonnegative(),
+  })
+  .refine((s) => s.leftFloatCents <= s.countedCashCents, {
+    path: ["leftFloatCents"],
+    message: "No puede quedar más de lo contado",
+  });
 
 // ── Stock y catálogo ─────────────────────────────────────────────────────────
 
@@ -224,7 +229,7 @@ export const productFields = z
     marginBp: z.number().int().nullable(),
     fixedPrice: z.boolean(),
     vatBp: z.number().int(),
-    minStock: qty.nullable(),
+    minStock: qty.refine((v) => v >= 0, "No puede ser negativo").nullable(),
     location: z.string().max(60).nullable(),
     ageRestricted: z.boolean(),
     tracksExpiry: z.boolean(),
@@ -245,16 +250,36 @@ export const productFields = z
   .partial();
 export type ProductFields = z.infer<typeof productFields>;
 
-export const productUpsert = z.object({
-  id: uuid,
-  /** Solo los campos que cambió el dispositivo. */
-  changes: productFields,
-  /** Los valores que el dispositivo tenía antes de cambiar (para registrar ediciones concurrentes). */
-  base: productFields.optional(),
-  barcodes: z.array(z.string().min(3).max(32)).optional(),
-  /** Stock inicial del alta rápida. */
-  initialStock: qty.optional(),
-});
+export const productUpsert = z
+  .object({
+    id: uuid,
+    /** Solo los campos que cambió el dispositivo. */
+    changes: productFields,
+    /** Los valores que el dispositivo tenía antes de cambiar (para registrar ediciones concurrentes). */
+    base: productFields.optional(),
+    barcodes: z
+      .array(z.string().regex(/^\d{4,14}$/, "Un código de barras tiene de 4 a 14 números"))
+      .optional(),
+    /** Stock inicial del alta rápida. */
+    initialStock: qty.refine((v) => v >= 0, "No puede ser negativo").optional(),
+  })
+  .superRefine((p, ctx) => {
+    // Lo que se vende por unidad no tiene medias unidades.
+    if (p.changes.saleUnit === "unit") {
+      for (const [k, v] of [
+        ["initialStock", p.initialStock],
+        ["minStock", p.changes.minStock],
+        ["purchaseUnitQty", p.changes.purchaseUnitQty],
+      ] as const) {
+        if (typeof v === "number" && !Number.isInteger(v))
+          ctx.addIssue({
+            code: "custom",
+            path: k === "initialStock" ? [k] : ["changes", k],
+            message: "Se vende por unidad: tiene que ser un número entero",
+          });
+      }
+    }
+  });
 
 // ── Clientes y fiado ─────────────────────────────────────────────────────────
 
@@ -264,9 +289,16 @@ export const customerUpsert = z.object({
     .object({
       name: plainText(120),
       nickname: plainText(60, 0).nullable(),
-      phone: z.string().max(30).nullable(),
+      phone: z
+        .string()
+        .max(30)
+        .regex(/^[\d\s()+-]*$/, "Solo números (y + para el país)")
+        .nullable(),
       address: z.string().max(200).nullable(),
-      dni: z.string().max(15).nullable(),
+      dni: z
+        .string()
+        .regex(/^\d{6,9}$/, "El DNI tiene de 6 a 9 números")
+        .nullable(),
       creditLimitCents: cents.nonnegative(),
       terms: z.enum(["weekly", "biweekly", "30d", "month_end"]),
       notes: z.string().max(500).nullable(),
@@ -294,35 +326,53 @@ export const shortageNote = z.object({
 });
 
 /** Recepción de mercadería, con o sin pedido. Queda en cola si no hay conexión. */
-export const receiptConfirm = z.object({
-  id: uuid,
-  kind: z.enum(["order", "no_order", "wholesale"]),
-  orderId: uuid.nullable().optional(),
-  supplierId: uuid.nullable().optional(),
-  /** Foto del remito o la factura: se sube aparte (PUT /api/files/:id). */
-  photoId: uuid.nullable().optional(),
-  invoiceNumber: z.string().max(40).nullable().optional(),
-  notes: z.string().max(500).nullable().optional(),
-  lines: z
-    .array(
-      z.object({
-        id: uuid,
-        productId: uuid,
-        orderLineId: uuid.nullable().optional(),
-        /** Lo que llegó, dañados incluidos. */
-        qty: z.number().min(0).max(100_000),
-        damagedQty: z.number().min(0).max(100_000).default(0),
-        /** Solo quien ve costos lo manda. */
-        unitCostCents: z.number().int().min(0).nullable().optional(),
-        lotCode: z.string().max(40).nullable().optional(),
-        expiresOn: z.iso.date().nullable().optional(),
-        /** "Actualizar precio": el precio nuevo, si se tocó en la recepción. */
-        newPriceCents: z.number().int().min(0).nullable().optional(),
-      }),
-    )
-    .min(1, "La recepción no tiene productos.")
-    .max(500),
-});
+export const receiptConfirm = z
+  .object({
+    id: uuid,
+    kind: z.enum(["order", "no_order", "wholesale"]),
+    orderId: uuid.nullable().optional(),
+    supplierId: uuid.nullable().optional(),
+    /** Foto del remito o la factura: se sube aparte (PUT /api/files/:id). */
+    photoId: uuid.nullable().optional(),
+    invoiceNumber: z.string().max(40).nullable().optional(),
+    notes: z.string().max(500).nullable().optional(),
+    lines: z
+      .array(
+        z.object({
+          id: uuid,
+          productId: uuid,
+          orderLineId: uuid.nullable().optional(),
+          /** Lo que llegó, dañados incluidos. */
+          qty: z.number().min(0).max(100_000),
+          damagedQty: z.number().min(0).max(100_000).default(0),
+          /** Solo quien ve costos lo manda. */
+          unitCostCents: z.number().int().min(0).nullable().optional(),
+          lotCode: z.string().max(40).nullable().optional(),
+          expiresOn: z.iso.date().nullable().optional(),
+          /** "Actualizar precio": el precio nuevo, si se tocó en la recepción. */
+          newPriceCents: z.number().int().min(0).nullable().optional(),
+        }),
+      )
+      .min(1, "La recepción no tiene productos.")
+      .max(500),
+  })
+  .superRefine((r, ctx) => {
+    const floor = new Date(Date.now() - 30 * 86_400_000).toISOString().slice(0, 10);
+    r.lines.forEach((l, i) => {
+      if (l.damagedQty > l.qty)
+        ctx.addIssue({
+          code: "custom",
+          path: ["lines", i, "damagedQty"],
+          message: "No puede haber más dañados que recibidos",
+        });
+      if (l.expiresOn && l.expiresOn < floor)
+        ctx.addIssue({
+          code: "custom",
+          path: ["lines", i, "expiresOn"],
+          message: "Ya pasó: revisá la fecha",
+        });
+    });
+  });
 
 // ── Operaciones ──────────────────────────────────────────────────────────────
 

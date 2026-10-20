@@ -1,4 +1,4 @@
-import { newId } from "@mostrador/shared";
+import { newId, plainText } from "@mostrador/shared";
 import { and, eq, isNotNull, isNull, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
@@ -103,9 +103,9 @@ setupRoutes.get("/setup/status", requireActor(), requireFull("settings"), async 
 });
 
 const businessBody = z.object({
-  name: z.string().min(1, "Poné el nombre del negocio").max(80),
-  address: z.string().max(120).nullable().optional(),
-  city: z.string().max(80).nullable().optional(),
+  name: plainText(80),
+  address: plainText(120, 0).nullable().optional(),
+  city: plainText(80, 0).nullable().optional(),
 });
 
 /** Primer uso: datos del negocio y la Caja 1. Solo si todavía no hay negocio. */

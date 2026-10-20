@@ -206,6 +206,11 @@ export function CollectSheet({ customer, onClose }: { customer: Detail; onClose:
   // No se cobra más de lo que debe: un dedo de más no deja "saldo a favor" por error.
   const owed = Math.max(0, customer.balanceCents);
   const tooMuch = amount > owed;
+  const amountHint = tooMuch
+    ? `Debe ${formatMoney(owed)}: no se puede cobrar más que eso.`
+    : typed && amount <= 0
+      ? "Poné cuánto paga."
+      : null;
   const pay = useMutation({
     mutationFn: async () => {
       if (!me) throw new Error("Sin sesión");
@@ -302,13 +307,18 @@ export function CollectSheet({ customer, onClose }: { customer: Detail; onClose:
               aria-label="Queda debiendo"
               className={cx(
                 "tnum text-[28px] leading-tight font-semibold",
-                customer.balanceCents - amount < 0 && "text-exito",
+                tooMuch ? "text-peligro" : customer.balanceCents - amount === 0 && "text-exito",
               )}
             >
               {money(customer.balanceCents - amount)}
             </output>
           </div>
         </div>
+        {amountHint && (
+          <div role="alert" className="text-[13px] font-semibold text-alerta">
+            {amountHint}
+          </div>
+        )}
         <NumPad
           onKey={(k) =>
             setTyped((t) =>

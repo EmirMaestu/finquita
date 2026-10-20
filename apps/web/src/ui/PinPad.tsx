@@ -30,6 +30,10 @@ export function PinPad({
   useEffect(() => {
     if (error) setPin("");
   }, [error]);
+  // El teclado físico es para el PIN: lo que tenía el foco (el buscador de Vender) lo suelta.
+  useEffect(() => {
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+  }, []);
   const onKey = useCallback(
     (k: string) => {
       if (busy) return;

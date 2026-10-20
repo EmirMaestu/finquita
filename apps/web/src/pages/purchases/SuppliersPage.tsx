@@ -410,8 +410,10 @@ export function SuppliersPage() {
                   <span className="min-w-0 flex-1">
                     <span className="font-semibold">{s.name}</span>
                     <span className="block truncate text-[13px] text-texto-suave">
-                      {s.category} · pedido {daysLabel(s.orderDays, s.scheduleNote).toLowerCase()} ·
-                      entrega {daysLabel(s.deliveryDays, s.scheduleNote).toLowerCase()}
+                      {s.category} · pedido {daysLabel(s.orderDays, s.scheduleNote).toLowerCase()}
+                      {s.deliveryDays?.length || !s.scheduleNote
+                        ? ` · entrega ${daysLabel(s.deliveryDays, s.scheduleNote).toLowerCase()}`
+                        : ""}
                     </span>
                     <span className="block text-xs text-texto-suave">
                       {CHANNEL[s.channel]}

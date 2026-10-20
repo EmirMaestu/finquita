@@ -17,8 +17,17 @@ export function SuggestedFlow() {
       o: SuggestedOrder;
       qty: Record<string, number>;
       next: "draft" | "send" | "pdf";
-    }) =>
-      api<{ id: string; number: number }>("/api/orders", {
+    }) => {
+      for (const [productId, n] of Object.entries(qty)) {
+        const l = (o.lines ?? []).find((x) => x.productId === productId);
+        const name = l?.name ?? "Un producto";
+        if (n < 0 || !Number.isFinite(n))
+          throw new Error(`${name}: la cantidad no puede ser negativa.`);
+        if (n > 100_000) throw new Error(`${name}: la cantidad no puede pasar de 100.000.`);
+        if (l?.unit === "unit" && !Number.isInteger(n))
+          throw new Error(`${name}: se pide por unidad, poné un número entero.`);
+      }
+      return api<{ id: string; number: number }>("/api/orders", {
         body: {
           supplierId: o.supplierId,
           expectedOn: o.delivery,
@@ -26,7 +35,8 @@ export function SuggestedFlow() {
             .filter(([, n]) => n > 0)
             .map(([productId, n]) => ({ productId, qty: n })),
         },
-      }),
+      });
+    },
     onSuccess: async (r, v) => {
       if (v.next === "pdf")
         await downloadFile(

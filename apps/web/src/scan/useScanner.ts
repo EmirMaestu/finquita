@@ -137,11 +137,7 @@ export function isNumericField(el: EventTarget | null): boolean {
  */
 export function inKeypad(el: EventTarget | null): boolean {
   if (el instanceof Element && el.closest("[data-keypad]")) return true;
-  return (
-    typeof document !== "undefined" &&
-    (el === document.body || el === document) &&
-    Boolean(document.querySelector("[data-keypad-global]"))
-  );
+  return typeof document !== "undefined" && Boolean(document.querySelector("[data-keypad-global]"));
 }
 
 /** Teclas devueltas por el detector: se vuelven a mandar y el detector no las mira. */

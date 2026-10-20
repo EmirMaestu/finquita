@@ -258,3 +258,28 @@ describe("API de catálogo", () => {
     expect((await tomas.post("/api/categories", { name: "X" })).status).toBe(403);
   });
 });
+
+describe("lo que pegó el destructor en la ronda 2", () => {
+  it("no deja dos categorías con el mismo nombre en el mismo nivel", async () => {
+    const carlos = await as(app(), ref.t.db, "carlos");
+    const r = await carlos.post("/api/categories", { name: "lácteos", defaultMarginBp: 15000 });
+    expect(r.status).toBe(409);
+    expect(r.body.error.message).toContain("Ya hay una categoría");
+  });
+
+  it("un producto por unidad rechaza código 'abc', stock inicial 1,5 y mínimo −2, en español", async () => {
+    const carlos = await as(app(), ref.t.db, "carlos");
+    const r = await carlos.post("/api/products", {
+      name: "Nuevo destructor",
+      saleUnit: "unit",
+      priceCents: 100_000,
+      barcodes: ["abc"],
+      initialStock: 1.5,
+      minStock: -2,
+    });
+    expect(r.status).toBe(400);
+    expect(r.body.error.message).toContain("Códigos de barras");
+    expect(r.body.error.message).toContain("entero");
+    expect(r.body.error.message).toContain("Stock mínimo");
+  });
+});

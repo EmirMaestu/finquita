@@ -157,6 +157,12 @@ export function CloseShiftPage() {
       : (parseMoney(left) ?? 0);
   const withdrawn = Math.max(0, counted - leftCents);
   const needsNote = result?.overTolerance ?? false;
+  const leftError =
+    left !== null && left.trim() !== "" && parseMoney(left) === null
+      ? "Poné un monto, por ejemplo 20000."
+      : leftCents > counted
+        ? `No puede quedar más de lo contado (${formatMoney(counted)}).`
+        : null;
 
   const close = async () => {
     if (!me || !v || !result) return;
@@ -411,6 +417,7 @@ export function CloseShiftPage() {
                   inputMode="decimal"
                   value={left ?? moneyInput(leftCents)}
                   onChange={(e) => setLeft(e.target.value)}
+                  error={leftError}
                 />
                 <div className="flex flex-col gap-0.5 rounded-lg border border-borde px-3 py-2.5">
                   <span className="text-xs text-texto-suave">Se retira a la caja fuerte</span>
@@ -423,7 +430,7 @@ export function CloseShiftPage() {
                 </Button>
                 <Button
                   onClick={() => void close()}
-                  disabled={needsNote && !note.trim()}
+                  disabled={Boolean(leftError) || (needsNote && !note.trim())}
                   locked={othersShift && isCashier}
                 >
                   {me?.member.role === "owner" ? "Cerrar turno" : "Cerrar turno y avisar al dueño"}

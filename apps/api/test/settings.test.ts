@@ -136,3 +136,17 @@ describe("ajustes", () => {
     expect((await julian.put("/api/settings/features", { lots: true })).status).toBe(403);
   });
 });
+
+describe("lo que pegó el destructor en la ronda 2", () => {
+  it("un cajero sin PIN no se puede invitar, y el recargo de 999999 % se rechaza en español", async () => {
+    const carlos = await as(app(), ref.t.db, "carlos");
+    const r = await carlos.post("/api/members", { name: "Usuario destructor", role: "cashier" });
+    expect(r.status).toBe(400);
+    expect(r.body.error.message).toContain("PIN");
+    const p = await carlos.put("/api/settings/payments", {
+      methods: { credit: { surchargeBp: 99_999_900 } },
+    });
+    expect(p.status).toBe(400);
+    expect(p.body.error.message).toMatch(/^Recargo: no puede pasar de/);
+  });
+});

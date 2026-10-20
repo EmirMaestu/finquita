@@ -5,6 +5,7 @@ import {
   formatQty,
   MAX_QTY,
   orderNumber,
+  parseDecimal,
   parseMoney,
   receiptSummary,
   roundQty,
@@ -350,7 +351,33 @@ function Receiving({
   // La línea quedó cargada: en el celular, la cámara vuelve sola para el próximo producto
   // (si la línea se abrió escaneando).
   const scannedRef = useRef(false);
+  /** Qué está mal en una línea cargada, en palabras; null si está bien. */
+  const lineProblem = (l: Line): string | null => {
+    const rec = num(l.received);
+    const dmg = num(l.damaged);
+    if (l.received !== "" && parseDecimal(l.received) === null)
+      return "Recibido: poné una cantidad.";
+    if (rec < 0 || dmg < 0) return "Las cantidades no pueden ser negativas.";
+    if (rec > 100_000) return "Recibido: no puede pasar de 100.000.";
+    if (l.unit === "unit" && (!Number.isInteger(rec) || !Number.isInteger(dmg)))
+      return "Se recibe por unidad: poné números enteros.";
+    if (dmg > rec) return `Dañados: no pueden ser más que los ${qtyText(rec, l.unit)} recibidos.`;
+    if (
+      l.expiresOn &&
+      l.expiresOn < new Date(Date.now() - 30 * 86_400_000).toISOString().slice(0, 10)
+    )
+      return "Vence: esa fecha ya pasó, revisala.";
+    if (l.cost.trim() && (parseMoney(l.cost) === null || (parseMoney(l.cost) ?? 0) < 0))
+      return "Costo por unidad: poné un monto, por ejemplo 1500.";
+    return null;
+  };
   const doneLine = () => {
+    const l = lines.find((x) => x.key === active);
+    const problem = l ? lineProblem(l) : null;
+    if (problem) {
+      toast({ text: problem, tone: "error" });
+      return;
+    }
     setActive(null);
     if (scannedRef.current && phone) scanRouter.openCamera();
     scannedRef.current = false;
@@ -493,9 +520,10 @@ function Receiving({
       toast({ text: e instanceof Error ? e.message : "No se pudo confirmar.", tone: "error" }),
   });
   const tryConfirm = () => {
-    const huge = touched.find((l) => num(l.received) > MAX_QTY || num(l.damaged) > MAX_QTY);
-    if (huge) {
-      toast({ text: `${huge.name}: la cantidad es demasiado grande, revisala.`, tone: "error" });
+    const bad = touched.map((l) => [l, lineProblem(l)] as const).find(([, p]) => p);
+    if (bad) {
+      toast({ text: `${bad[0].name}: ${bad[1]}`, tone: "error" });
+      setActive(bad[0].key);
       return;
     }
     if (sum.hasDifferences) setSummary(true);

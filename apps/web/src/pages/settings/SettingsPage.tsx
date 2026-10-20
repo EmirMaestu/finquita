@@ -9,6 +9,7 @@ import {
   PERMISSIONS,
   type Permission,
   parseDecimal,
+  parseDenominations,
   parseMoney,
   type Role,
   type SettingsMap,
@@ -61,6 +62,15 @@ const pctBp = (s: string): number | null => {
   return n === null ? null : Math.round(n * 100);
 };
 const badPct = () => toast({ text: "Poné un porcentaje, por ejemplo 10 o 1,5.", tone: "error" });
+/** Recargos y comisiones van de −50 % a 50 %: más que eso es un error de tipeo. */
+const pctInRange = (bp: number | null, min: number) =>
+  bp !== null && bp >= min && bp <= 5000
+    ? true
+    : (toast({
+        text: `Tiene que ser un porcentaje entre ${min < 0 ? "−50" : "0"} y 50, por ejemplo 10.`,
+        tone: "error",
+      }),
+      false);
 
 function useSettingsServer() {
   return useQuery({
@@ -189,6 +199,16 @@ function UsersSection() {
   const [f, setF] = useState({ name: "", role: "cashier" as Role, email: "", phone: "", pin: "" });
   const [open, setOpen] = useState<string | null>(null);
   const refresh = () => qc.invalidateQueries({ queryKey: ["members"] });
+  const needsPin = f.role === "cashier" || f.role === "stocker";
+  const pinError = needsPin
+    ? f.pin.length === 0
+      ? "Cajeros y repositores entran con PIN: poné uno de 4 a 6 números."
+      : f.pin.length < 4
+        ? "El PIN tiene que tener de 4 a 6 números."
+        : null
+    : f.pin && f.pin.length < 4
+      ? "El PIN tiene que tener de 4 a 6 números."
+      : null;
   const invite = useMutation({
     mutationFn: () =>
       api("/api/members", {
@@ -325,7 +345,7 @@ function UsersSection() {
         title="Invitar"
         footer={
           <Button
-            disabled={!f.name.trim()}
+            disabled={!f.name.trim() || Boolean(pinError)}
             busy={invite.isPending}
             busyLabel="Invitando…"
             onClick={() => invite.mutate()}
@@ -370,6 +390,7 @@ function UsersSection() {
             value={f.pin}
             onChange={(e) => setF({ ...f, pin: e.target.value.replace(/\D/g, "").slice(0, 6) })}
             hint="De 4 a 6 números, para entrar en la Mac del mostrador."
+            error={f.pin || needsPin ? pinError : undefined}
           />
         </div>
       </Card>
@@ -442,8 +463,13 @@ function RegistersSection({ s }: { s: SettingsMap }) {
               onBlur={(e) =>
                 !e.target.value.trim()
                   ? toast({ text: "La caja necesita un nombre.", tone: "error" })
-                  : e.target.value.trim() !== r.name &&
-                    upd.mutate({ id: r.id, body: { name: e.target.value.trim() } })
+                  : e.target.value.trim().length > 40
+                    ? toast({
+                        text: "El nombre de la caja: como mucho 40 caracteres.",
+                        tone: "error",
+                      })
+                    : e.target.value.trim() !== r.name &&
+                      upd.mutate({ id: r.id, body: { name: e.target.value.trim() } })
               }
             />
             <TextField
@@ -451,10 +477,12 @@ function RegistersSection({ s }: { s: SettingsMap }) {
               inputMode="decimal"
               defaultValue={String(r.suggestedFloatCents / 100)}
               onBlur={(e) =>
-                upd.mutate({
-                  id: r.id,
-                  body: { suggestedFloatCents: parseMoney(e.target.value) ?? 0 },
-                })
+                parseMoney(e.target.value) === null || (parseMoney(e.target.value) ?? 0) < 0
+                  ? toast({ text: "Poné un monto, por ejemplo 20000.", tone: "error" })
+                  : upd.mutate({
+                      id: r.id,
+                      body: { suggestedFloatCents: parseMoney(e.target.value) ?? 0 },
+                    })
               }
             />
             <TextField
@@ -487,14 +515,15 @@ function RegistersSection({ s }: { s: SettingsMap }) {
         title="Arqueo"
         footer={
           <Button
-            onClick={() =>
-              save.mutate({
-                denominations: denoms
-                  .split(/[,\s]+/)
-                  .map(Number)
-                  .filter((n) => n > 0),
-              })
-            }
+            onClick={() => {
+              const parsed = parseDenominations(denoms);
+              if (!parsed)
+                return toast({
+                  text: "Billetes: montos enteros separados por coma, por ejemplo 20000, 10000, 2000.",
+                  tone: "error",
+                });
+              save.mutate({ denominations: parsed });
+            }}
           >
             Guardar billetes
           </Button>
@@ -544,7 +573,8 @@ function PaymentsSection({ s }: { s: SettingsMap }) {
                 onBlur={(e) =>
                   pctBp(e.target.value) === null
                     ? badPct()
-                    : pctBp(e.target.value) !== cfg.surchargeBp &&
+                    : pctInRange(pctBp(e.target.value), -5000) &&
+                      pctBp(e.target.value) !== cfg.surchargeBp &&
                       save.mutate({ methods: { [m]: { surchargeBp: pctBp(e.target.value) } } })
                 }
                 hint="Negativo para descuento."
@@ -556,7 +586,8 @@ function PaymentsSection({ s }: { s: SettingsMap }) {
                 onBlur={(e) =>
                   pctBp(e.target.value) === null
                     ? badPct()
-                    : pctBp(e.target.value) !== cfg.feeBp &&
+                    : pctInRange(pctBp(e.target.value), 0) &&
+                      pctBp(e.target.value) !== cfg.feeBp &&
                       save.mutate({ methods: { [m]: { feeBp: pctBp(e.target.value) } } })
                 }
                 hint="Para rentabilidad y resultado."

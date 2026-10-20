@@ -52,6 +52,7 @@ export function OpenShift({
   }, [registerId]);
 
   const counted = mode === "bills" ? countTotal(counts) : (parseMoney(total) ?? 0);
+  const badTotal = mode === "total" && total.trim() !== "" && parseMoney(total) === null;
   const left = prev?.shift.leftFloatCents ?? null;
   // Se compara recién cuando se contó algo: con el contador en cero no hay nada que no coincida.
   const started = mode === "bills" ? Object.values(counts).some((n) => n > 0) : total.trim() !== "";
@@ -87,7 +88,7 @@ export function OpenShift({
         // Enter en el fondo o en un billete abre el turno (no hace falta tabular hasta el botón).
         if (e.key === "Enter" && e.target instanceof HTMLInputElement && !busy) {
           e.preventDefault();
-          if (!(differs && !note.trim())) void open();
+          if (!badTotal && !(differs && !note.trim())) void open();
         }
       }}
     >
@@ -152,6 +153,7 @@ export function OpenShift({
           value={total}
           onChange={(e) => setTotal(e.target.value)}
           placeholder="20000"
+          error={badTotal ? "Poné un monto, por ejemplo 20000." : undefined}
         />
       )}
       <div className="flex items-baseline justify-between border-t border-borde pt-3">
@@ -185,7 +187,11 @@ export function OpenShift({
           {error}
         </div>
       )}
-      <Button size="xl" onClick={() => void open()} disabled={busy || (differs && !note.trim())}>
+      <Button
+        size="xl"
+        onClick={() => void open()}
+        disabled={busy || badTotal || (differs && !note.trim())}
+      >
         Abrir {shiftName(now)}
       </Button>
     </section>

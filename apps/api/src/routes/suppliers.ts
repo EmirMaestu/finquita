@@ -4,7 +4,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import type { AppEnv } from "../app";
 import { actorOf, requireActor } from "../auth/actor";
-import { loadOverrides, requireFull } from "../auth/permissions";
+import { loadOverrides, requireFull, requirePermission } from "../auth/permissions";
 import {
   barcodes,
   products,
@@ -43,7 +43,7 @@ async function balances(db: AppEnv["Variables"]["db"]) {
 }
 
 /** Lista con rubro, días de pedido y entrega, WhatsApp, saldo a pagar y último pedido. */
-supplierRoutes.get("/suppliers", requireActor(), async (c) => {
+supplierRoutes.get("/suppliers", requireActor(), requirePermission("count_receive"), async (c) => {
   const costs = await canRead(c);
   const db = c.get("db");
   const rows = await db
@@ -144,10 +144,15 @@ supplierRoutes.get("/suppliers/:id", requireActor(), async (c) => {
 
 const supplierBody = z.object({
   name: plainText(80),
-  legalName: z.string().max(120).nullable().optional(),
-  cuit: z.string().max(20).nullable().optional(),
-  category: z.string().max(60).nullable().optional(),
-  contactName: z.string().max(60).nullable().optional(),
+  legalName: plainText(120, 0).nullable().optional(),
+  cuit: z
+    .string()
+    .max(20)
+    .regex(/^[\d-]*$/, "El CUIT son números, con o sin guiones")
+    .nullable()
+    .optional(),
+  category: plainText(60, 0).nullable().optional(),
+  contactName: plainText(60, 0).nullable().optional(),
   whatsapp: z
     .string()
     .max(20)

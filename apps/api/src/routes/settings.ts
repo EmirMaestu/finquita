@@ -31,7 +31,7 @@ import {
 } from "../db/schema/index";
 import { auditFrom, diff } from "../lib/audit";
 import { ApiError, conflict, notFound } from "../lib/errors";
-import { validate } from "../lib/validate";
+import { validate, validationError } from "../lib/validate";
 
 export const settingsRoutes = new Hono<AppEnv>();
 const owner = requireFull("settings");
@@ -145,13 +145,7 @@ settingsRoutes.put("/settings/:key", requireActor(), owner, async (c) => {
   const schema = SCHEMAS[key];
   if (!schema) throw notFound("Esa sección no existe.");
   const parsed = schema.safeParse(await c.req.json().catch(() => null));
-  if (!parsed.success)
-    throw new ApiError(
-      400,
-      "validation",
-      parsed.error.issues[0]?.message ?? "Revisá los datos.",
-      parsed.error.issues,
-    );
+  if (!parsed.success) throw validationError(parsed.error);
   const db = c.get("db");
   const before = (await currentSettings(db))[key];
   const after = merge(before, parsed.data);
@@ -245,7 +239,7 @@ settingsRoutes.get("/members", requireActor(), owner, async (c) => {
 });
 
 const PIN_RE = /^\d{4,6}$/;
-const memberBody = z.object({
+const memberFields = z.object({
   name: plainText(60),
   nickname: plainText(30, 0).nullable().optional(),
   role: roles,
@@ -253,6 +247,10 @@ const memberBody = z.object({
   phone: z.string().max(30).nullable().optional(),
   pin: z.string().regex(PIN_RE, "El PIN tiene que tener de 4 a 6 números").optional(),
 });
+const memberBody = memberFields.refine(
+  (m) => m.role === "owner" || m.role === "manager" || Boolean(m.pin),
+  { path: ["pin"], message: "Cajeros y repositores entran con PIN: poné uno de 4 a 6 números" },
+);
 
 /** Invitar: el dueño carga a la persona; si es encargado (o dueño) con email, crea su cuenta desde el ingreso. */
 settingsRoutes.post("/members", requireActor(), owner, validate("json", memberBody), async (c) => {
@@ -298,7 +296,7 @@ settingsRoutes.patch(
   owner,
   validate(
     "json",
-    memberBody.omit({ pin: true }).partial().extend({ active: z.boolean().optional() }),
+    memberFields.omit({ pin: true }).partial().extend({ active: z.boolean().optional() }),
   ),
   async (c) => {
     const id = c.req.param("id");

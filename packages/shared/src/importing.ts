@@ -21,7 +21,8 @@ export type ColumnMapping = Partial<Record<ImportField, number>>;
 
 const HINTS: Record<ImportField, RegExp> = {
   name: /^(nombre|producto|descrip|articulo|artículo|detalle)/i,
-  barcode: /(barra|ean|codigo de barras|código de barras|^ean13|^cod.? ?barras)/i,
+  barcode:
+    /(barra|ean|codigo de barras|código de barras|^ean13|^cod.? ?barras|^c[oó]d(igo)?\.?$|^upc$)/i,
   plu: /(plu|interno|cod.? ?int)/i,
   price: /(precio|venta|pvp)/i,
   cost: /(costo|compra)/i,

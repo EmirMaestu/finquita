@@ -272,7 +272,11 @@ export function ImportPage() {
               <li key={i.line} className="flex flex-col gap-0.5 border-t border-borde py-2 text-sm">
                 <span className="font-medium">
                   <span className="text-texto-suave">Fila {i.line} · </span>
-                  {i.name || "(sin nombre)"}
+                  {i.name
+                    ? i.name.length > 80
+                      ? `${i.name.slice(0, 80)}…`
+                      : i.name
+                    : "(sin nombre)"}
                 </span>
                 {i.action === "new" && (
                   <span className="text-texto-suave">

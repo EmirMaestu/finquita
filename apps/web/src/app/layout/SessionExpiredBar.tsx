@@ -1,4 +1,5 @@
 import { LogIn } from "lucide-react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router";
 import { credentials } from "../../data/api";
 import { lockScreen } from "../lock";
@@ -8,8 +9,12 @@ import { useSessionExpired } from "../sessionExpired";
 export function SessionExpiredBar() {
   const expired = useSessionExpired();
   const navigate = useNavigate();
-  if (!expired) return null;
   const device = Boolean(credentials.get().deviceToken);
+  // En la Mac con PIN, la pantalla de "¿Quién sos?" aparece sola: nadie sigue trabajando sin sesión.
+  useEffect(() => {
+    if (expired && device) lockScreen.open("switch");
+  }, [expired, device]);
+  if (!expired) return null;
   return (
     <div
       role="alert"

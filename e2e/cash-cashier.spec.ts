@@ -1,5 +1,18 @@
-import { expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 import { ensureShiftOpen, loginWithPin, scanWithGun } from "./helpers";
+
+/** Si el turno lo abrió otra persona (otro test), cerrarlo pide el PIN de un encargado o del dueño. */
+async function authorizeIfAsked(page: Page) {
+  const pin = page.getByRole("dialog", { name: "Autorizá con tu PIN" });
+  if (
+    await pin.waitFor({ state: "visible", timeout: 2500 }).then(
+      () => true,
+      () => false,
+    )
+  ) {
+    for (const d of "1234") await pin.getByRole("button", { name: d, exact: true }).click();
+  }
+}
 
 test("el cajero vende, va a Caja desde Vender y cierra el turno con su nombre", async ({
   page,
@@ -47,8 +60,9 @@ test("el cajero vende, va a Caja desde Vender y cierra el turno con su nombre", 
   const close = page.getByRole("button", { name: /Cerrar turno/ });
   await expect(close).toContainText("avisar al dueño");
   await close.click();
+  await authorizeIfAsked(page);
   await expect(page.getByText("CIERRE DE CAJA")).toBeVisible();
-  await expect(page.getByText(/Cajero: Tomás/)).toBeVisible();
+  await expect(page.getByText(/Cajero: Tomás|Cerró: Tomás/)).toBeVisible();
 });
 
 test("abrir la caja con un fondo negativo no deja una caja fantasma", async ({ page }) => {
@@ -64,6 +78,7 @@ test("abrir la caja con un fondo negativo no deja una caja fantasma", async ({ p
     const note = page.getByLabel(/Comentario/);
     if (await note.isVisible()) await note.fill("Cierre para la prueba");
     await page.getByRole("button", { name: /Cerrar turno/ }).click();
+    await authorizeIfAsked(page);
     await expect(page.getByText("CIERRE DE CAJA")).toBeVisible();
     await page.goto("/caja");
   }

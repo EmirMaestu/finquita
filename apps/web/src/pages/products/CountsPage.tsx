@@ -246,7 +246,7 @@ function QtyEntry({
             ? kg && !t.includes(",")
               ? `${t},`
               : t
-            : (t + k).slice(0, 7),
+            : (t + k).slice(0, kg ? 7 : 5),
       ),
     [kg],
   );
@@ -476,7 +476,28 @@ export function CountPage() {
           >
             Aprobar elegidos
           </Button>
-          <Button onClick={() => approve.mutate(undefined)}>Aprobar todo</Button>
+          <Button
+            onClick={() => {
+              const moved = lines.filter(
+                (l) =>
+                  l.countedQty !== null &&
+                  l.systemQty !== undefined &&
+                  l.countedQty !== l.systemQty,
+              );
+              const plus = moved.filter((l) => (l.countedQty ?? 0) > (l.systemQty ?? 0)).length;
+              const minus = moved.length - plus;
+              if (
+                moved.length &&
+                !window.confirm(
+                  `Vas a ajustar el stock de ${moved.length} productos (${plus} suben, ${minus} bajan). No se deshace. ¿Aprobar todo?`,
+                )
+              )
+                return;
+              approve.mutate(undefined);
+            }}
+          >
+            Aprobar todo
+          </Button>
         </div>
       )}
       {!open && !review && (

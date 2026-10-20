@@ -27,6 +27,8 @@ test("conteo chico: Nico cuenta a ciegas y el encargado aprueba", async ({ brows
   for (const d of "8") await entry.getByRole("button", { name: d, exact: true }).click();
   await entry.getByRole("button", { name: /Guardar/ }).click();
   await expect(nico.getByRole("status", { name: "Avance" })).toHaveText("1 de 1");
+  nico.on("dialog", (d) => d.accept());
+  julian.on("dialog", (d) => d.accept());
   await nico.getByRole("button", { name: "Terminar conteo" }).click();
   await expect(nico.getByText("Listo: lo revisa un encargado o el dueño.")).toBeVisible();
 

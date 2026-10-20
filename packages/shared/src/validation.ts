@@ -55,6 +55,16 @@ export const FIELD_LABELS: Record<string, string> = {
   stockQty: "Stock",
   initialStock: "Stock inicial",
   code: "Código",
+  minOrderCents: "Pedido mínimo",
+  leadDays: "Días de entrega",
+  paymentTermsDays: "Plazo de pago",
+  legalName: "Razón social",
+  contactName: "Contacto",
+  dni: "DNI",
+  countedQty: "Cantidad contada",
+  blindCount: "Conteo ciego",
+  reserveDays: "Días de reserva",
+  discountCapBp: "Tope de descuento",
   barcode: "Código de barras",
   barcodes: "Códigos de barras",
   internalCode: "Código interno",
@@ -137,7 +147,8 @@ export function issueText(issue: Issue): string {
       if (issue.format === "email") return "no es un email válido";
       if (issue.format === "uuid") return "no es válido";
       if (issue.format === "date") return "tiene que ser una fecha (aaaa-mm-dd)";
-      if (issue.format === "regex") return "tiene caracteres que no van";
+      if (issue.format === "regex")
+        return /^Invalid/i.test(issue.message) ? "tiene caracteres que no van" : issue.message;
       return "no tiene el formato esperado";
     case "invalid_value":
       return "no es una opción válida";
@@ -170,8 +181,10 @@ export function issuesText(issues: readonly Issue[]): string {
   const list = describeIssues(issues);
   const first = list[0];
   if (!first) return "Revisá los datos.";
-  const head = `${first.field}: ${first.message}`;
-  return list.length > 1 ? `${head} (y ${list.length - 1} más)` : head;
+  // Todos los problemas de una vez (hasta cuatro): nadie arregla de a uno a ciegas.
+  const shown = list.slice(0, 4).map((e) => `${e.field}: ${e.message}`);
+  const rest = list.length - shown.length;
+  return shown.join(" · ") + (rest > 0 ? ` (y ${rest} más)` : "");
 }
 
 /** Un problema al validar antes de encolar: la operación no se guarda ni viaja. */

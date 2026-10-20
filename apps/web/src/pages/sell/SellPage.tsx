@@ -9,6 +9,7 @@ import {
   formatMoney,
   formatQty,
   METHOD_LABEL,
+  moneyInput,
   OpValidationError,
   overDiscountCap,
   parseMoney,
@@ -20,6 +21,7 @@ import { Lock, Pause, ShieldAlert, User } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { NoPermissionFor } from "../../app/guards";
+import { useLockScreen } from "../../app/lock";
 import { useCan, useGrant, useMe } from "../../app/session";
 import { useViewport } from "../../app/useViewport";
 import { requestPin } from "../../auth/pinAuth";
@@ -87,17 +89,19 @@ type Done = {
 
 /** Descuento general (F4): porcentaje o monto; por encima del tope, el cajero necesita PIN. */
 function DiscountDialog({
+  currentCents,
   subtotalCents,
   capBp,
   onApply,
   onClose,
 }: {
+  currentCents: number;
   subtotalCents: number;
   capBp: number;
   onApply: (cents: number) => void;
   onClose: () => void;
 }) {
-  const [value, setValue] = useState("");
+  const [value, setValue] = useState(currentCents ? moneyInput(currentCents) : "");
   const pct = value.trim().endsWith("%");
   const n = pct ? Number(value.replace("%", "").replace(",", ".").trim()) : null;
   const cents = pct
@@ -438,8 +442,9 @@ export function SellPage() {
   }, [drawerGrant, me]);
 
   // Atajos del mostrador. La app captura las teclas F aunque el navegador tenga las suyas.
+  const locked = useLockScreen();
   useEffect(() => {
-    if (dialog || done) return;
+    if (dialog || done || locked) return;
     const h = (e: KeyboardEvent) => {
       const s = sale.get();
       const idx = s.cart.lines.findIndex((l) => l.id === s.selected);
@@ -539,6 +544,7 @@ export function SellPage() {
     openPay,
     openDrawer,
     navigate,
+    locked,
     reg.shift,
   ]);
 
@@ -656,6 +662,7 @@ export function SellPage() {
       )}
       {dialog?.kind === "discount" && (
         <DiscountDialog
+          currentCents={totals.discountCents}
           subtotalCents={totals.subtotalCents}
           capBp={settings.pricing.discountCapBp}
           onApply={(c) => void applyDiscount(c)}

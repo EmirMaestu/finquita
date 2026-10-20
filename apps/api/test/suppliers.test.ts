@@ -91,9 +91,10 @@ describe("proveedores", () => {
     expect(r.body.products.length).toBe(14);
   });
 
-  it("permisos: el cajero no edita; el repositor ve la lista", async () => {
+  it("permisos: el cajero no edita ni ve la lista (con los WhatsApp); el repositor sí la ve", async () => {
     const tomas = await as(app(), ref.t.db, "tomas");
     expect((await tomas.post("/api/suppliers", { name: "X" })).status).toBe(403);
+    expect((await tomas.get("/api/suppliers")).status).toBe(403);
     const nico = await as(app(), ref.t.db, "nico");
     expect((await nico.get("/api/suppliers")).status).toBe(200);
   });

@@ -37,8 +37,15 @@ export function AdjustStockSheet({
     })();
   }, [productId]);
   const n = parseDecimal(value) ?? Number.NaN;
+  const wholeOnly = unit === "unit" && Number.isFinite(n) && !Number.isInteger(n);
+  const noteLong = note.length > 500;
   const valid =
-    value.trim() !== "" && Number.isFinite(n) && n <= MAX_QTY && (mode === "real" ? n >= 0 : n > 0);
+    value.trim() !== "" &&
+    Number.isFinite(n) &&
+    n <= MAX_QTY &&
+    (mode === "real" ? n >= 0 : n > 0) &&
+    !wholeOnly &&
+    !noteLong;
   const invalidText =
     value.trim() === "" || valid
       ? null
@@ -46,9 +53,11 @@ export function AdjustStockSheet({
         ? "Poné una cantidad, por ejemplo 12 o 1,5"
         : n > MAX_QTY
           ? "Es demasiado: revisá la cantidad"
-          : mode === "real"
-            ? "El stock real no puede ser negativo"
-            : "La cantidad tiene que ser mayor que 0";
+          : wholeOnly
+            ? "Se vende por unidad: poné un número entero, por ejemplo 2"
+            : mode === "real"
+              ? "El stock real no puede ser negativo"
+              : "La cantidad tiene que ser mayor que 0";
   const delta = mode === "real" ? n - (stock ?? 0) : mode === "in" ? n : -n;
   const [busy, setBusy] = useState(false);
   const submit = async () => {
@@ -130,6 +139,7 @@ export function AdjustStockSheet({
           value={note}
           onChange={(e) => setNote(e.target.value)}
           placeholder="Opcional"
+          error={noteLong ? "Nota: como mucho 500 caracteres." : undefined}
         />
         {grant === "approval" && (
           <div className="rounded-lg bg-alerta-suave px-3 py-2 text-[13px] font-semibold text-alerta">

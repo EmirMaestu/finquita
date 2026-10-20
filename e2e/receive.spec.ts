@@ -9,7 +9,15 @@ test("recepción del pedido 0042 en el iPhone: falta yogur y el dueño completa 
   await loginOwner(owner);
   await owner.goto("/compras/pedidos");
   await owner.getByRole("button", { name: /0042/ }).click();
-  await owner.getByRole("button", { name: "Marcar enviado" }).click();
+  // (Si otro test ya lo marcó enviado, el botón no está: se sigue igual.)
+  const send = owner.getByRole("button", { name: "Marcar enviado" });
+  if (
+    await send.waitFor({ state: "visible", timeout: 5000 }).then(
+      () => true,
+      () => false,
+    )
+  )
+    await send.click();
   await expect(
     owner
       .getByRole("complementary", { name: "Detalle del pedido" })
