@@ -10,7 +10,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { TriangleAlert } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { NoPermissionFor } from "../../app/guards";
 import { useCan } from "../../app/session";
 import { useViewport } from "../../app/useViewport";
@@ -48,6 +48,14 @@ export function CashPage() {
   >(null);
   const [filter, setFilter] = useState<"all" | "cash" | "manual">("all");
   const shift = reg.shift;
+  // Desde Inicio › "Registrar gasto" se llega con la hoja del gasto abierta.
+  const [params, setParams] = useSearchParams();
+  useEffect(() => {
+    if (params.get("gasto") === "1" && shift) {
+      setSheet("expense");
+      setParams({}, { replace: true });
+    }
+  }, [params, setParams, shift]);
   const view = useQuery({
     queryKey: ["shift-view", shift?.id, version],
     placeholderData: (prev) => prev,

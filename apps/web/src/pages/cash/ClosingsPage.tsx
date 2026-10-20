@@ -12,10 +12,12 @@ import {
 } from "@mostrador/shared";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
+import { useNavigate } from "react-router";
 import { NoPermissionFor } from "../../app/guards";
 import { useCan, useMe } from "../../app/session";
 import { api } from "../../data/api";
 import { useSettings } from "../../data/settings";
+import { Button } from "../../ui/Button";
 import { FilterChip } from "../../ui/Chip";
 import { cx } from "../../ui/cx";
 import { EmptyState, ErrorState, SkeletonList } from "../../ui/States";
@@ -86,6 +88,7 @@ function Receipt({ id }: { id: string }) {
 
 /** Historial de cierres: por fecha, con turno, cajero, ventas y diferencia en color. */
 export function ClosingsPage() {
+  const navigate = useNavigate();
   const can = useCan("shift");
   const [daily, setDaily] = useState(false);
   const [open, setOpen] = useState<string | null>(null);
@@ -128,7 +131,11 @@ export function ClosingsPage() {
           onRetry={() => q.refetch()}
         />
       ) : !rows.length ? (
-        <EmptyState title="Todavía no hay cierres" />
+        <EmptyState
+          title="Todavía no hay cierres"
+          body="El comprobante de cada turno cerrado aparece acá."
+          action={<Button onClick={() => navigate("/caja")}>Ir a Caja</Button>}
+        />
       ) : (
         <div className={cx("grid gap-4", open ? "lg:grid-cols-[minmax(0,1fr)_420px]" : "")}>
           <ul

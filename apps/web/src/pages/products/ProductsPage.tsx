@@ -162,6 +162,9 @@ export function ProductsPage() {
   const [search, setSearch] = useSearchParams();
   const seeCosts = useCan("view_costs");
   const canEdit = useCan("change_prices");
+  // Dar de alta un producto: quien cambia precios o quien vende (alta rápida); el repositor, no.
+  const canSell = useCan("sell");
+  const canCreate = canEdit || canSell;
   const { features } = useSettings();
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<ProductFilter | null>(null);
@@ -212,7 +215,7 @@ export function ProductsPage() {
 
   // Las mismas acciones en la compu y en el celular (el celular no las tenía).
   const actions = [
-    { label: "Modo carga", onSelect: () => navigate("/productos/carga") },
+    { label: "Modo carga", onSelect: () => navigate("/productos/carga"), hidden: !canCreate },
     {
       label: "Importar desde Excel",
       onSelect: () => navigate("/productos/importar"),
@@ -384,7 +387,11 @@ export function ProductsPage() {
               <th className="font-semibold">Producto</th>
               <th className="font-semibold">Stock</th>
               {seeCosts && <th className="text-right font-semibold">Costo</th>}
-              {seeCosts && <th className="text-right font-semibold">Gan.</th>}
+              {seeCosts && (
+                <th className="text-right font-semibold" title="Ganancia sobre el costo">
+                  Ganancia
+                </th>
+              )}
               <th className="text-right font-semibold">Precio</th>
               {showDate && <th className="font-semibold">Actualiz.</th>}
             </tr>

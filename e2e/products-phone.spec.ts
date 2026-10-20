@@ -1,7 +1,8 @@
 import { devices, expect, type Page, test } from "@playwright/test";
 import { loginWithPin } from "./helpers";
 
-// Productos en el iPhone: el repositor llega a Modo carga desde "Más acciones" y carga con la cámara.
+// Productos en el iPhone: el encargado llega a Modo carga desde "Más acciones" y carga con la cámara.
+// (El repositor no da de alta productos: la opción no se le muestra.)
 test.use({
   ...devices["iPhone 14 Pro"],
   defaultBrowserType: "chromium",
@@ -13,11 +14,11 @@ const show = (page: Page, code: string | null) =>
     (window as unknown as { __qaCamera: { code: string | null } }).__qaCamera.code = c;
   }, code);
 
-test("el repositor abre Modo carga desde Productos y carga un producto con la cámara", async ({
+test("el encargado abre Modo carga desde Productos y carga un producto con la cámara", async ({
   page,
 }) => {
   await page.addInitScript({ path: "scripts/qa/camera-init.js" });
-  await loginWithPin(page, "Nico", "5678");
+  await loginWithPin(page, "Julián", "2345");
   await page.goto("/productos");
   await page.getByRole("button", { name: "Más acciones" }).click();
   await expect(page.getByRole("menuitem", { name: "Movimientos de stock" })).toBeVisible();
@@ -54,4 +55,12 @@ test("en el celular, Nuevo producto tiene nombre y cámara para el código", asy
   await expect(form.getByLabel("Códigos de barras")).toHaveValue("7790000009990", {
     timeout: 10_000,
   });
+});
+
+test("el repositor no ve Modo carga (no puede dar de alta productos)", async ({ page }) => {
+  await loginWithPin(page, "Nico", "5678");
+  await page.goto("/productos");
+  await page.getByRole("button", { name: "Más acciones" }).click();
+  await expect(page.getByRole("menuitem", { name: "Modo carga" })).toHaveCount(0);
+  await expect(page.getByRole("menuitem", { name: "Movimientos de stock" })).toBeVisible();
 });

@@ -2,6 +2,8 @@ import { formatMoney } from "@mostrador/shared";
 import { Camera, ScanBarcode } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
+import { NoPermissionFor } from "../../app/guards";
+import { useCan } from "../../app/session";
 import { useViewport } from "../../app/useViewport";
 import { findByCode } from "../../data/catalog";
 import type { LocalProduct } from "../../data/types";
@@ -18,6 +20,9 @@ type Loaded = { id: string; name: string; code: string | null; priceCents: numbe
  * nombre, precio, Enter y el siguiente.
  */
 export function LoadModePage() {
+  const canPrices = useCan("change_prices");
+  const canSell = useCan("sell");
+  const canCreate = canPrices || canSell;
   const { layout } = useViewport();
   const phone = layout === "phone";
   const navigate = useNavigate();
@@ -46,6 +51,7 @@ export function LoadModePage() {
     });
   }, []);
 
+  if (!canCreate) return <NoPermissionFor perm="change_prices" />;
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-4 p-4 lg:p-6">
       <div className="flex items-center gap-3">

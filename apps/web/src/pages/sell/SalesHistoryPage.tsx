@@ -562,6 +562,11 @@ export function SalesHistoryPage() {
             <EmptyState
               title="No hay ventas con ese filtro"
               body={filter === "today" ? "Todavía no hay ventas hoy." : undefined}
+              action={
+                filter === "today" ? (
+                  <Button onClick={() => navigate("/vender")}>Nueva venta</Button>
+                ) : undefined
+              }
             />
           ) : (
             <table
@@ -569,11 +574,11 @@ export function SalesHistoryPage() {
               aria-label="Ventas"
             >
               <thead className="block">
-                <tr className="grid grid-cols-[80px_56px_minmax(0,1fr)_110px_100px] gap-2 border-b border-borde bg-fondo px-4 py-2 text-left text-xs font-semibold text-texto-suave lg:grid-cols-[80px_56px_minmax(0,1fr)_130px_100px_120px]">
+                <tr className="grid grid-cols-[64px_44px_minmax(0,1fr)_92px] gap-2 border-b border-borde bg-fondo px-3 py-2 text-left text-xs font-semibold text-texto-suave lg:grid-cols-[80px_56px_minmax(0,1fr)_130px_100px_120px]">
                   <th className="font-semibold">N°</th>
                   <th className="font-semibold">Hora</th>
                   <th className="font-semibold">Cajero · cliente</th>
-                  <th className="font-semibold">Medio</th>
+                  <th className="hidden font-semibold lg:block">Medio</th>
                   <th className="text-right font-semibold">Total</th>
                   <th className="hidden font-semibold lg:block">Estado</th>
                 </tr>
@@ -591,7 +596,7 @@ export function SalesHistoryPage() {
                       (desktop ? setOpen(r.id) : navigate(`/vender/historial/${r.id}`))
                     }
                     className={cx(
-                      "grid min-h-11 cursor-pointer grid-cols-[80px_56px_minmax(0,1fr)_110px_100px] items-center gap-2 border-b border-borde px-4 text-sm last:border-b-0 hover:bg-fondo lg:grid-cols-[80px_56px_minmax(0,1fr)_130px_100px_120px]",
+                      "grid min-h-11 cursor-pointer grid-cols-[64px_44px_minmax(0,1fr)_92px] items-center gap-2 border-b border-borde px-3 text-sm last:border-b-0 hover:bg-fondo lg:grid-cols-[80px_56px_minmax(0,1fr)_130px_100px_120px]",
                       selected === r.id && "bg-primario-suave/60",
                     )}
                   >
@@ -602,7 +607,7 @@ export function SalesHistoryPage() {
                       {r.customerName ? ` · ${r.customerName}` : ""}
                       {r.local ? " · sin sincronizar" : ""}
                     </td>
-                    <td className="truncate text-texto-suave">
+                    <td className="hidden truncate text-texto-suave lg:block">
                       {r.methods.map((m) => METHOD_LABEL[m]).join(" + ")}
                     </td>
                     <td

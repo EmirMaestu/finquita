@@ -361,7 +361,14 @@ function OrderView({ id }: { id: string }) {
           PDF
         </Button>
         {o.nextSteps.includes("cancelled") && (
-          <Button variant="ghost" className="text-peligro" onClick={() => step.mutate("cancelled")}>
+          <Button
+            variant="ghost"
+            className="text-peligro"
+            onClick={() =>
+              window.confirm("¿Cancelar este pedido? No se puede deshacer.") &&
+              step.mutate("cancelled")
+            }
+          >
             Cancelar pedido
           </Button>
         )}
@@ -612,7 +619,15 @@ export function OrdersPage() {
             ) : list.isError ? (
               <ErrorState onRetry={() => list.refetch()} />
             ) : !list.data.items.length ? (
-              <EmptyState title="No hay pedidos acá" body="Armalos desde el pedido sugerido." />
+              <EmptyState
+                title="No hay pedidos acá"
+                body="Armalos desde el pedido sugerido."
+                action={
+                  <Button onClick={() => navigate("/compras/sugerido")}>
+                    Ver el pedido sugerido
+                  </Button>
+                }
+              />
             ) : (
               <ul
                 className="m-0 list-none overflow-hidden rounded-card border border-borde bg-superficie p-0"

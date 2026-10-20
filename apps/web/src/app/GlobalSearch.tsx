@@ -3,6 +3,7 @@ import { Search } from "lucide-react";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useNavigate } from "react-router";
 import { searchCustomers } from "../data/customers";
+import { useSettings } from "../data/settings";
 import type { LocalCustomer, LocalProduct } from "../data/types";
 import { productIndex } from "../sell/searchIndex";
 import { useSyncStatus } from "../sync/status";
@@ -48,6 +49,7 @@ export const ACTIONS: Action[] = [
   { label: "Proveedores", path: "/compras/proveedores", perm: "build_orders" },
   { label: "Clientes y fiado", path: "/clientes", perm: "sell" },
   { label: "Reportes", path: "/reportes", perm: "reports" },
+  { label: "Conteos de inventario", path: "/productos/conteos", perm: "count_receive" },
   { label: "Avisos", path: "/avisos" },
   { label: "Ajustes", path: "/ajustes", perm: "settings" },
 ];
@@ -114,9 +116,23 @@ export function GlobalSearch() {
     };
   }, [term, version]);
 
+  const { features } = useSettings();
   const actions = useMemo(
-    () => matchActions(term).filter((a) => !a.perm || can[a.perm]),
-    [term, can],
+    () =>
+      matchActions(term)
+        .filter((a) => !a.perm || can[a.perm])
+        .map((a) =>
+          a.path === "/productos/conteos" && !features.counts
+            ? can.settings
+              ? {
+                  ...a,
+                  label: "Conteos de inventario (apagados: prendelos en Funciones)",
+                  path: "/ajustes/funciones",
+                }
+              : { ...a, label: "Conteos de inventario (apagados: los prende el dueño en Ajustes)" }
+            : a,
+        ),
+    [term, can, features.counts],
   );
   const saleNumber = /^\d{1,6}$/.test(term.trim()) ? Number(term.trim()) : null;
   const go = (path: string) => {

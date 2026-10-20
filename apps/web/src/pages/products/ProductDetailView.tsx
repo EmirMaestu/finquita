@@ -25,7 +25,7 @@ const MOVE_LABEL: Record<string, string> = {
   return: "Devolución",
   receipt: "Recepción",
   adjustment: "Ajuste",
-  waste: "Merma",
+  waste: "Sale del stock",
   count: "Conteo",
   void: "Anulación",
 };

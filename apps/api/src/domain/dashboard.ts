@@ -142,6 +142,7 @@ export async function dashboard(db: Db, opts: { costs: boolean; now?: Date }) {
       tickets: t.tickets,
       averageTicketCents: t.tickets ? Math.round(t.salesCents / t.tickets) : 0,
       cashCents,
+      shiftOpen: open.length > 0,
       ...(opts.costs
         ? {
             marginCents,

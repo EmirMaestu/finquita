@@ -46,6 +46,7 @@ type Dashboard = {
     tickets: number;
     averageTicketCents: number;
     cashCents: number;
+    shiftOpen?: boolean;
     marginCents?: number;
     marginBp?: number | null;
   };
@@ -133,7 +134,7 @@ function Numbers({ n }: { n: Dashboard["numbers"] }) {
     ],
     ["Tickets", String(n.tickets)],
     ["Ticket promedio", formatMoney(n.averageTicketCents)],
-    ["Efectivo en caja", formatMoney(n.cashCents)],
+    ["Efectivo en caja", n.shiftOpen === false ? "Caja cerrada" : formatMoney(n.cashCents)],
   ];
   if (n.marginCents !== undefined)
     cards.push([
@@ -210,7 +211,7 @@ function Shortcuts() {
     ["Escanear", ScanBarcode, () => scanRouter.openCamera()],
     ["Recibir mercadería", PackageCheck, () => navigate("/compras/recepcion")],
     ["Nuevo pedido", Truck, () => navigate("/compras/sugerido")],
-    ["Registrar gasto", Wallet, () => navigate("/caja")],
+    ["Registrar gasto", Wallet, () => navigate("/caja?gasto=1")],
     ["Cambiar precios", Tag, () => navigate("/productos/precios")],
   ];
   return (
@@ -394,9 +395,7 @@ function StockerHome() {
           ))
         )}
       </section>
-      <p className="m-0 text-xs text-texto-suave">
-        No ves ventas, costos ni caja: tu rol es repositor.
-      </p>
+      <p className="m-0 text-xs text-texto-suave">No ves ventas, costos ni caja desde acá.</p>
     </div>
   );
 }
@@ -404,6 +403,8 @@ function StockerHome() {
 /** Inicio: en cinco segundos, cómo viene el día y qué necesita atención. */
 export function HomePage() {
   const me = useMe();
+  const navigate = useNavigate();
+  const reg = useShell().register;
   const reports = useGrant("reports");
   const role = me?.member.role;
   const enabled = role === "owner" || role === "manager";
@@ -458,6 +459,11 @@ export function HomePage() {
               title="Todavía no hay ventas hoy"
               body="Cuando vendas, acá ves cómo viene el día."
               icon={<Receipt size={28} aria-hidden />}
+              action={
+                <Button onClick={() => navigate(reg?.open ? "/vender" : "/caja")}>
+                  {reg?.open ? "Nueva venta" : "Abrir caja"}
+                </Button>
+              }
             />
           )}
         </>

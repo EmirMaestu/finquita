@@ -108,6 +108,7 @@ describe("vista previa con datos", () => {
         ["Nombre", "Precio", "Stock"],
         ["Jamón cocido x kg", "21000", "4,5"],
         ["Galletitas de agua 200 g", "1500", "20"],
+        ["Azúcar Ledesma 1 kg", "1900", "12"],
       ],
       mapping: { name: 0, price: 1, stock: 2 },
     });
@@ -127,5 +128,8 @@ describe("vista previa con datos", () => {
       stock: 20,
       unit: "unit",
     });
+    // "1 kg" es el envase, no se vende por peso (lo vio el desconfiado en la ronda 2).
+    const azucar = r.body.items.find((i: { line: number }) => i.line === 4);
+    expect(azucar).toMatchObject({ action: "new", unit: "unit" });
   });
 });

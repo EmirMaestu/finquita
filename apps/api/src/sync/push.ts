@@ -62,10 +62,18 @@ async function reject(
         deviceAt: a.deviceAt,
       });
       const label = OP_LABEL_ES[a.type as keyof typeof OP_LABEL_ES] ?? "la operación";
+      const p = (a.payload ?? {}) as Record<string, unknown>;
+      const changes = (p.changes ?? {}) as Record<string, unknown>;
+      const who =
+        typeof changes.name === "string"
+          ? ` "${changes.name}"`
+          : typeof p.number === "number"
+            ? ` ${String(p.number).padStart(6, "0")}`
+            : "";
       await raiseAlert(tx, {
         kind: "sync_rejected",
         severity: "danger",
-        title: `No se pudo registrar ${label}`,
+        title: `No se pudo registrar ${label}${who}`,
         body: `${a.reason}. Quedó guardada para revisarla.`,
         refType: "sync_op",
         refId: a.opId,

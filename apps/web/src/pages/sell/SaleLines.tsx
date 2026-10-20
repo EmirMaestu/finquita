@@ -134,7 +134,7 @@ export function SaleTable({
         <span>↑ ↓ elegir línea</span>
         <span>+ − cantidad</span>
         <span>Supr quitar</span>
-        <span>* multiplicar</span>
+        <span>3 * y escanear: tres · * 3 Enter: deja la línea en 3</span>
       </div>
     </div>
   );

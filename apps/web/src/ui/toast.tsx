@@ -64,7 +64,7 @@ function ToastItem({ t }: { t: Toast }) {
             t.action?.run();
             dismissToast(t.id);
           }}
-          className="h-9 rounded-lg px-3 text-sm font-semibold text-acento"
+          className="h-11 rounded-lg px-3 text-sm font-semibold text-acento lg:h-9"
         >
           {t.action.label}
         </button>

@@ -151,18 +151,6 @@ export function SuggestedPage({
               </FilterChip>
             ))}
           </nav>
-          {inTransit.length > 0 && (
-            <p className="m-0 text-[13px] text-texto-suave">
-              Sin nada para pedir porque ya hay un pedido en camino:{" "}
-              {inTransit
-                .map(
-                  (o) =>
-                    `${o.supplierName} (pedido ${(o.openOrders ?? []).map(orderNumber).join(", ")})`,
-                )
-                .join(" · ")}
-              .
-            </p>
-          )}
           {detail.isPending || !order ? (
             <SkeletonList />
           ) : (
@@ -274,6 +262,18 @@ export function SuggestedPage({
                       </li>
                     ))}
                   </ul>
+                )}
+                {inTransit.length > 0 && (
+                  <p className="m-0 border-t border-borde px-4 py-2 text-[13px] text-texto-suave">
+                    Sin nada para pedir porque ya hay un pedido en camino:{" "}
+                    {inTransit
+                      .map(
+                        (o) =>
+                          `${o.supplierName} (pedido ${(o.openOrders ?? []).map(orderNumber).join(", ")})`,
+                      )
+                      .join(" · ")}
+                    .
+                  </p>
                 )}
                 <div className="flex items-center gap-3 border-t border-borde px-4 py-3 text-sm">
                   <span className="flex-1 text-texto-suave">

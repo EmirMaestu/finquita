@@ -52,7 +52,7 @@ export function PinPad({
     return () => window.removeEventListener("keydown", h);
   }, [pin, onSubmit, onCancel]);
   return (
-    <div className="flex w-full max-w-[320px] flex-col gap-4">
+    <div className="flex w-full max-w-[320px] flex-col gap-4" data-keypad data-keypad-global>
       <div className="flex flex-col items-center gap-1.5 text-center">
         <span className="inline-flex size-11 items-center justify-center rounded-full bg-alerta-suave text-alerta">
           <Lock size={22} aria-hidden />

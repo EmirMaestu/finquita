@@ -13,7 +13,7 @@ const VARIANT: Record<Variant, string> = {
 };
 
 const SIZE: Record<Size, string> = {
-  md: "h-10 px-4 text-sm",
+  md: "h-12 px-4 text-sm lg:h-10",
   lg: "h-12 px-5 text-base",
   xl: "h-14 px-6 text-lg",
 };

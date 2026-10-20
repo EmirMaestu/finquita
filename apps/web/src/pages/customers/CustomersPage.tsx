@@ -20,6 +20,7 @@ import { useCan, useGrant, useMe } from "../../app/session";
 import { useRegister } from "../../cash/useRegister";
 import { ApiError, api, downloadFile } from "../../data/api";
 import { collectCreditLocal, saveCustomerLocal } from "../../data/customers";
+import { localDb } from "../../data/db";
 import { Button } from "../../ui/Button";
 import { Checkbox } from "../../ui/Checkbox";
 import { Chip, FilterChip } from "../../ui/Chip";
@@ -246,6 +247,11 @@ export function CollectSheet({ customer, onClose }: { customer: Detail; onClose:
           </pre>
         </section>
         <div className="mt-3 flex flex-wrap gap-2">
+          {!customer.phone && (
+            <span className="w-full text-sm text-texto-suave">
+              Sin teléfono cargado: el recibo se manda a mano.
+            </span>
+          )}
           <a
             href={waLink(customer.phone, receipt)}
             target="_blank"
@@ -319,7 +325,7 @@ export function CollectSheet({ customer, onClose }: { customer: Detail; onClose:
             Efectivo
           </FilterChip>
           <FilterChip active={method === "transfer"} onClick={() => setMethod("transfer")}>
-            Transf. o QR
+            Transferencia o QR
           </FilterChip>
           <FilterChip active={method === "debit"} onClick={() => setMethod("debit")}>
             Tarjeta
@@ -377,7 +383,24 @@ function CustomerView({ id, onEdit }: { id: string; onEdit: (d: Detail) => void 
   const [collecting, setCollecting] = useState(false);
   const q = useQuery({
     queryKey: ["customer", id],
-    queryFn: () => api<Detail>(`/api/customers/${id}`),
+    queryFn: async () => {
+      try {
+        return await api<Detail>(`/api/customers/${id}`);
+      } catch (err) {
+        // Recién creado (todavía viaja por la cola) o sin internet: la copia local.
+        const local = id ? await localDb().customers.get(id) : undefined;
+        if (!local) throw err;
+        return {
+          ...local,
+          address: null,
+          dni: null,
+          availableCents: Math.max(0, local.creditLimitCents - local.balanceCents),
+          movements: [],
+          overLimit: local.balanceCents > local.creditLimitCents,
+          local: true,
+        } as unknown as Detail;
+      }
+    },
   });
   const reverse = useMutation({
     mutationFn: (entryId: string) =>
@@ -498,7 +521,10 @@ function CustomerView({ id, onEdit }: { id: string; onEdit: (d: Detail) => void 
                 <button
                   type="button"
                   className="text-xs font-semibold text-peligro"
-                  onClick={() => reverse.mutate(m.id)}
+                  onClick={() =>
+                    window.confirm(`¿Anular "${m.label}" por ${money(Math.abs(m.amountCents))}?`) &&
+                    reverse.mutate(m.id)
+                  }
                   aria-label={`Anular ${m.label} del ${formatDate(new Date(m.at)).slice(0, 5)}`}
                 >
                   Anular

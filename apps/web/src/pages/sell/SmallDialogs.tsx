@@ -101,7 +101,7 @@ export function UnknownCodeDialog({
           withStock
         />
         <Button variant="secondary" onClick={onMisc}>
-          Vender como varios · F3
+          Vender como varios <Key>F3</Key>
         </Button>
       </div>
     </Sheet>
@@ -166,7 +166,8 @@ export const SHORTCUTS: [string, string][] = [
   ["F9", "Retiro o gasto de caja"],
   ["F10", "Abrir el cajón"],
   ["F12", "Cobrar (también Ctrl + Enter)"],
-  ["*", 'Multiplicar: "3 *" y escanear agrega tres'],
+  ["*", 'Multiplicar: "3 *" y escanear agrega tres; "* 3" y Enter deja la línea elegida en 3'],
+  ["F8", "Ir a Caja (abrir o cerrar el turno)"],
   ["+ −", "Sumar o restar uno al ítem elegido"],
   ["Supr", "Quitar el ítem elegido"],
   ["Esc", "Cancelar o cerrar"],
@@ -180,6 +181,7 @@ export const SHORTCUTS_BAR: [string, string][] = [
   ["F5", "Cliente"],
   ["F6", "Espera"],
   ["F9", "Retiro"],
+  ["F8", "Caja"],
   ["F10", "Cajón"],
   ["F12", "Cobrar"],
 ];

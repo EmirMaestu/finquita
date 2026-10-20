@@ -43,24 +43,25 @@ type Draft = {
   left: string | null;
 };
 const DRAFT_KEY = "mostrador.closeDraft";
-function loadDraft(shiftId: string | undefined): Draft | null {
-  if (!shiftId) return null;
+function loadDraft(shiftId: string | undefined, memberId: string | undefined): Draft | null {
+  if (!shiftId || !memberId) return null;
   try {
     const raw = localStorage.getItem(DRAFT_KEY);
     if (!raw) return null;
-    const d = JSON.parse(raw) as Draft & { shiftId: string };
-    return d.shiftId === shiftId ? d : null;
+    const d = JSON.parse(raw) as Draft & { shiftId: string; memberId?: string };
+    // Lo contado es de quien lo contó: otra persona que entra no hereda el arqueo a medias.
+    return d.shiftId === shiftId && d.memberId === memberId ? d : null;
   } catch {
     return null;
   }
 }
-function saveDraft(shiftId: string, d: Draft) {
+function saveDraft(shiftId: string, memberId: string, d: Draft) {
   try {
-    localStorage.setItem(DRAFT_KEY, JSON.stringify({ shiftId, ...d }));
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({ shiftId, memberId, ...d }));
   } catch {}
 }
-function clearDraft(shiftId: string) {
-  if (loadDraft(shiftId)) localStorage.removeItem(DRAFT_KEY);
+function clearDraft(shiftId: string, memberId: string) {
+  if (loadDraft(shiftId, memberId)) localStorage.removeItem(DRAFT_KEY);
 }
 
 /** Arqueo ciego y cierre: se cuenta sin ver el esperado, se comparan los otros medios y se cierra. */
@@ -80,19 +81,19 @@ export function CloseShiftPage() {
   // Lo contado sobrevive una recarga de la página (queda en el dispositivo hasta cerrar).
   const loadedFor = useRef<string | null>(null);
   useEffect(() => {
-    if (!shift || loadedFor.current === shift.id) return;
+    if (!shift || !me || loadedFor.current === shift.id) return;
     loadedFor.current = shift.id;
-    const d = loadDraft(shift.id);
+    const d = loadDraft(shift.id, me.member.id);
     if (!d) return;
     setCounts(d.counts);
     setOther(d.other);
     setNote(d.note);
     setLeft(d.left);
-  }, [shift]);
+  }, [shift, me]);
   useEffect(() => {
-    if (shift && loadedFor.current === shift.id && step !== "done")
-      saveDraft(shift.id, { counts, other, note, left });
-  }, [shift, step, counts, other, note, left]);
+    if (shift && me && loadedFor.current === shift.id && step !== "done")
+      saveDraft(shift.id, me.member.id, { counts, other, note, left });
+  }, [shift, me, step, counts, other, note, left]);
   const view = useQuery({
     queryKey: ["shift-close", shift?.id],
     queryFn: () => (shift ? loadShiftView(shift) : null),
@@ -228,7 +229,7 @@ export function CloseShiftPage() {
         settings.tickets.width,
       ),
     );
-    clearDraft(shift.id);
+    clearDraft(shift.id, me.member.id);
     setStep("done");
   };
 
@@ -263,7 +264,7 @@ export function CloseShiftPage() {
             return (
               <div
                 key={d}
-                className="grid h-14 grid-cols-[90px_1fr_110px] items-center gap-3 border-b border-borde px-4 lg:h-12"
+                className="grid h-14 grid-cols-[72px_1fr_84px] items-center gap-2 lg:grid-cols-[90px_1fr_110px] lg:gap-3 border-b border-borde px-4 lg:h-12"
               >
                 <span className="tnum font-semibold">{formatMoney(d * 100)}</span>
                 <Stepper
@@ -295,6 +296,10 @@ export function CloseShiftPage() {
             className="flex flex-col gap-2.5 rounded-card border border-borde bg-superficie px-5 py-4"
           >
             <div className="font-semibold">2 · Otros medios, según cupones y app del banco</div>
+            <div className="text-[13px] text-texto-suave">
+              Cargá el total de los cupones del posnet y de la app del banco. Lo que dejes vacío no
+              se controla (queda como lo registró el sistema).
+            </div>
             <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
               {OTHER.map((o) => (
                 <TextField

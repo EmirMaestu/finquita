@@ -12,7 +12,7 @@ import { SkeletonList } from "../ui/States";
 import { LiveShell } from "./LiveShell";
 import { lockScreen, useLockReason, useLockScreen } from "./lock";
 import type { ModuleId } from "./modules";
-import { type Me, SessionProvider, useSessionQuery } from "./session";
+import { type Me, SessionProvider, useSessionQuery, useSignOut } from "./session";
 
 /** Módulos que ve cada uno según sus permisos (lo que no puede usar, no aparece). */
 export function modulesFor(me: Me): ModuleId[] {
@@ -77,6 +77,7 @@ const IDLE_MS = 5 * 60_000;
 function IdleLock() {
   const locked = useLockScreen();
   const reason = useLockReason();
+  const signOut = useSignOut();
   useEffect(() => {
     if (!credentials.get().pinToken) return;
     let timer = setTimeout(() => !isSaleInProgress() && lockScreen.open("idle"), IDLE_MS);
@@ -93,7 +94,13 @@ function IdleLock() {
   }, []);
   // Bloqueada por inactividad, solo se destraba con el PIN: no hay "Volver".
   return locked ? (
-    <LockScreen onCancel={reason === "switch" ? () => lockScreen.close() : undefined} />
+    <LockScreen
+      onCancel={reason === "switch" ? () => lockScreen.close() : undefined}
+      onPassword={() => {
+        lockScreen.close();
+        void signOut();
+      }}
+    />
   ) : null;
 }
 

@@ -60,6 +60,7 @@ describe("panel del día", () => {
       averageTicketCents: 726_667,
       // Fondo de $ 20.000 + $ 9.200 en efectivo (pagó con $ 10.000, $ 800 de vuelto).
       cashCents: 2_920_000,
+      shiftOpen: true,
       marginCents: 2 * 130_000 + 205_000 + 3 * 60_000,
       marginBp: 2959,
     });

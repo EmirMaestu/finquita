@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { useEffect, useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { pluFromInternalBarcode } from "../src/data/catalog";
-import { createRepeatFilter } from "../src/scan/camera";
+import { createGapFilter, createRepeatFilter } from "../src/scan/camera";
 import { createScanDetector, stripScanLeak, useScanner } from "../src/scan/useScanner";
 
 /** Teclea un texto con un intervalo fijo entre teclas (ms) sobre el detector. */
@@ -174,6 +174,21 @@ describe("cámara y planilla de códigos", () => {
     expect(accept("7790000003011")).toBe(true);
   });
 
+  it("con la cámara, el producto quieto en el cuadro no suma; si sale y vuelve, sí", () => {
+    let t = 0;
+    const g = createGapFilter(3, 4000, () => t);
+    expect(g.read("7790000001017")).toBe(true);
+    for (t = 300; t < 3000; t += 300) expect(g.read("7790000001017")).toBe(false);
+    // Sale del cuadro (tres intentos sin lectura) y vuelve: segunda unidad.
+    g.miss();
+    g.miss();
+    g.miss();
+    t = 3300;
+    expect(g.read("7790000001017")).toBe(true);
+    // Otro producto entra directo.
+    expect(g.read("7791234000012")).toBe(true);
+  });
+
   it("los códigos internos de la planilla empiezan con 2", () => {
     expect(pluFromInternalBarcode("2000000010014")).toBe("1001");
     expect(pluFromInternalBarcode("7791234000012")).toBeNull();
@@ -215,6 +230,23 @@ describe("pistola contra teclado: campos numéricos y teclados de diálogo", () 
     }
     // …y al terminar sin Enter, vuelve todo.
     vi.advanceTimersByTime(100);
+    expect(onScan).not.toHaveBeenCalled();
+    expect(onRelease).toHaveBeenCalledWith("10000");
+  });
+
+  it("en el teclado del cobro, '10000' + Enter de un tirón es tipeo (vuelve) y no un código", () => {
+    const clock = { t: 0 };
+    const onScan = vi.fn();
+    const onRelease = vi.fn();
+    const d = createScanDetector({ onScan, onRelease, now: () => clock.t });
+    for (const key of "10000") {
+      clock.t += 5;
+      d.keydown({ key, ctrlKey: false, metaKey: false, altKey: false }, { keypad: true });
+    }
+    clock.t += 5;
+    expect(
+      d.keydown({ key: "Enter", ctrlKey: false, metaKey: false, altKey: false }, { keypad: true }),
+    ).toBe(false);
     expect(onScan).not.toHaveBeenCalled();
     expect(onRelease).toHaveBeenCalledWith("10000");
   });

@@ -1,7 +1,7 @@
 import { formatDate, formatMoney, formatQty, parseDecimal } from "@mostrador/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CircleCheck, ScanBarcode } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { NoPermissionFor } from "../../app/guards";
 import { useCan, useGrant } from "../../app/session";
@@ -320,6 +320,7 @@ export function CountPage() {
     for (const l of lines) for (const c of l.barcodes) m.set(c, l);
     return m;
   }, [lines]);
+  const scannedRef = useRef(false);
   useEffect(() => {
     if (!open) return;
     return scanRouter.claim(async (code) => {
@@ -335,6 +336,7 @@ export function CountPage() {
         return;
       }
       beep("ok");
+      scannedRef.current = scanRouter.isCameraOpen();
       scanRouter.closeCamera();
       setEntry(l);
     });
@@ -449,7 +451,17 @@ export function CountPage() {
         <Button
           size="lg"
           className="self-start"
-          onClick={() => submit.mutate()}
+          onClick={() => {
+            const left = lines.filter((l) => l.countedQty === null).length;
+            if (
+              left &&
+              !window.confirm(
+                `Quedan ${left} productos sin contar: van como "no contados". ¿Terminás igual? Lo revisa un encargado o el dueño.`,
+              )
+            )
+              return;
+            submit.mutate();
+          }}
           disabled={!counted}
         >
           Terminar conteo
@@ -480,6 +492,9 @@ export function CountPage() {
           onSave={(qty) => {
             save.mutate({ productId: entry.productId, countedQty: qty });
             setEntry(null);
+            // Leído con la cámara: vuelve sola para el próximo producto.
+            if (scannedRef.current) scanRouter.openCamera();
+            scannedRef.current = false;
           }}
         />
       )}

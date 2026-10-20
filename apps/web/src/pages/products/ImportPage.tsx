@@ -163,8 +163,8 @@ export function ImportPage() {
             <div>
               <div className="text-base font-semibold">Decinos qué es cada columna</div>
               <div className="text-sm text-texto-suave">
-                Reconocimos {recognized} de {Object.keys(IMPORT_FIELDS).length} por el encabezado.
-                Revisá y seguí.
+                Reconocimos {recognized} {recognized === 1 ? "columna" : "columnas"} por el
+                encabezado; revisá el resto. Revisá y seguí.
               </div>
             </div>
             {(Object.keys(IMPORT_FIELDS) as ImportField[]).map((f) => (

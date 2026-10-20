@@ -35,7 +35,7 @@ setupRoutes.get("/setup/status", requireActor(), requireFull("settings"), async 
       key: "business",
       done: !!business,
       title: "Cargá los datos del negocio",
-      action: "Negocio",
+      action: "Cargar los datos del negocio",
       path: "/ajustes/negocio",
     },
     {
@@ -52,7 +52,7 @@ setupRoutes.get("/setup/status", requireActor(), requireFull("settings"), async 
       title: "Configurá medios de pago",
       detail:
         "Crédito viene con 10 % de recargo: revisalo. Recargos, alias y CVU para transferencias",
-      action: "Medios de pago",
+      action: "Configurar medios de pago",
       path: "/ajustes/medios",
     },
     {
@@ -60,14 +60,14 @@ setupRoutes.get("/setup/status", requireActor(), requireFull("settings"), async 
       done: (await count(db.select({ n }).from(members).where(eq(members.active, true)))) > 1,
       title: "Sumá a tu equipo",
       detail: "Invitá a cada persona y asignale su PIN",
-      action: "Usuarios",
+      action: "Invitar al equipo",
       path: "/ajustes/usuarios",
     },
     {
       key: "suppliers",
       done: (await count(db.select({ n }).from(suppliers).where(isNull(suppliers.deletedAt)))) > 0,
       title: "Agregá a tus proveedores",
-      action: "Proveedores",
+      action: "Cargar proveedores",
       path: "/compras/proveedores",
     },
     {
@@ -81,7 +81,7 @@ setupRoutes.get("/setup/status", requireActor(), requireFull("settings"), async 
         )) > 0,
       title: "Cargá el WhatsApp de tus proveedores",
       detail: "Los pedidos salen con un botón que abre el chat",
-      action: "Proveedores",
+      action: "Cargar sus WhatsApp",
       path: "/compras/proveedores",
     },
     {

@@ -20,7 +20,11 @@ syncEngine().start();
 listenServerEvents(() => void syncEngine().kick());
 
 const queryClient = new QueryClient({
-  defaultOptions: { queries: { staleTime: 30_000, retry: 1 } },
+  // Sin internet no se pausa nada: la app es local primero (la cola se encarga de mandar).
+  defaultOptions: {
+    queries: { staleTime: 30_000, retry: 1, networkMode: "always" },
+    mutations: { networkMode: "always" },
+  },
 });
 const router = createBrowserRouter(routes);
 

@@ -11,6 +11,7 @@ import { Button } from "../../ui/Button";
 import { Chip, FilterChip } from "../../ui/Chip";
 import { cx } from "../../ui/cx";
 import { EmptyState, ErrorState, SkeletonList } from "../../ui/States";
+import { toast } from "../../ui/toast";
 
 type Move = {
   id: string;
@@ -58,6 +59,11 @@ export function MovementsPage() {
     enabled: canApprove,
   });
   const review = useMutation({
+    onError: (e) =>
+      toast({
+        text: e instanceof Error ? e.message : "No se pudo. Probá de nuevo.",
+        tone: "error",
+      }),
     mutationFn: ({ id, approve }: { id: string; approve: boolean }) =>
       api(`/api/stock/movements/${id}/review`, { body: { approve } }),
     onSuccess: () =>

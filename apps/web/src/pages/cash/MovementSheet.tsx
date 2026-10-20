@@ -178,7 +178,13 @@ export function MovementSheet({
             }}
             hint={invoices.isError ? "Sin conexión no se pueden ver las facturas." : undefined}
           >
-            <option value="">Elegí la factura</option>
+            <option value="">
+              {invoices.isPending
+                ? "Buscando facturas…"
+                : invoices.data?.length
+                  ? "Elegí la factura"
+                  : "No hay facturas pendientes para pagar"}
+            </option>
             {(invoices.data ?? []).map((i) => (
               <option key={i.id} value={i.id}>
                 {i.supplierName} · {i.number ?? "sin número"} · {formatMoney(i.pendingCents)}

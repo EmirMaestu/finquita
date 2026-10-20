@@ -83,13 +83,20 @@ export function OpenShift({
     <section
       aria-label="Abrir turno"
       className="mx-auto flex w-full max-w-lg flex-col gap-4 rounded-card border border-borde bg-superficie p-5"
+      onKeyDown={(e) => {
+        // Enter en el fondo o en un billete abre el turno (no hace falta tabular hasta el botón).
+        if (e.key === "Enter" && e.target instanceof HTMLInputElement && !busy) {
+          e.preventDefault();
+          if (!(differs && !note.trim())) void open();
+        }
+      }}
     >
       <div className="flex items-center gap-3">
         <span className="inline-flex size-12 items-center justify-center rounded-full bg-neutro-suave text-texto-suave">
           <Lock size={24} aria-hidden />
         </span>
         <div>
-          <h2 className="m-0 text-[22px] font-semibold">Abrí la caja para vender</h2>
+          <h2 className="m-0 text-[22px] font-semibold">Abrí la caja</h2>
           <div className="text-sm text-texto-suave">
             {registerName} · {shiftName(now)}
           </div>
@@ -122,7 +129,7 @@ export function OpenShift({
             return (
               <div
                 key={d}
-                className="grid grid-cols-[90px_1fr_110px] items-center gap-3 border-b border-borde py-1.5"
+                className="grid grid-cols-[72px_1fr_84px] items-center gap-2 lg:grid-cols-[90px_1fr_110px] lg:gap-3 border-b border-borde py-1.5"
               >
                 <span className="tnum font-semibold">{formatMoney(d * 100)}</span>
                 <Stepper

@@ -330,7 +330,7 @@ export function ProductForm({ open, onClose, product, onSaved, initialCode }: Pr
           />
           <Toggle
             label="Mayores de 18"
-            hint="Recuerda pedir documento al vender."
+            hint="Acordate de pedir documento al vender."
             checked={adult}
             onChange={setAdult}
           />

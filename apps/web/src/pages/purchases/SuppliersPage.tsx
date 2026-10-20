@@ -385,6 +385,11 @@ export function SuppliersPage() {
         <EmptyState
           title="Todavía no hay proveedores"
           body="Cargá a quién le comprás para armar pedidos."
+          action={
+            canEdit ? (
+              <Button onClick={() => setForm({ s: null })}>Nuevo proveedor</Button>
+            ) : undefined
+          }
         />
       ) : (
         <div className={cx("grid gap-4", open ? "lg:grid-cols-[minmax(0,1fr)_420px]" : "")}>

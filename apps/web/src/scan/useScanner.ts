@@ -60,8 +60,10 @@ export function createScanDetector(opts: Omit<ScannerOptions, "enabled">) {
   let keypad = false;
   const finish = (byKey = false) => {
     const code = buffer;
-    // En un teclado numérico, una ráfaga que termina sola (sin Enter ni Tab) es tipeo rápido.
-    if (fast && code.length >= minLength && (byKey || !keypad)) {
+    // En un teclado numérico, una ráfaga que termina sola (sin Enter ni Tab) es tipeo rápido,
+    // y una corta con Enter ("10000" + Enter) también: solo un código de barras entero
+    // (8 dígitos o más) cuenta como escaneo ahí.
+    if (fast && code.length >= (keypad ? 8 : minLength) && (byKey || !keypad)) {
       clear();
       opts.onScan(code);
       return true;
@@ -129,9 +131,17 @@ export function isNumericField(el: EventTarget | null): boolean {
   );
 }
 
-/** Dentro de un diálogo con teclado numérico (data-keypad): cobro, peso, PIN. */
+/**
+ * Dentro de un diálogo con teclado numérico (data-keypad): cobro, peso, PIN. Un teclado de PIN
+ * a pantalla completa (data-keypad-global) cuenta aunque el foco esté en el cuerpo de la página.
+ */
 export function inKeypad(el: EventTarget | null): boolean {
-  return el instanceof Element && Boolean(el.closest("[data-keypad]"));
+  if (el instanceof Element && el.closest("[data-keypad]")) return true;
+  return (
+    typeof document !== "undefined" &&
+    (el === document.body || el === document) &&
+    Boolean(document.querySelector("[data-keypad-global]"))
+  );
 }
 
 /** Teclas devueltas por el detector: se vuelven a mandar y el detector no las mira. */

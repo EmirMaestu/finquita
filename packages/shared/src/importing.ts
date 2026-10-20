@@ -119,7 +119,8 @@ export function normalizeRow(cells: string[], mapping: ColumnMapping, line: numb
   const minStock = quantity(rawMin);
   const unitCell = get("unit").toLowerCase();
   // "Jamón cocido x kg", "Pan por kilo": si no hay columna de unidad, el nombre lo dice.
-  const kgByName = /(\bx\s*kg\b|\bpor\s*kilo\b|\bpor\s*kg\b|\bal\s*kilo\b|\bkg\s*$)/i.test(name);
+  // "Jamón x kg" o "Pan por kilo" sí; "Yerba 1 kg" o "Azúcar 1 kg" no (es el envase).
+  const kgByName = /(\bx\s*kg\b|\bpor\s*kilo\b|\bpor\s*kg\b|\bal\s*kilo\b)/i.test(name);
   return {
     line,
     name,

@@ -122,7 +122,7 @@ describe("POST /api/sync/push", () => {
       .select()
       .from(alerts)
       .where(and(eq(alerts.kind, "sync_rejected"), eq(alerts.refId, sale.opId)));
-    expect(alert?.title).toBe("No se pudo registrar la venta");
+    expect(alert?.title).toMatch(/^No se pudo registrar la venta \d{6}$/);
     const again = await nico.post("/api/sync/push", { deviceNow: now(), ops: [sale] });
     expect(again.body.results[0]).toMatchObject({ status: "rejected", duplicate: true });
     expect(await stockOf("coca")).toBe(14);

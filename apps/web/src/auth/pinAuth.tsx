@@ -124,7 +124,7 @@ export function PinAuthorizer() {
         className="flex w-full max-w-[360px] justify-center rounded-2xl bg-superficie px-5 py-6 shadow-xl"
       >
         <PinPad
-          title={req.title ?? "Autorizá con tu PIN"}
+          title={req.title ?? "Autorizá con el PIN de un encargado o del dueño"}
           subtitle={req.detail}
           error={error}
           busy={busy}

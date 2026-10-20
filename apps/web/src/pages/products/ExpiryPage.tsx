@@ -26,6 +26,11 @@ export function ExpiryPage() {
   const canRemove = useGrant("adjust_stock") === "allow";
   const q = useQuery({ queryKey: ["lots"], queryFn: () => api<Lot[]>("/api/lots?within=30") });
   const remove = useMutation({
+    onError: (e) =>
+      toast({
+        text: e instanceof Error ? e.message : "No se pudo. Probá de nuevo.",
+        tone: "error",
+      }),
     mutationFn: (a: { id: string; action: "waste" | "supplier" }) =>
       api(`/api/lots/${a.id}/remove`, { body: { action: a.action } }),
     onSuccess: async (_r, a) => {

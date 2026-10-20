@@ -230,7 +230,10 @@ function UsersSection() {
   const pin = useMutation({
     mutationFn: (a: { id: string; pin: string }) =>
       api(`/api/members/${a.id}/pin`, { method: "PUT", body: { pin: a.pin } }),
-    onSuccess: () => toast({ text: "PIN cambiado" }),
+    onSuccess: async () => {
+      toast({ text: "PIN cambiado" });
+      await qc.invalidateQueries({ queryKey: ["members"] });
+    },
     onError: (e) =>
       toast({ text: e instanceof ApiError ? e.message : "No se pudo cambiar.", tone: "error" }),
   });
@@ -1285,7 +1288,7 @@ export function SettingsPage() {
   );
   return (
     <div className="flex flex-col gap-4 p-4 lg:p-6">
-      <h1 className="m-0 text-[22px] font-semibold">Ajustes</h1>
+      <h1 className="m-0 hidden text-[22px] font-semibold lg:block">Ajustes</h1>
       {wide ? (
         <div className="grid grid-cols-[240px_minmax(0,1fr)] gap-6">
           {nav}

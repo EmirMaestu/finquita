@@ -103,7 +103,7 @@ export function PaymentDialog({
   // "Falta" es lo que queda después de los pagos ya agregados; con algo tipeado, descuenta eso.
   // Sin pagos y sin tipear no se muestra: el medio elegido cubre justo el total.
   const stillDue = typed !== null ? Math.max(0, remaining - current) : remaining;
-  const showDue = payments.length > 0 || typed !== null;
+  const showDue = payments.length > 0 || (typed !== null && stillDue > 0);
   // Lo que se muestra en grande: en efectivo, lo recibido; con otro medio, lo que se cobra
   // (con el recargo incluido: es el número que va al posnet).
   const shown = tab === "cash" ? current : (pending?.amountCents ?? 0);
@@ -112,10 +112,12 @@ export function PaymentDialog({
 
   const blocked =
     tab === "transfer" && !verified
-      ? 'Tildá "Verificada en el banco" antes de confirmar.'
+      ? 'Para confirmar, tildá "Verificada en el banco" (tecla V).'
       : tab === "account" && !fiado
-        ? "Asigná un cliente con F5 para fiar."
+        ? "Elegí el cliente para fiar (F5)."
         : null;
+  /** "crédito", "débito", pero "QR o billetera" (la sigla no se baja). */
+  const lower = (label: string) => (/^[A-Z]{2}/.test(label) ? label : label.toLowerCase());
 
   const confirm = useCallback(() => {
     if (busy) return;
@@ -239,7 +241,7 @@ export function PaymentDialog({
           </output>
           {(surcharge > 0 || extra > 0) && (
             <div className="text-[13px] text-texto-suave">
-              Incluye recargo {METHOD_LABEL[method].toLowerCase()}{" "}
+              Incluye recargo {lower(METHOD_LABEL[method])}{" "}
               {formatMoney(surcharge + (remaining > 0 ? extra : 0))}
             </div>
           )}
@@ -297,7 +299,7 @@ export function PaymentDialog({
                   aria-pressed={output === id}
                   onClick={() => setOutput(id)}
                   className={cx(
-                    "h-9 flex-1 rounded-lg border text-[13px] font-semibold",
+                    "h-11 flex-1 rounded-lg border text-[13px] font-semibold lg:h-9",
                     output === id
                       ? "border-primario bg-primario-suave text-primario"
                       : "border-borde bg-superficie",
@@ -314,7 +316,7 @@ export function PaymentDialog({
           <div className="hidden items-center justify-between lg:flex">
             <span className="text-xl font-semibold">Cobrar</span>
             <span className="text-[13px] text-texto-suave">
-              Enter agrega el pago · Ctrl ⏎ cobra · Esc vuelve a la venta
+              Enter agrega el pago (y cobra si ya cubre el total) · Ctrl ⏎ cobra · Esc vuelve
             </span>
           </div>
           <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
@@ -355,7 +357,7 @@ export function PaymentDialog({
                   aria-pressed={card === c}
                   onClick={() => setCard(c)}
                   className={cx(
-                    "h-8 rounded-full px-3 text-xs font-semibold",
+                    "h-10 rounded-full px-3 text-xs font-semibold lg:h-8",
                     card === c ? "bg-texto text-fondo" : "border border-borde bg-superficie",
                   )}
                 >
@@ -378,7 +380,7 @@ export function PaymentDialog({
                     aria-pressed={transfer === c}
                     onClick={() => setTransfer(c)}
                     className={cx(
-                      "h-8 rounded-full px-3 text-xs font-semibold",
+                      "h-10 rounded-full px-3 text-xs font-semibold lg:h-8",
                       transfer === c ? "bg-texto text-fondo" : "border border-borde bg-superficie",
                     )}
                   >
@@ -464,7 +466,7 @@ export function PaymentDialog({
                     ? typed === null
                       ? "Recibido en efectivo · justo"
                       : "Recibido en efectivo"
-                    : `Cobrá con ${METHOD_LABEL[method].toLowerCase()}${extra > 0 ? ` · incluye recargo ${formatMoney(extra)}` : ""}`}
+                    : `Cobrá con ${lower(METHOD_LABEL[method])}${extra > 0 ? ` · incluye recargo ${formatMoney(extra)}` : ""}`}
                 </div>
                 <output
                   className="block tnum text-[32px] font-semibold tracking-[-.02em]"
@@ -511,11 +513,16 @@ export function PaymentDialog({
               </div>
             </div>
           </div>
-          {blocked && remaining > 0 && (
-            <div className="text-[13px] font-semibold text-alerta">{blocked}</div>
-          )}
           <div className="sticky -mx-5 -mb-5 bottom-0 bg-superficie px-5 pt-2 pb-5 lg:-mx-7 lg:-mb-7 lg:px-7 lg:pb-7">
+            {blocked && remaining > 0 && (
+              <div role="alert" className="mb-2 text-[13px] font-semibold text-alerta">
+                {blocked}
+              </div>
+            )}
             <Button
+              // "Agregar pago" y "Confirmar cobro" son dos botones distintos: el freno al doble
+              // clic de cada uno no se come el clic del otro.
+              key={remaining > 0 && current < remaining ? "add" : "confirm"}
               size="xl"
               onClick={confirm}
               disabled={busy || (remaining > 0 && Boolean(blocked))}

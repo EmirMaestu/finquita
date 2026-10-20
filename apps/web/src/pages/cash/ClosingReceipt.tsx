@@ -1,4 +1,5 @@
 import { Button } from "../../ui/Button";
+import { toast } from "../../ui/toast";
 
 /** Comprobante de cierre: para imprimir o compartir. */
 export function ClosingReceipt({ lines, onDone }: { lines: string[]; onDone?: () => void }) {
@@ -15,7 +16,10 @@ export function ClosingReceipt({ lines, onDone }: { lines: string[]; onDone?: ()
     const text = lines.join("\n");
     const nav = navigator as Navigator & { share?: (d: ShareData) => Promise<void> };
     if (nav.share) await nav.share({ title: "Cierre de caja", text }).catch(() => {});
-    else await navigator.clipboard?.writeText(text).catch(() => {});
+    else {
+      await navigator.clipboard?.writeText(text).catch(() => {});
+      toast({ text: "Copiado: pegalo en WhatsApp o en un mail." });
+    }
   };
   return (
     <div className="mx-auto flex max-w-md flex-col gap-4 p-4 lg:p-6">

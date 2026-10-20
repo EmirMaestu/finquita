@@ -39,6 +39,7 @@ import { completeSale, type Payment } from "../../sell/complete";
 import { productIndex } from "../../sell/searchIndex";
 import { heldSales, sale, useHeldSales, useSale } from "../../sell/store";
 import { printTicket, shareTicket, ticketFromSale } from "../../sell/ticket";
+import { syncEngine } from "../../sync";
 import { useSyncStatus } from "../../sync/status";
 import { Button } from "../../ui/Button";
 import { cx } from "../../ui/cx";
@@ -233,7 +234,8 @@ export function SellPage() {
           ms: 1800,
         });
       }
-      if (p.kind !== "service") {
+      // Un producto recién creado desde el mostrador (sin stock cargado) no pregunta por stock.
+      if (p.kind !== "service" && !p.needsReview) {
         const stock = await localStock(p);
         if (stock - q < 0) {
           if (scanRouter.isCameraOpen())
@@ -246,7 +248,7 @@ export function SellPage() {
             ...w.filter((x) => x.lineId !== r.lineId),
             {
               lineId: r.lineId,
-              text: `Sin stock según el sistema. ¿Vender igual? El stock queda en ${Math.round((stock - q) * 1000) / 1000} y se avisa.`,
+              text: `Sin stock suficiente según el sistema: hay ${formatQty(stock, p.saleUnit === "unit" ? "unit" : "kg")} y llevás ${formatQty(q, p.saleUnit === "unit" ? "unit" : "kg")}. ¿Vender igual? Queda en ${formatQty(Math.round((stock - q) * 1000) / 1000, p.saleUnit === "unit" ? "unit" : "kg")} y se avisa.`,
             },
           ]);
         }
@@ -432,7 +434,7 @@ export function SellPage() {
       );
       if (!a) return;
     }
-    toast({ text: "Cajón abierto (sin impresora, abrilo a mano)", tone: "info" });
+    toast({ text: "Sin impresora conectada: abrí el cajón a mano.", tone: "info" });
   }, [drawerGrant, me]);
 
   // Atajos del mostrador. La app captura las teclas F aunque el navegador tenga las suyas.
@@ -456,6 +458,7 @@ export function SellPage() {
       if (k === "F6") return setDialog({ kind: "held" });
       if (k === "F9") return reg.shift && setDialog({ kind: "cash" });
       if (k === "F10") return void openDrawer();
+      if (k === "F8") return navigate("/caja");
       if (k === "F12" || (k === "Enter" && (e.ctrlKey || e.metaKey))) {
         stop();
         return openPay();
@@ -478,6 +481,19 @@ export function SellPage() {
       if (k === "*" && /^\d+$/.test(query.trim())) {
         stop();
         sale.set({ multiplier: Number(query.trim()) });
+        return setQuery("");
+      }
+      // "* 3" con una línea elegida: la deja en 3 unidades (el orden inverso de "3 *").
+      if (k === "Enter" && s.selected && /^\*\s*\d+$/.test(query.trim())) {
+        stop();
+        const n = Number(query.trim().slice(1));
+        const line = s.cart.lines.find((l) => l.id === s.selected);
+        if (line && n > 0 && n <= 999) {
+          let c = s.cart;
+          for (let i = 0; i < Math.abs(n - line.qty); i++)
+            c = bumpQty(c, s.selected, n > line.qty ? 1 : -1);
+          sale.setCart(c, s.selected);
+        }
         return setQuery("");
       }
       if (k === "Escape") {
@@ -522,6 +538,7 @@ export function SellPage() {
     focusSearch,
     openPay,
     openDrawer,
+    navigate,
     reg.shift,
   ]);
 
@@ -683,7 +700,16 @@ export function SellPage() {
         {reg.registerId ? (
           <OpenShift registerId={reg.registerId} registerName={reg.registerName} />
         ) : (
-          <div className="text-texto-suave">Bajando la configuración de las cajas…</div>
+          <div className="flex flex-col items-center gap-3 text-center text-texto-suave">
+            <span>
+              {online
+                ? "Bajando la configuración de las cajas…"
+                : "Sin internet y todavía no bajó la configuración de las cajas: conectate una vez para poder vender."}
+            </span>
+            <Button variant="secondary" onClick={() => void syncEngine().kick()}>
+              Reintentar
+            </Button>
+          </div>
         )}
       </div>
     );

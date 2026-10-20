@@ -132,20 +132,34 @@ function save(data: BlobPart, type: string, name: string) {
 function Bars({ chart }: { chart: NonNullable<Report["chart"]> }) {
   const max = Math.max(1, ...chart.points.map((p) => Math.max(p.value, p.previous ?? 0)));
   const many = chart.points.length > 12;
+  const total = chart.points.reduce((a, p) => a + p.value, 0);
+  const top = chart.points.reduce<(typeof chart.points)[number] | null>(
+    (best, p) => (p.value > 0 && (!best || p.value > best.value) ? p : best),
+    null,
+  );
   return (
     <section
       aria-label={chart.label}
       className="rounded-card border border-borde bg-superficie p-4"
     >
       <div className="mb-2 text-sm font-semibold">{chart.label}</div>
-      <div className="flex h-40 items-end gap-1 overflow-x-auto">
+      {top && (
+        <div className="mb-1 text-xs text-texto-suave">
+          Mejor día: {top.label}, {formatMoney(top.value)}
+          {total > 0 ? ` · total ${formatMoney(total)}` : ""}
+        </div>
+      )}
+      {total === 0 && chart.points.every((p) => !p.previous) && (
+        <div className="mb-1 text-xs text-texto-suave">Sin ventas en este período.</div>
+      )}
+      <div className={cx("flex h-40 items-end", many ? "gap-px" : "gap-1")}>
         {chart.points.map((p) => (
           <div
             key={p.label}
-            className="flex h-full min-w-3 flex-1 flex-col items-center justify-end gap-1"
+            className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1"
             title={`${p.label}: ${formatMoney(p.value)}${p.previous != null ? ` · antes ${formatMoney(p.previous)}` : ""}`}
           >
-            <div className="flex h-full w-full items-end gap-0.5">
+            <div className={cx("flex h-full w-full items-end", many ? "gap-px" : "gap-0.5")}>
               {p.previous != null && (
                 <div
                   className="flex-1 rounded-t bg-neutro-suave"

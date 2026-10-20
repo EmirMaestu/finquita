@@ -38,7 +38,7 @@ export function Menu({
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen(!open)}
-        className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-borde bg-superficie px-3 text-[13px] font-semibold hover:bg-neutro-suave"
+        className="inline-flex h-11 items-center lg:h-9 gap-1.5 rounded-lg border border-borde bg-superficie px-3 text-[13px] font-semibold hover:bg-neutro-suave"
       >
         {label}
         <ChevronDown size={16} aria-hidden />
@@ -62,7 +62,7 @@ export function Menu({
                   setOpen(false);
                   i.onSelect();
                 }}
-                className="flex h-10 items-center gap-2 rounded-lg px-3 text-left text-sm font-medium hover:bg-neutro-suave"
+                className="flex h-12 items-center gap-2 rounded-lg px-3 text-left text-sm font-medium lg:h-10 hover:bg-neutro-suave"
               >
                 {i.icon}
                 {i.label}

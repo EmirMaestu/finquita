@@ -164,3 +164,12 @@ describe("recargos en el reporte de ventas", () => {
     }
   });
 });
+
+describe("gráfico por día", () => {
+  it("las barras suman lo mismo que el total del período", async () => {
+    const carlos = await as(app(), ref.t.db, "carlos");
+    const s = (await carlos.get(`/api/reports/sales?${q}`)).body;
+    const bars = (s.chart.points as { value: number }[]).reduce((a, p) => a + p.value, 0);
+    expect(bars).toBe(s.headline.value);
+  });
+});

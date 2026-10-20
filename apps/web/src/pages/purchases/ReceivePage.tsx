@@ -9,7 +9,7 @@ import {
   receiptSummary,
   roundQty,
 } from "@mostrador/shared";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Camera, CircleCheck, PackageCheck, ScanBarcode, TriangleAlert } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
@@ -25,7 +25,7 @@ import { confirmReceiptLocal } from "../../data/receive";
 import { useSettings } from "../../data/settings";
 import { beep } from "../../scan/beep";
 import { scanRouter } from "../../scan/GlobalScan";
-import { getSyncStatus } from "../../sync/status";
+import { getSyncStatus, useSyncStatus } from "../../sync/status";
 import { Button } from "../../ui/Button";
 import { Chip } from "../../ui/Chip";
 import { cx } from "../../ui/cx";
@@ -93,8 +93,9 @@ const centsText = (c: number | null) => (c == null ? "" : String(c / 100).replac
 function Start() {
   const navigate = useNavigate();
   const costs = useGrant("view_costs") === "allow";
+  const { version } = useSyncStatus();
   const expected = useQuery({
-    queryKey: ["receipts-expected"],
+    queryKey: ["receipts-expected", version],
     queryFn: () => api<Expected[]>("/api/receipts/expected"),
   });
   const pending = useQuery({
@@ -305,6 +306,7 @@ function Receiving({
 }) {
   const me = useMe();
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const settings = useSettings();
   const costs = useGrant("view_costs") === "allow";
   const [lines, setLines] = useState<Line[]>(() =>
@@ -475,11 +477,16 @@ function Receiving({
     },
     onSuccess: () => {
       toast({
-        text: getSyncStatus().online
-          ? "Recepción confirmada: entró el stock"
-          : "Recepción guardada en el dispositivo: entró el stock y se manda al volver internet",
+        text: `${
+          getSyncStatus().online
+            ? "Recepción confirmada: entró el stock"
+            : "Recepción guardada en el dispositivo: entró el stock y se manda al volver internet"
+        }${costs ? "" : ". El dueño o el encargado completan los costos"}`,
         ms: getSyncStatus().online ? 2500 : 6000,
       });
+      void qc.invalidateQueries({ queryKey: ["receipts-expected"] });
+      void qc.invalidateQueries({ queryKey: ["receive-order"] });
+      void qc.invalidateQueries({ queryKey: ["order"] });
       navigate("/compras/recepcion");
     },
     onError: (e) =>
@@ -802,8 +809,9 @@ export function ReceivePage() {
   const orderId = params.get("pedido");
   const kind =
     (params.get("tipo") as "no_order" | "wholesale" | null) ?? (orderId ? "order" : null);
+  const { version } = useSyncStatus();
   const order = useQuery({
-    queryKey: ["receive-order", orderId],
+    queryKey: ["receive-order", orderId, version],
     queryFn: () => api<OrderData>(`/api/receipts/order/${orderId}`),
     enabled: can && !!orderId,
   });

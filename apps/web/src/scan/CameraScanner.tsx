@@ -1,7 +1,7 @@
 import type { DecodeHintType as HintType } from "@zxing/library";
 import { X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { createRepeatFilter } from "./camera";
+import { createGapFilter } from "./camera";
 import { scanRouter, useCameraFlash, useCameraStatus } from "./GlobalScan";
 
 /**
@@ -34,7 +34,7 @@ export function CameraScanner({
   useEffect(() => {
     let stop: (() => void) | null = null;
     let cancelled = false;
-    const accept = createRepeatFilter();
+    const gap = createGapFilter();
     // En este bundle, ZXing no reconoce sus propias excepciones de "no encontré nada" y las
     // loguea como advertencia en cada cuadro sin código. Mientras la cámara está abierta, esas
     // advertencias (y solo esas) no van a la consola.
@@ -92,7 +92,11 @@ export function CameraScanner({
         } satisfies MediaStreamConstraints;
         const controls = await reader.decodeFromConstraints(constraints, el, (result) => {
           const text = result?.getText();
-          if (text && accept(text)) {
+          if (!text) {
+            gap.miss();
+            return;
+          }
+          if (gap.read(text)) {
             scanRouter.flash();
             cb.current(text);
           }

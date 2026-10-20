@@ -3,11 +3,13 @@ import { useNavigate } from "react-router";
 import { scanRouter } from "../../scan/GlobalScan";
 import { ConnectionChip, RegisterChip } from "../../ui/StatusChips";
 import { globalSearch } from "../GlobalSearch";
+import { useCan } from "../session";
 import { useShell } from "../shell";
 
 export function MobileTopBar({ title }: { title: string }) {
   const shell = useShell();
   const navigate = useNavigate();
+  const hasShift = useCan("shift");
   const showConnection =
     !shell.connection.online ||
     shell.connection.pending > 0 ||
@@ -20,9 +22,9 @@ export function MobileTopBar({ title }: { title: string }) {
       <h1 className="m-0 flex-1 truncate text-xl font-semibold">{title}</h1>
       {showConnection ? (
         <ConnectionChip connection={shell.connection} compact />
-      ) : (
+      ) : hasShift ? (
         <RegisterChip register={shell.register} short />
-      )}
+      ) : null}
       <button
         type="button"
         aria-label="Buscar en todo"

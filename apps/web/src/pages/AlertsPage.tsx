@@ -119,7 +119,7 @@ export function AlertsPage() {
       hours?: number;
     }) => api(`/api/alerts/${id}/${action}`, { body: action === "snooze" ? { hours } : {} }),
     onSuccess: async (_r, v) => {
-      if (v.action === "snooze") toast({ text: "Pospuesto: vuelve a aparecer después" });
+      if (v.action === "snooze") toast({ text: "Pospuesto 4 horas: después vuelve a aparecer" });
       if (v.action === "resolve") toast({ text: "Resuelto" });
       await refresh();
     },
@@ -139,7 +139,8 @@ export function AlertsPage() {
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-4 p-4 lg:p-6">
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="m-0 flex-1 text-[22px] font-semibold">Avisos</h1>
+        <h1 className="m-0 hidden flex-1 text-[22px] font-semibold lg:block">Avisos</h1>
+        <span className="flex-1 lg:hidden" />
         {!!q.data?.unread && (
           <Button variant="ghost" onClick={() => readAll.mutate()}>
             Marcar todo como leído
@@ -171,23 +172,20 @@ export function AlertsPage() {
           ))}
         </SelectField>
       </div>
-      {!!attention.data?.attention.length && (
-        <section
-          aria-label="Requiere atención"
-          className="rounded-card border border-borde bg-superficie"
-        >
-          <h2 className="m-0 border-b border-borde px-4 py-3 text-base font-semibold">
-            Requiere atención
-          </h2>
-          <AttentionList items={attention.data.attention} />
-        </section>
-      )}
+      {!!attention.data?.attention.length && <AttentionList items={attention.data.attention} />}
       {q.isPending ? (
         <SkeletonList />
       ) : q.isError ? (
         <ErrorState message="Los avisos se ven con conexión." onRetry={() => q.refetch()} />
       ) : !q.data.items.length ? (
-        <EmptyState title="No hay avisos" body="Cuando algo necesite tu atención, aparece acá." />
+        <EmptyState
+          title={attention.data?.attention.length ? "No hay avisos nuevos" : "No hay avisos"}
+          body={
+            attention.data?.attention.length
+              ? "Lo que requiere atención está arriba; los avisos (stock bajo, cierres, fiado vencido) llegan acá."
+              : "Cuando algo necesite tu atención, aparece acá."
+          }
+        />
       ) : (
         <ul
           className="m-0 list-none overflow-hidden rounded-card border border-borde bg-superficie p-0"
@@ -224,7 +222,7 @@ export function AlertsPage() {
                     onClick={() => act.mutate({ id: a.id, action: "snooze", hours: 4 })}
                     aria-label={`Posponer ${a.title}`}
                   >
-                    Posponer
+                    Posponer 4 h
                   </Button>
                   <Button
                     variant="secondary"

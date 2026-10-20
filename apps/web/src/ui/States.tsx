@@ -51,7 +51,9 @@ export function ErrorState({ message, onRetry }: { message?: string; onRetry?: (
       <CircleAlert size={28} className="text-peligro" aria-hidden />
       <div className="text-base font-semibold">No pudimos cargar esto</div>
       <div className="max-w-md text-sm text-texto-suave">
-        {message ?? "Revisá la conexión y probá de nuevo."}
+        {typeof navigator !== "undefined" && !navigator.onLine
+          ? (message ?? "Sin conexión: se ve al volver internet.")
+          : "Algo falló al cargar. Probá de nuevo; si sigue, avisale al dueño."}
       </div>
       {onRetry && (
         <Button variant="secondary" onClick={onRetry}>
