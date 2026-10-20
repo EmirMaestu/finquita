@@ -164,6 +164,16 @@ describe("cámara y planilla de códigos", () => {
     expect(accept("7791234000012")).toBe(true);
   });
 
+  it("el mismo producto en cuadro suma otra unidad a los 1,5 s (la ventana no se renueva)", () => {
+    let t = 0;
+    const accept = createRepeatFilter(1500, () => t);
+    expect(accept("7790000003011")).toBe(true);
+    // La cámara lo relee cada 300 ms mientras sigue en cuadro.
+    for (t = 300; t < 1500; t += 300) expect(accept("7790000003011")).toBe(false);
+    t = 1600;
+    expect(accept("7790000003011")).toBe(true);
+  });
+
   it("los códigos internos de la planilla empiezan con 2", () => {
     expect(pluFromInternalBarcode("2000000010014")).toBe("1001");
     expect(pluFromInternalBarcode("7791234000012")).toBeNull();

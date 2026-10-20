@@ -15,6 +15,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { NoPermissionFor } from "../../app/guards";
 import { useCan, useGrant, useMe } from "../../app/session";
+import { useViewport } from "../../app/useViewport";
 import { api } from "../../data/api";
 import { findByCode } from "../../data/catalog";
 import { localDb } from "../../data/db";
@@ -326,6 +327,7 @@ function Receiving({
   const [summary, setSummary] = useState(false);
   const [search, setSearch] = useState("");
   const qtyRef = useRef<HTMLInputElement>(null);
+  const phone = useViewport().layout === "phone";
   const codes = useMemo(
     () =>
       new Map(
@@ -336,6 +338,14 @@ function Receiving({
 
   const set = (key: string, patch: Partial<Line>) =>
     setLines((ls) => ls.map((l) => (l.key === key ? { ...l, ...patch } : l)));
+  // La línea quedó cargada: en el celular, la cámara vuelve sola para el próximo producto
+  // (si la línea se abrió escaneando).
+  const scannedRef = useRef(false);
+  const doneLine = () => {
+    setActive(null);
+    if (scannedRef.current && phone) scanRouter.openCamera();
+    scannedRef.current = false;
+  };
   const activate = (key: string) => {
     setActive(key);
     setTimeout(() => {
@@ -387,6 +397,8 @@ function Receiving({
       const key = codes.get(code);
       if (key) {
         beep("ok");
+        // Solo si leyó la cámara se la reabre al terminar la línea (con la pistola, no).
+        scannedRef.current = scanRouter.isCameraOpen();
         scanRouter.closeCamera();
         activate(key);
         return;
@@ -509,7 +521,7 @@ function Receiving({
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();
-                setActive(null);
+                doneLine();
               }
             }}
             className="tnum h-14 w-24 rounded-lg border-2 border-borde-fuerte text-center text-2xl font-semibold"
@@ -583,7 +595,7 @@ function Receiving({
             />
           </>
         )}
-        <Button variant="secondary" onClick={() => setActive(null)}>
+        <Button variant="secondary" onClick={doneLine}>
           Listo
         </Button>
       </section>

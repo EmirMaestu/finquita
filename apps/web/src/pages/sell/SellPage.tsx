@@ -7,6 +7,7 @@ import {
   creditNeedsPin,
   discountFor,
   formatMoney,
+  formatQty,
   METHOD_LABEL,
   OpValidationError,
   overDiscountCap,
@@ -212,6 +213,8 @@ export function SellPage() {
   const addToSale = useCallback(
     async (p: LocalProduct, qty?: number) => {
       if (p.saleUnit !== "unit" && qty === undefined) {
+        // El teclado de peso se abre con la cámara cerrada: si no, queda tapado por el visor.
+        scanRouter.closeCamera();
         setDialog({ kind: "weight", product: p });
         return;
       }
@@ -220,9 +223,24 @@ export function SellPage() {
       sale.setCart(r.cart, r.lineId);
       sale.set({ multiplier: null });
       setQuery("");
+      if (scanRouter.isCameraOpen()) {
+        // Con la cámara abierta no se ve la lista: se avisa cada lectura.
+        const line = r.cart.lines.find((l) => l.id === r.lineId);
+        const n = line?.qty ?? q;
+        toast({
+          text: `Agregado: ${p.name}${n > 1 ? ` × ${formatQty(n, line?.unit ?? "unit")}` : ""}`,
+          ms: 1800,
+        });
+      }
       if (p.kind !== "service") {
         const stock = await localStock(p);
         if (stock - q < 0) {
+          if (scanRouter.isCameraOpen())
+            toast({
+              text: `${p.name}: sin stock según el sistema, se vende igual`,
+              tone: "error",
+              ms: 3000,
+            });
           setWarnings((w) => [
             ...w.filter((x) => x.lineId !== r.lineId),
             {
@@ -232,12 +250,28 @@ export function SellPage() {
           ]);
         }
       }
-      if (p.ageRestricted)
+      if (p.ageRestricted) {
         setAdultNotice(`${p.name} es para mayores de 18. Pedí documento si hace falta.`);
+        if (scanRouter.isCameraOpen())
+          toast({
+            text: `${p.name} es para mayores de 18: pedí documento`,
+            tone: "info",
+            ms: 3000,
+          });
+      }
       focusSearch();
     },
     [focusSearch],
   );
+  // Dentro del visor se ve lo que va: "3 ítems · $ 18.550".
+  useEffect(() => {
+    scanRouter.setStatus(
+      totals.itemCount
+        ? `${plural(totals.itemCount, "ítem", "ítems")} · ${formatMoney(totals.totalCents)}`
+        : "Todavía no hay nada en la venta",
+    );
+    return () => scanRouter.setStatus(null);
+  }, [totals.itemCount, totals.totalCents]);
 
   const dialogRef = useRef<Dialog>(null);
   dialogRef.current = dialog;
@@ -270,6 +304,8 @@ export function SellPage() {
         return;
       }
       beep("error");
+      // El diálogo de código desconocido necesita la pantalla: la cámara se cierra.
+      scanRouter.closeCamera();
       setDialog({ kind: "unknown", code });
     },
     [addToSale, version],

@@ -1,5 +1,5 @@
 import { useCallback, useState, useSyncExternalStore } from "react";
-import { useLocation } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import { findByCode } from "../data/catalog";
 import type { LocalProduct } from "../data/types";
 import { toast } from "../ui/toast";
@@ -15,6 +15,9 @@ import { useScanner } from "./useScanner";
 type Handler = (code: string) => void;
 let handler: Handler | null = null;
 let cameraOpen = false;
+/** Texto chico dentro del visor ("3 ítems · $ 18.550") y flash de la última lectura. */
+let cameraStatus: string | null = null;
+let flashAt = 0;
 const listeners = new Set<() => void>();
 const emit = () => {
   for (const l of listeners) l();
@@ -36,7 +39,40 @@ export const scanRouter = {
     cameraOpen = false;
     emit();
   },
+  isCameraOpen: () => cameraOpen,
+  /** Lo que la pantalla quiere mostrar dentro del visor mientras escanea. */
+  setStatus(text: string | null) {
+    if (cameraStatus === text) return;
+    cameraStatus = text;
+    emit();
+  },
+  /** Una lectura aceptada: el visor parpadea. */
+  flash() {
+    flashAt = Date.now();
+    emit();
+  },
 };
+
+export function useCameraStatus() {
+  return useSyncExternalStore(
+    (cb) => {
+      listeners.add(cb);
+      return () => listeners.delete(cb);
+    },
+    () => cameraStatus,
+    () => cameraStatus,
+  );
+}
+export function useCameraFlash() {
+  return useSyncExternalStore(
+    (cb) => {
+      listeners.add(cb);
+      return () => listeners.delete(cb);
+    },
+    () => flashAt,
+    () => flashAt,
+  );
+}
 
 function useCameraOpen() {
   return useSyncExternalStore(
@@ -53,19 +89,36 @@ export function GlobalScan() {
   const [quick, setQuick] = useState<LocalProduct | null>(null);
   const camera = useCameraOpen();
   const { pathname } = useLocation();
+  const navigate = useNavigate();
 
-  const onCode = useCallback(async (code: string) => {
-    if (handler) return handler(code);
-    const p = await findByCode(code);
-    if (!p) {
-      beep("error");
-      toast({ text: `El código ${code} no está cargado`, tone: "error" });
-      return;
-    }
-    beep("ok");
-    scanRouter.closeCamera();
-    setQuick(p);
-  }, []);
+  const onCode = useCallback(
+    async (code: string) => {
+      if (handler) return handler(code);
+      const p = await findByCode(code);
+      if (!p) {
+        beep("error");
+        // Fuera de Vender, el código nuevo se carga desde acá mismo (Modo carga con el código puesto).
+        toast({
+          text: `El código ${code} no está cargado`,
+          tone: "error",
+          ms: 6000,
+          action: {
+            label: "Cargarlo",
+            run: () => {
+              scanRouter.closeCamera();
+              navigate(`/productos/carga?codigo=${code}`);
+            },
+          },
+        });
+        return;
+      }
+      beep("ok");
+      scanRouter.flash();
+      scanRouter.closeCamera();
+      setQuick(p);
+    },
+    [navigate],
+  );
 
   useScanner({ onScan: (c) => void onCode(c) });
 

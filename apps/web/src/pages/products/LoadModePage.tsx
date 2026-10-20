@@ -1,7 +1,7 @@
 import { formatMoney } from "@mostrador/shared";
 import { Camera, ScanBarcode } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { useViewport } from "../../app/useViewport";
 import { findByCode } from "../../data/catalog";
 import type { LocalProduct } from "../../data/types";
@@ -21,9 +21,14 @@ export function LoadModePage() {
   const { layout } = useViewport();
   const phone = layout === "phone";
   const navigate = useNavigate();
-  const [code, setCode] = useState<string | null>(null);
+  const [params, setParams] = useSearchParams();
+  // Desde "El código … no está cargado › Cargarlo" se llega con el código ya puesto.
+  const [code, setCode] = useState<string | null>(() => params.get("codigo"));
   const [existing, setExisting] = useState<LocalProduct | null>(null);
   const [loaded, setLoaded] = useState<Loaded[]>([]);
+  useEffect(() => {
+    if (params.get("codigo")) setParams({}, { replace: true });
+  }, [params, setParams]);
 
   useEffect(() => {
     return scanRouter.claim(async (c) => {
@@ -71,7 +76,14 @@ export function LoadModePage() {
               <Button variant="secondary" onClick={() => navigate(`/productos/${existing.id}`)}>
                 Ver ficha
               </Button>
-              <Button onClick={() => setExisting(null)}>Seguir cargando</Button>
+              <Button
+                onClick={() => {
+                  setExisting(null);
+                  if (phone) scanRouter.openCamera();
+                }}
+              >
+                Seguir cargando
+              </Button>
             </div>
           </div>
         ) : code ? (
