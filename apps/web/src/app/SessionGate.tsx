@@ -10,7 +10,7 @@ import { primeSaleNumbers } from "../sell/complete";
 import { syncEngine } from "../sync";
 import { SkeletonList } from "../ui/States";
 import { LiveShell } from "./LiveShell";
-import { lockScreen, useLockScreen } from "./lock";
+import { lockScreen, useLockReason, useLockScreen } from "./lock";
 import type { ModuleId } from "./modules";
 import { type Me, SessionProvider, useSessionQuery } from "./session";
 
@@ -76,12 +76,13 @@ const IDLE_MS = 5 * 60_000;
  */
 function IdleLock() {
   const locked = useLockScreen();
+  const reason = useLockReason();
   useEffect(() => {
     if (!credentials.get().pinToken) return;
-    let timer = setTimeout(() => !isSaleInProgress() && lockScreen.open(), IDLE_MS);
+    let timer = setTimeout(() => !isSaleInProgress() && lockScreen.open("idle"), IDLE_MS);
     const reset = () => {
       clearTimeout(timer);
-      timer = setTimeout(() => !isSaleInProgress() && lockScreen.open(), IDLE_MS);
+      timer = setTimeout(() => !isSaleInProgress() && lockScreen.open("idle"), IDLE_MS);
     };
     const events = ["keydown", "pointerdown", "touchstart"] as const;
     for (const e of events) window.addEventListener(e, reset);
@@ -90,7 +91,10 @@ function IdleLock() {
       for (const e of events) window.removeEventListener(e, reset);
     };
   }, []);
-  return locked ? <LockScreen onCancel={() => lockScreen.close()} /> : null;
+  // Bloqueada por inactividad, solo se destraba con el PIN: no hay "Volver".
+  return locked ? (
+    <LockScreen onCancel={reason === "switch" ? () => lockScreen.close() : undefined} />
+  ) : null;
 }
 
 /**

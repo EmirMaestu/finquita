@@ -1,7 +1,8 @@
-import { Bell, ScanBarcode } from "lucide-react";
+import { Bell, ScanBarcode, Search } from "lucide-react";
 import { useNavigate } from "react-router";
 import { scanRouter } from "../../scan/GlobalScan";
 import { ConnectionChip, RegisterChip } from "../../ui/StatusChips";
+import { globalSearch } from "../GlobalSearch";
 import { useShell } from "../shell";
 
 export function MobileTopBar({ title }: { title: string }) {
@@ -22,6 +23,15 @@ export function MobileTopBar({ title }: { title: string }) {
       ) : (
         <RegisterChip register={shell.register} short />
       )}
+      <button
+        type="button"
+        aria-label="Buscar en todo"
+        title="Buscar"
+        onClick={() => globalSearch.open()}
+        className="inline-flex size-12 items-center justify-center"
+      >
+        <Search size={24} aria-hidden />
+      </button>
       <button
         type="button"
         aria-label={`Avisos${shell.unreadAlerts ? `: ${shell.unreadAlerts} sin leer` : ""}`}

@@ -43,7 +43,7 @@ export function UserMenu() {
               role="menuitem"
               onClick={() => {
                 setOpen(false);
-                lockScreen.open();
+                lockScreen.open("switch");
               }}
               className="flex h-10 items-center gap-2 rounded-lg px-3 text-left text-sm font-medium hover:bg-neutro-suave"
             >

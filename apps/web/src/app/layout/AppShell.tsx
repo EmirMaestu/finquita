@@ -4,6 +4,7 @@ import { PinAuthorizer } from "../../auth/pinAuth";
 import { GlobalScan } from "../../scan/GlobalScan";
 import { InstallGuide } from "../../ui/InstallGuide";
 import { Toaster } from "../../ui/toast";
+import { GlobalSearch } from "../GlobalSearch";
 import { moduleForPath } from "../modules";
 import { useViewport } from "../useViewport";
 import { BottomBar } from "./BottomBar";
@@ -55,6 +56,7 @@ export function AppShell() {
         </main>
         <BottomBar />
         <GlobalScan />
+        <GlobalSearch />
         <Toaster />
         <PinAuthorizer />
       </div>
@@ -73,6 +75,7 @@ export function AppShell() {
           </main>
         </div>
         <GlobalScan />
+        <GlobalSearch />
         <Toaster />
         <PinAuthorizer />
       </div>
@@ -88,6 +91,7 @@ export function AppShell() {
           <Outlet />
         </main>
         <GlobalScan />
+        <GlobalSearch />
         <Toaster />
         <PinAuthorizer />
       </div>
@@ -113,6 +117,7 @@ export function AppShell() {
         </main>
       </div>
       <GlobalScan />
+      <GlobalSearch />
       <Toaster />
       <PinAuthorizer />
     </div>

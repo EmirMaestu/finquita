@@ -346,6 +346,7 @@ export function CollectSheet({ customer, onClose }: { customer: Detail; onClose:
               <Checkbox
                 key={m.id}
                 label={`${formatDate(new Date(m.at)).slice(0, 5)} · ${m.label} · ${formatMoney(m.openCents ?? 0)}`}
+                showLabel
                 checked={picked.has(m.id)}
                 onChange={(v) =>
                   setPicked((s) => {

@@ -100,8 +100,10 @@ function ChangeCategory({
   const qc = useQueryClient();
   const cats = useQuery({ queryKey: ["categories"], queryFn: fetchCategories, enabled: open });
   const [categoryId, setCategoryId] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const m = useMutation({
     mutationFn: async () => {
+      setError(null);
       for (const id of ids)
         await api(`/api/products/${id}`, {
           method: "PATCH",
@@ -112,15 +114,22 @@ function ChangeCategory({
       await qc.invalidateQueries({ queryKey: ["products"] });
       onClose();
     },
+    onError: (e) => setError(e instanceof Error ? e.message : "No se pudo cambiar la categoría."),
   });
   return (
     <Sheet
       open={open}
       onClose={onClose}
       title={`Cambiar categoría de ${ids.length} productos`}
+      error={error}
       footer={
-        <Button className="flex-1" onClick={() => m.mutate()} disabled={m.isPending}>
-          Cambiar
+        <Button
+          className="flex-1"
+          onClick={() => m.mutate()}
+          busy={m.isPending}
+          busyLabel="Cambiando…"
+        >
+          Cambiar categoría
         </Button>
       }
     >
@@ -212,6 +221,11 @@ export function ProductsPage() {
     {
       label: "Cambio masivo de precios",
       onSelect: () => navigate("/productos/precios"),
+      hidden: !canEdit,
+    },
+    {
+      label: "Categorías",
+      onSelect: () => navigate("/productos/categorias"),
       hidden: !canEdit,
     },
     { label: "Etiquetas de góndola", onSelect: () => navigate("/productos/etiquetas") },

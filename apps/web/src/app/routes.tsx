@@ -8,6 +8,7 @@ import { HomePage } from "../pages/home/HomePage";
 import { ModulePlaceholder } from "../pages/ModulePlaceholder";
 import { MorePage } from "../pages/MorePage";
 import { BulkPricePage } from "../pages/products/BulkPricePage";
+import { CategoriesPage } from "../pages/products/CategoriesPage";
 import { CodeSheetPage } from "../pages/products/CodeSheetPage";
 import { CountPage, CountsPage } from "../pages/products/CountsPage";
 import { ExpiryPage } from "../pages/products/ExpiryPage";
@@ -63,6 +64,7 @@ export const routes: RouteObject[] = [
       { path: "vender/historial/:id", element: <SalesHistoryPage /> },
       { path: "productos", element: <ProductsPage /> },
       { path: "productos/carga", element: <LoadModePage /> },
+      { path: "productos/categorias", element: <CategoriesPage /> },
       { path: "productos/importar", element: <ImportPage /> },
       { path: "productos/planilla", element: <CodeSheetPage /> },
       { path: "productos/etiquetas", element: <ShelfLabelsPage /> },

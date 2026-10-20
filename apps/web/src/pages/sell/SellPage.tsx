@@ -16,7 +16,7 @@ import {
   removeLine,
   todayAR,
 } from "@mostrador/shared";
-import { Lock, Menu as MenuIcon, Pause, ShieldAlert, User } from "lucide-react";
+import { Lock, Pause, ShieldAlert, User } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { NoPermissionFor } from "../../app/guards";
@@ -44,6 +44,7 @@ import { Button } from "../../ui/Button";
 import { cx } from "../../ui/cx";
 import { TextField } from "../../ui/Field";
 import { Key } from "../../ui/Key";
+import { Menu } from "../../ui/Menu";
 import { Sheet } from "../../ui/Sheet";
 import { toast } from "../../ui/toast";
 import { MovementSheet } from "../cash/MovementSheet";
@@ -757,15 +758,19 @@ export function SellPage() {
           >
             Varios
           </Button>
-          <Button
-            variant="secondary"
-            size="lg"
+          <Menu
+            label="Más"
             className="flex-1"
-            onClick={() => cart.lines.length && setDialog({ kind: "discount" })}
-            icon={<MenuIcon size={18} />}
-          >
-            Más
-          </Button>
+            items={[
+              { label: "Asignar cliente o fiado", onSelect: () => setDialog({ kind: "customer" }) },
+              {
+                label: "Descuento",
+                onSelect: () => cart.lines.length && setDialog({ kind: "discount" }),
+              },
+              { label: "Historial de ventas", onSelect: () => navigate("/vender/historial") },
+              { label: "Ventas en espera", onSelect: () => setDialog({ kind: "held" }) },
+            ]}
+          />
         </div>
         <div className="fixed inset-x-0 bottom-[76px] z-20 border-t border-borde bg-superficie px-4 py-3">
           <button
