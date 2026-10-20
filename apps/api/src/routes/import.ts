@@ -32,6 +32,10 @@ export type ImportItem = {
   errors: string[];
   changes?: Record<string, [unknown, unknown]>;
   warnings?: string[];
+  priceCents?: number | null;
+  costCents?: number | null;
+  stock?: number | null;
+  unit?: "unit" | "kg";
 };
 
 async function plan(
@@ -75,7 +79,17 @@ async function plan(
       byName.get(r.name.toLowerCase());
     byLine.set(r.line, match ?? null);
     if (!match) {
-      items.push({ line: r.line, action: "new", name: r.name, errors: [] });
+      items.push({
+        line: r.line,
+        action: "new",
+        name: r.name,
+        errors: [],
+        priceCents: r.priceCents,
+        costCents: r.costCents,
+        stock: r.stock,
+        unit: r.unit,
+        warnings: r.unitGuessed ? ["Se carga por kilo (lo dice el nombre)"] : [],
+      });
       continue;
     }
     const changes: Record<string, [unknown, unknown]> = {};

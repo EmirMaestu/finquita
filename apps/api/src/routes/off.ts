@@ -28,5 +28,6 @@ offRoutes.get("/off/:code", requireActor(), async (c) => {
       "rate_limited",
       "Muchas consultas seguidas: cargá el nombre a mano o probá en un minuto.",
     );
-  throw new ApiError(503, "unavailable", "Open Food Facts no responde: cargá el nombre a mano.");
+  // Apagado o caído: la alta sigue a mano, sin un error en la consola del navegador.
+  return c.json({ found: false, unavailable: true });
 });

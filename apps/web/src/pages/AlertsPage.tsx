@@ -10,6 +10,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, BellRing, CircleAlert, Info, TriangleAlert } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
+import { useMe } from "../app/session";
 import { api } from "../data/api";
 import { disablePush, enablePush, type PushState, pushState } from "../push";
 import { Button } from "../ui/Button";
@@ -18,6 +19,7 @@ import { cx } from "../ui/cx";
 import { SelectField } from "../ui/Field";
 import { EmptyState, ErrorState, SkeletonList } from "../ui/States";
 import { toast } from "../ui/toast";
+import { type Attention, AttentionList } from "./home/HomePage";
 
 type AlertItem = {
   id: string;
@@ -127,6 +129,13 @@ export function AlertsPage() {
     onSuccess: refresh,
   });
   const kinds = [...new Set((q.data?.items ?? []).map((a) => a.kind))];
+  // Lo de "Requiere atención" de Inicio se calcula en vivo (no es un aviso): se muestra acá también.
+  const role = useMe()?.member.role;
+  const attention = useQuery({
+    queryKey: ["dashboard"],
+    queryFn: () => api<{ attention: Attention[] }>("/api/dashboard"),
+    enabled: role === "owner" || role === "manager",
+  });
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-4 p-4 lg:p-6">
       <div className="flex flex-wrap items-center gap-3">
@@ -162,6 +171,17 @@ export function AlertsPage() {
           ))}
         </SelectField>
       </div>
+      {!!attention.data?.attention.length && (
+        <section
+          aria-label="Requiere atención"
+          className="rounded-card border border-borde bg-superficie"
+        >
+          <h2 className="m-0 border-b border-borde px-4 py-3 text-base font-semibold">
+            Requiere atención
+          </h2>
+          <AttentionList items={attention.data.attention} />
+        </section>
+      )}
       {q.isPending ? (
         <SkeletonList />
       ) : q.isError ? (

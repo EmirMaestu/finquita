@@ -1,6 +1,7 @@
 import {
   type ColumnMapping,
   formatMoney,
+  formatQty,
   guessMapping,
   IMPORT_FIELDS,
   type ImportField,
@@ -27,6 +28,10 @@ type Item = {
   action: "new" | "update" | "unchanged" | "error";
   name: string;
   errors: string[];
+  priceCents?: number | null;
+  costCents?: number | null;
+  stock?: number | null;
+  unit?: "unit" | "kg";
   warnings?: string[];
   changes?: Record<string, [unknown, unknown]>;
 };
@@ -269,6 +274,16 @@ export function ImportPage() {
                   <span className="text-texto-suave">Fila {i.line} · </span>
                   {i.name || "(sin nombre)"}
                 </span>
+                {i.action === "new" && (
+                  <span className="text-texto-suave">
+                    {i.priceCents != null ? `Precio ${formatMoney(i.priceCents)}` : "Sin precio"}
+                    {i.costCents != null ? ` · costo ${formatMoney(i.costCents)}` : ""}
+                    {i.stock != null
+                      ? ` · stock ${formatQty(i.stock, i.unit === "kg" ? "kg" : "unit")}`
+                      : ""}
+                    {i.unit === "kg" ? " · por kilo" : " · por unidad"}
+                  </span>
+                )}
                 {i.errors.map((e) => (
                   <span key={e} className="text-peligro">
                     {e}

@@ -43,14 +43,15 @@ setupRoutes.get("/setup/status", requireActor(), requireFull("settings"), async 
       done: (await count(db.select({ n }).from(products).where(isNull(products.deletedAt)))) > 0,
       title: "Cargá tus productos",
       detail: "Con Excel, escaneando en Modo carga o directamente vendiendo",
-      action: "Modo carga",
-      path: "/productos/carga",
+      action: "Cargar productos",
+      path: "/productos",
     },
     {
       key: "payments",
       done: !!pay,
       title: "Configurá medios de pago",
-      detail: "Recargos, alias y CVU para transferencias",
+      detail:
+        "Crédito viene con 10 % de recargo: revisalo. Recargos, alias y CVU para transferencias",
       action: "Medios de pago",
       path: "/ajustes/medios",
     },

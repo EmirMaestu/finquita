@@ -485,10 +485,14 @@ function CustomerView({ id, onEdit }: { id: string; onEdit: (d: Detail) => void 
                   </span>
                 ) : null}
               </span>
-              <span className={cx("tnum font-semibold", m.amountCents < 0 && "text-exito")}>
-                {m.amountCents < 0 ? `−${formatMoney(-m.amountCents)}` : formatMoney(m.amountCents)}
+              <span className="flex shrink-0 flex-col items-end">
+                <span className={cx("tnum font-semibold", m.amountCents < 0 && "text-exito")}>
+                  {m.amountCents < 0
+                    ? `−${formatMoney(-m.amountCents)}`
+                    : formatMoney(m.amountCents)}
+                </span>
+                <span className="tnum text-xs text-texto-suave">queda {money(m.balanceCents)}</span>
               </span>
-              <span className="tnum w-20 text-right text-texto-suave">{money(m.balanceCents)}</span>
               {canReverse && !m.reversed && m.kind !== "reversal" && (
                 <button
                   type="button"
@@ -716,7 +720,11 @@ export function CustomersPage() {
           customer={form.c}
           onClose={(newId) => {
             setForm(null);
-            if (newId && !form.c) navigate(`/clientes/${newId}`);
+            if (newId && !form.c) {
+              // El recién creado no tiene deuda: con el filtro "Con deuda" no se vería.
+              setFilter("all");
+              navigate(`/clientes/${newId}`);
+            }
           }}
         />
       )}

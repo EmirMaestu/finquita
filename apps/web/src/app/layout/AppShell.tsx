@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Outlet, useLocation } from "react-router";
 import { PinAuthorizer } from "../../auth/pinAuth";
 import { GlobalScan } from "../../scan/GlobalScan";
@@ -30,8 +30,19 @@ export function AppShell() {
   const { layout } = useViewport();
   const location = useLocation();
   const title =
-    location.pathname === "/mas" ? "Más" : (moduleForPath(location.pathname)?.label ?? "");
+    location.pathname === "/mas"
+      ? "Más"
+      : location.pathname.startsWith("/avisos")
+        ? "Avisos"
+        : (moduleForPath(location.pathname)?.label ?? "");
   const [collapsed, setCollapsed] = useState(readCollapsed);
+  // Cada pantalla arranca arriba (si no, Caja abría scrolleada hasta el fondo de Ajustes).
+  const path = location.pathname;
+  useEffect(() => {
+    if (!path) return;
+    window.scrollTo(0, 0);
+    for (const m of document.querySelectorAll("main")) m.scrollTo?.(0, 0);
+  }, [path]);
 
   if (layout === "phone") {
     return (
@@ -39,7 +50,7 @@ export function AppShell() {
         <MobileTopBar title={title} />
         <SessionExpiredBar />
         <main className="flex-1 pb-[96px]">
-          <InstallGuide />
+          {location.pathname === "/inicio" && <InstallGuide />}
           <Outlet />
         </main>
         <BottomBar />

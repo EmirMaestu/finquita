@@ -70,6 +70,8 @@ export type ImportRow = {
   minStock: number | null;
   supplier: string | null;
   unit: "unit" | "kg";
+  /** Sin columna de unidad, se dedujo "por kilo" del nombre ("Jamón cocido x kg"). */
+  unitGuessed: boolean;
   errors: string[];
 };
 
@@ -116,6 +118,8 @@ export function normalizeRow(cells: string[], mapping: ColumnMapping, line: numb
   const rawMin = get("minStock");
   const minStock = quantity(rawMin);
   const unitCell = get("unit").toLowerCase();
+  // "Jamón cocido x kg", "Pan por kilo": si no hay columna de unidad, el nombre lo dice.
+  const kgByName = /(\bx\s*kg\b|\bpor\s*kilo\b|\bpor\s*kg\b|\bal\s*kilo\b|\bkg\s*$)/i.test(name);
   return {
     line,
     name,
@@ -127,7 +131,8 @@ export function normalizeRow(cells: string[], mapping: ColumnMapping, line: numb
     stock,
     minStock,
     supplier: get("supplier") || null,
-    unit: /kg|kilo|pes/.test(unitCell) ? "kg" : "unit",
+    unit: /kg|kilo|pes/.test(unitCell) ? "kg" : !unitCell && kgByName ? "kg" : "unit",
+    unitGuessed: !unitCell && kgByName,
     errors,
   };
 }

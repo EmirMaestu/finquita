@@ -73,7 +73,7 @@ export function LockScreen({
         </div>
       ) : (
         <div className="flex w-full max-w-md flex-col gap-4">
-          <h1 className="m-0 text-center text-[22px] font-semibold">¿Quién va a usar la caja?</h1>
+          <h1 className="m-0 text-center text-[22px] font-semibold">¿Quién sos?</h1>
           {people.isError && (
             <div className="text-center text-sm text-peligro">
               Este dispositivo no está habilitado. Pedile al dueño que lo habilite.

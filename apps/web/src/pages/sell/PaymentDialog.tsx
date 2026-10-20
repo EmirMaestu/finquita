@@ -10,6 +10,7 @@ import {
 } from "@mostrador/shared";
 import { Banknote, CreditCard, HandCoins, QrCode, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useGrant } from "../../app/session";
 import { useSettings } from "../../data/settings";
 import { Button } from "../../ui/Button";
 import { cx } from "../../ui/cx";
@@ -66,6 +67,7 @@ export function PaymentDialog({
 }) {
   const settings = useSettings();
   const methods = settings.payments.methods;
+  const creditGrant = useGrant("credit_over_limit");
   const [payments, setPayments] = useState<Tender[]>([]);
   const [tab, setTab] = useState<Tab>(initialTab ?? "cash");
   const [card, setCard] = useState<"debit" | "credit">("debit");
@@ -437,7 +439,8 @@ export function PaymentDialog({
                   {(fiado.overdue ||
                     fiado.balanceCents + Math.min(base, remaining) > fiado.limitCents) && (
                     <span className="font-semibold text-peligro">
-                      {fiado.overdue ? "Tiene deuda vencida" : "Se pasa del límite"}: pide PIN.
+                      {fiado.overdue ? "Tiene deuda vencida" : "Se pasa del límite"}
+                      {creditGrant === "allow" ? ": lo autorizás vos." : ": pide PIN."}
                     </span>
                   )}
                 </div>

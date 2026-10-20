@@ -18,7 +18,7 @@ import { ArrowDownRight, ArrowUpRight, ChevronLeft, Download, FileSpreadsheet } 
 import { useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import { NoPermissionFor } from "../../app/guards";
-import { useGrant } from "../../app/session";
+import { useGrant, useMe } from "../../app/session";
 import { api } from "../../data/api";
 import { Button } from "../../ui/Button";
 import { FilterChip } from "../../ui/Chip";
@@ -556,6 +556,7 @@ function Card({ k }: { k: (typeof KINDS)[number] }) {
 
 /** Reportes: cada uno responde una pregunta del dueño. */
 export function ReportsPage() {
+  const me = useMe();
   const grant = useGrant("reports");
   const profit = useGrant("reports_profitability") === "allow";
   const wide = useWide();
@@ -568,6 +569,11 @@ export function ReportsPage() {
   return (
     <div className="flex flex-col gap-4 p-4 lg:p-6">
       <h1 className="m-0 text-[22px] font-semibold">Reportes</h1>
+      {me?.member.role === "cashier" && (
+        <span className="rounded-full bg-info-suave px-3 py-1 text-[13px] font-semibold text-info">
+          Solo tus ventas: lo que cobraste vos
+        </span>
+      )}
       {wide ? (
         <div className="grid grid-cols-[220px_minmax(0,1fr)] gap-6">
           <nav aria-label="Reportes" className="flex flex-col gap-1">

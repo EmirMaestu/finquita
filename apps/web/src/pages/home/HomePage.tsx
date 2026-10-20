@@ -31,7 +31,7 @@ import { cx } from "../../ui/cx";
 import { EmptyState, ErrorState, SkeletonList } from "../../ui/States";
 import { FirstSteps, useSetupStatus } from "./Setup";
 
-type Attention = {
+export type Attention = {
   key: string;
   severity: "danger" | "warning" | "info";
   text: string;
@@ -165,7 +165,7 @@ function Numbers({ n }: { n: Dashboard["numbers"] }) {
   );
 }
 
-function AttentionList({ items }: { items: Attention[] }) {
+export function AttentionList({ items }: { items: Attention[] }) {
   const navigate = useNavigate();
   return (
     <section
