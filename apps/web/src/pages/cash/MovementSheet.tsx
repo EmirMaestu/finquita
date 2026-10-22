@@ -9,6 +9,7 @@ import type { LocalShift } from "../../data/types";
 import { Button } from "../../ui/Button";
 import { FilterChip } from "../../ui/Chip";
 import { SelectField, TextField } from "../../ui/Field";
+import { PhotoButton } from "../../ui/PhotoButton";
 import { Sheet } from "../../ui/Sheet";
 import { toast } from "../../ui/toast";
 
@@ -67,6 +68,7 @@ export function MovementSheet({
   const [kind, setKind] = useState<Kind>(initialKind);
   const [amount, setAmount] = useState("");
   const [reason, setReason] = useState("");
+  const [photoId, setPhotoId] = useState<string | null>(null);
   const [category, setCategory] = useState<keyof typeof EXPENSE_CATEGORIES>("cleaning");
   const [invoiceId, setInvoiceId] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -119,12 +121,14 @@ export function MovementSheet({
           reason: reason.trim(),
           category: kind === "expense" ? category : null,
           invoiceId: invoiceId || null,
+          photoId: kind === "expense" ? photoId : null,
         },
         auth,
       );
       toast({ text: `${k.label} registrado: ${formatMoney(cents)}` });
       setAmount("");
       setReason("");
+      setPhotoId(null);
       onClose();
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudo registrar.");
@@ -222,6 +226,12 @@ export function MovementSheet({
           placeholder={kind === "expense" ? "Lavandina y trapos de piso" : "A la caja fuerte"}
           hint="Obligatorio"
         />
+        {kind === "expense" && (
+          <div className="flex items-center gap-2">
+            <PhotoButton value={photoId} onChange={setPhotoId} label="Foto del comprobante" />
+            <span className="text-[13px] text-texto-suave">opcional</span>
+          </div>
+        )}
         <div className="flex justify-between rounded-lg bg-fondo px-3 py-2 text-[13px] text-texto-suave">
           <span>
             {kind === "income" ? "Entra al" : "Sale del"} efectivo de {registerName}

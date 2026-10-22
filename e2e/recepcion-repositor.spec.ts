@@ -29,7 +29,7 @@ test("el repositor llega a Recepción desde Compras y recibe lo que faltaba del 
   await loginWithPin(page, "Nico", "5678");
   await page.getByRole("link", { name: "Compras" }).click();
   await expect(page).toHaveURL(/\/compras\/recepcion/);
-  await expect(page.getByText("No tenés permiso")).toHaveCount(0);
+  await expect(page.getByText("no tiene permiso para esto")).toHaveCount(0);
   // Sin pestañas que no puede abrir.
   await expect(page.getByRole("link", { name: "Sugerido" })).toHaveCount(0);
   // El 0042 quedó parcial en la prueba de recepción: se ve y lo dice.

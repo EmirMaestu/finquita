@@ -16,6 +16,7 @@ import { Button } from "../../ui/Button";
 import { cx } from "../../ui/cx";
 import { Key } from "../../ui/Key";
 import { NumPad } from "../../ui/NumPad";
+import { toast } from "../../ui/toast";
 
 type Tab = "cash" | "card" | "transfer" | "account";
 
@@ -431,6 +432,20 @@ export function PaymentDialog({
                   <span className="font-semibold">
                     {settings.payments.alias || "Sin alias cargado"}
                   </span>
+                  {settings.payments.alias && (
+                    <button
+                      type="button"
+                      className="h-11 self-start rounded-lg border border-borde px-3 text-[13px] font-semibold lg:h-9"
+                      onClick={() =>
+                        navigator.clipboard
+                          ?.writeText(settings.payments.alias)
+                          .then(() => toast({ text: "Alias copiado" }))
+                          .catch(() => toast({ text: "No se pudo copiar", tone: "error" }))
+                      }
+                    >
+                      Copiar alias
+                    </button>
+                  )}
                   {settings.payments.cvu && (
                     <span className="text-[13px] break-all text-texto-suave">
                       CVU {settings.payments.cvu}
@@ -537,7 +552,7 @@ export function PaymentDialog({
               <div className="mt-auto flex flex-col gap-0.5 rounded-lg bg-exito-suave p-3 text-exito">
                 <span className="text-xs font-semibold">Vuelto</span>
                 <output
-                  className="tnum text-[32px] leading-none font-semibold tracking-[-.02em]"
+                  className="tnum text-[40px] leading-none font-semibold tracking-[-.02em]"
                   aria-label="Vuelto"
                 >
                   {formatMoney(projectedChange)}

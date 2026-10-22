@@ -16,8 +16,14 @@ export function UserMenu() {
     const h = (e: MouseEvent) => {
       if (!ref.current?.contains(e.target as Node)) setOpen(false);
     };
+    // Esc también lo cierra, como los demás menús.
+    const k = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
     window.addEventListener("mousedown", h);
-    return () => window.removeEventListener("mousedown", h);
+    window.addEventListener("keydown", k);
+    return () => {
+      window.removeEventListener("mousedown", h);
+      window.removeEventListener("keydown", k);
+    };
   }, [open]);
   const hasDevice = Boolean(credentials.get().deviceToken);
   return (

@@ -168,6 +168,8 @@ export const cashMovement = z.object({
     .optional(),
   note: z.string().max(500).nullable().optional(),
   invoiceId: uuid.nullable().optional(),
+  /** Foto del comprobante del gasto (opcional). */
+  photoId: uuid.nullable().optional(),
 });
 
 export const shiftClose = z

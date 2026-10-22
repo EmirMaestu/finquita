@@ -103,8 +103,8 @@ export function CameraScanner({
         });
         stop = () => controls.stop();
         if (cancelled) stop();
-      } catch {
-        setError("No pudimos abrir la cámara. Revisá el permiso en Ajustes del teléfono.");
+      } catch (err) {
+        setError(cameraErrorText(err));
       }
     })();
     return () => {
@@ -149,4 +149,24 @@ export function CameraScanner({
       </div>
     </div>
   );
+}
+
+/** Por qué no abrió la cámara, en palabras y con qué hacer (cada causa tiene su salida). */
+export function cameraErrorText(err: unknown): string {
+  const name = err instanceof Error || err instanceof DOMException ? err.name : "";
+  const phone =
+    typeof navigator !== "undefined" && /iPhone|iPad|Android/i.test(navigator.userAgent);
+  if (typeof window !== "undefined" && window.isSecureContext === false)
+    return "La cámara solo anda con la app abierta en https. Usá la pistola o buscá por nombre.";
+  if (name === "NotAllowedError" || name === "SecurityError")
+    return phone
+      ? "No hay permiso para usar la cámara. Dalo en Ajustes del teléfono › Safari › Cámara."
+      : "No hay permiso para usar la cámara. Dalo desde el candado de la barra de direcciones.";
+  if (name === "NotFoundError" || name === "OverconstrainedError")
+    return phone
+      ? "No encontramos la cámara de este teléfono."
+      : "Esta computadora no tiene cámara. Usá la pistola o buscá por nombre.";
+  if (name === "NotReadableError" || name === "AbortError")
+    return "La cámara la está usando otra app. Cerrala y probá de nuevo.";
+  return "No pudimos abrir la cámara. Probá de nuevo o usá la pistola.";
 }

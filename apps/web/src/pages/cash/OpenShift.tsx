@@ -192,7 +192,7 @@ export function OpenShift({
         onClick={() => void open()}
         disabled={busy || badTotal || (differs && !note.trim())}
       >
-        Abrir {shiftName(now)}
+        Abrir {shiftName(now)} en {registerName}
       </Button>
     </section>
   );

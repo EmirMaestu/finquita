@@ -43,9 +43,10 @@ function useToasts(): Toast[] {
 
 function ToastItem({ t }: { t: Toast }) {
   useEffect(() => {
-    const timer = setTimeout(() => dismissToast(t.id), t.ms ?? 2500);
+    // Con una acción ("Deshacer", "Cargarlo") hace falta tiempo para llegar a tocarla.
+    const timer = setTimeout(() => dismissToast(t.id), t.ms ?? (t.action ? 6000 : 2500));
     return () => clearTimeout(timer);
-  }, [t.id, t.ms]);
+  }, [t.id, t.ms, t.action]);
   const Icon = t.tone === "error" ? CircleAlert : t.tone === "info" ? Info : Check;
   return (
     <div

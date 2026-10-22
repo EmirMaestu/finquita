@@ -382,7 +382,9 @@ function SaleDetailView({ id, onBack }: { id: string; onBack?: () => void }) {
         </div>
         <div className="text-[13px] text-texto-suave">
           {formatDate(new Date(s.deviceAt))} {formatTime(new Date(s.deviceAt))} ·{" "}
-          {s.memberName ?? ""} · {s.registerName ?? "Caja 1"} · {s.customerName ?? "sin cliente"}
+          {[s.memberName, s.registerName, s.customerName ?? "sin cliente"]
+            .filter(Boolean)
+            .join(" · ")}
           {s.local ? " · sin sincronizar" : ""}
         </div>
       </div>
@@ -525,7 +527,7 @@ export function SalesHistoryPage() {
           <span className="rounded-md bg-superficie px-3 py-1.5">Historial</span>
         </nav>
         <span className="flex-1" />
-        <label className="flex h-9 w-48 items-center gap-2 rounded-lg border border-borde bg-superficie px-2.5 text-[13px] text-texto-suave">
+        <label className="flex h-11 w-full items-center gap-2 sm:w-48 lg:h-9 rounded-lg border border-borde bg-superficie px-2.5 text-[13px] text-texto-suave">
           <Search size={16} aria-hidden />
           <input
             aria-label="Número de venta"

@@ -2,7 +2,7 @@ import { newId, type OpPayload } from "@mostrador/shared";
 import { eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import { createApp } from "../src/app";
-import { alerts } from "../src/db/schema/index";
+import { alerts, cashMovements } from "../src/db/schema/index";
 import { as, memberId, pinOf } from "./helpers/actors";
 import type { TestClient } from "./helpers/client";
 import { TEST_AUTH } from "./helpers/client";
@@ -120,6 +120,24 @@ describe("caja: turno en curso", () => {
       memberName: "Tomás",
       openingFloatCents: 2_000_000,
     });
+  });
+
+  it("el gasto guarda la foto del comprobante", async () => {
+    const julian = await as(app(), ref.t.db, "julian");
+    const shiftId = newId();
+    const id = newId();
+    const photoId = newId();
+    const r = await push(julian, [
+      openShift(shiftId, 2_000_000, "julian"),
+      op(
+        "cash.movement",
+        { id, shiftId, kind: "expense", amountCents: 120_000, reason: "Flete", photoId },
+        { by: "julian" },
+      ),
+    ]);
+    expect(r.body.results.map((x: { status: string }) => x.status)).toEqual(["applied", "applied"]);
+    const [row] = await ref.t.db.select().from(cashMovements).where(eq(cashMovements.id, id));
+    expect(row?.photoUrl).toBe(`/api/files/${photoId}`);
   });
 
   it("retiro, ingreso y pago a proveedor en efectivo", async () => {

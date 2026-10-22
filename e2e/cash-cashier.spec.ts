@@ -78,7 +78,9 @@ test("el cajero vende, va a Caja desde Vender y cierra el turno con su nombre", 
   // Enter en el comentario cierra.
   await note.press("Enter");
   await authorizeIfAsked(page);
-  await expect(page.getByText("CIERRE DE CAJA")).toBeVisible();
+  await expect(page.getByRole("document", { name: "Comprobante de cierre" })).toContainText(
+    "CIERRE DE CAJA",
+  );
   await expect(page.getByText(/Cajero: Tomás|Cerró: Tomás/)).toBeVisible();
 });
 
@@ -96,7 +98,9 @@ test("abrir la caja con un fondo negativo no deja una caja fantasma", async ({ p
     if (await note.isVisible()) await note.fill("Cierre para la prueba");
     await page.getByRole("button", { name: /Cerrar turno/ }).click();
     await authorizeIfAsked(page);
-    await expect(page.getByText("CIERRE DE CAJA")).toBeVisible();
+    await expect(page.getByRole("document", { name: "Comprobante de cierre" })).toContainText(
+      "CIERRE DE CAJA",
+    );
     await page.goto("/caja");
   }
   await expect(open).toBeVisible({ timeout: 20_000 });

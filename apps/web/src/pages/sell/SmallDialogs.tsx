@@ -135,8 +135,13 @@ export function HeldSalesSheet({
             Poner en espera la venta actual
           </Button>
         )}
-        {list.length === 0 && (
+        {list.length === 0 ? (
           <div className="py-4 text-center text-sm text-texto-suave">No hay ventas esperando.</div>
+        ) : (
+          <p className="m-0 text-[13px] text-texto-suave">
+            Las ventas en espera se guardan en este dispositivo hasta cerrar el turno.
+            {canHold ? " Al recuperar una, la que tenés ahora queda en espera." : ""}
+          </p>
         )}
         <ul className="m-0 list-none p-0">
           {list.map((h) => (
@@ -153,6 +158,7 @@ export function HeldSalesSheet({
                   </span>
                 </span>
                 <span className="tnum font-semibold">{formatMoney(h.totalCents)}</span>
+                <span className="font-semibold text-primario">Recuperar</span>
               </button>
             </li>
           ))}
@@ -175,6 +181,8 @@ export const SHORTCUTS: [string, string][] = [
   ["F8", "Ir a Caja (abrir o cerrar el turno)"],
   ["+ −", "Sumar o restar uno al ítem elegido"],
   ["Supr", "Quitar el ítem elegido"],
+  ["↑ ↓", "Elegir una línea de la venta"],
+  ["Enter", "Agregar lo buscado o cerrar un aviso"],
   ["Esc", "Cancelar o cerrar"],
 ];
 

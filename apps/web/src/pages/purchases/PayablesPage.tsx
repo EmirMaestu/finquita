@@ -9,18 +9,17 @@ import {
   todayAR,
 } from "@mostrador/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Camera } from "lucide-react";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { NoPermissionFor } from "../../app/guards";
 import { useGrant, useMe } from "../../app/session";
 import { addCashMoveLocal } from "../../cash/local";
 import { useRegister } from "../../cash/useRegister";
 import { ApiError, api } from "../../data/api";
-import { queuePhoto } from "../../data/files";
 import { Button } from "../../ui/Button";
 import { Chip, FilterChip } from "../../ui/Chip";
 import { cx } from "../../ui/cx";
 import { SelectField, TextField } from "../../ui/Field";
+import { PhotoButton } from "../../ui/PhotoButton";
 import { Sheet } from "../../ui/Sheet";
 import { EmptyState, ErrorState, SkeletonList } from "../../ui/States";
 import { toast } from "../../ui/toast";
@@ -49,36 +48,6 @@ type Summary = {
 };
 
 const short = (d: string | null) => (d ? formatDate(d).slice(0, 5) : "—");
-
-function PhotoButton({
-  value,
-  onChange,
-  label,
-}: {
-  value: string | null;
-  onChange: (id: string) => void;
-  label: string;
-}) {
-  const ref = useRef<HTMLInputElement>(null);
-  return (
-    <>
-      <input
-        ref={ref}
-        type="file"
-        accept="image/*,application/pdf"
-        className="hidden"
-        aria-label={label}
-        onChange={async (e) => {
-          const f = e.target.files?.[0];
-          if (f) onChange(await queuePhoto(f));
-        }}
-      />
-      <Button variant="secondary" icon={<Camera size={18} />} onClick={() => ref.current?.click()}>
-        {value ? `${label} ✓` : label}
-      </Button>
-    </>
-  );
-}
 
 function PaySheet({
   item,

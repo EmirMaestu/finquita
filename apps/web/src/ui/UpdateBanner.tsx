@@ -36,14 +36,14 @@ export function UpdateBanner({ needRefresh, saleInProgress, onUpdate }: Props) {
       <button
         type="button"
         onClick={() => setDismissed(true)}
-        className="h-10 rounded-lg px-3 text-sm font-semibold text-texto-suave hover:bg-neutro-suave"
+        className="h-11 rounded-lg px-3 text-sm font-semibold text-texto-suave hover:bg-neutro-suave lg:h-10"
       >
         Después
       </button>
       <button
         type="button"
         onClick={() => setRequested(true)}
-        className="h-10 rounded-lg bg-primario px-4 text-sm font-semibold text-sobre-primario hover:bg-primario-hover"
+        className="h-11 rounded-lg bg-primario px-4 text-sm font-semibold text-sobre-primario hover:bg-primario-hover lg:h-10"
       >
         Actualizar
       </button>

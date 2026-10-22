@@ -226,7 +226,7 @@ export function CashPage() {
             Ingreso
           </Button>
           <Button variant="ghost" onClick={() => navigate("/caja/historial")}>
-            Historial
+            Cierres
           </Button>
           {/* En la compu, F8 y Enter llevan del mostrador al cierre (ronda 3). */}
           <Button autoFocus={desktop} onClick={() => navigate("/caja/cierre")}>

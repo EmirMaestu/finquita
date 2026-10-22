@@ -12,7 +12,9 @@ import { useScanner } from "./useScanner";
  * Lo escaneado fuera de las pantallas que lo usan (Vender, recepción, conteo) muestra
  * la ficha rápida. Las pantallas que escanean registran su propio manejador.
  */
-type Handler = (code: string) => void;
+/** De dónde vino el código: la pistola deja escapar su primer dígito al campo; la cámara, no. */
+export type ScanSource = "gun" | "camera";
+type Handler = (code: string, from?: ScanSource) => void;
 /** Pila de manejadores: el último que reclamó (la hoja abierta encima) recibe el escaneo. */
 const handlers: Handler[] = [];
 let handler: Handler | null = null;
@@ -97,8 +99,8 @@ export function GlobalScan() {
   const navigate = useNavigate();
 
   const onCode = useCallback(
-    async (code: string) => {
-      if (handler) return handler(code);
+    async (code: string, from: ScanSource = "gun") => {
+      if (handler) return handler(code, from);
       const p = await findByCode(code);
       if (!p) {
         beep("error");
@@ -132,7 +134,7 @@ export function GlobalScan() {
       {camera && (
         <CameraScanner
           key={pathname}
-          onCode={(c) => void onCode(c)}
+          onCode={(c) => void onCode(c, "camera")}
           onClose={() => scanRouter.closeCamera()}
         />
       )}

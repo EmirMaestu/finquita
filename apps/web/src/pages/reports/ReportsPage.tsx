@@ -578,7 +578,13 @@ export function ReportsPage() {
   const { kind } = useParams();
   if (grant === "deny") return <NoPermissionFor perm="reports" />;
   const list = KINDS.filter((k) => (grant === "own" ? k.kind === "sales" : !k.profit || profit));
-  if (!list.length) return <EmptyState title="No hay reportes para tu rol" />;
+  if (!list.length)
+    return (
+      <EmptyState
+        title="No hay reportes para tu usuario"
+        body="Los reportes los ven el dueño y el encargado; el cajero ve solo sus ventas."
+      />
+    );
   const current = (list.find((k) => k.kind === kind) ?? (wide ? list[0] : null))?.kind ?? null;
   return (
     <div className="flex flex-col gap-4 p-4 lg:p-6">

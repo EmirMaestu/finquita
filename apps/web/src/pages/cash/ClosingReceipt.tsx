@@ -21,9 +21,12 @@ export function ClosingReceipt({ lines, onDone }: { lines: string[]; onDone?: ()
       toast({ text: "Copiado: pegalo en WhatsApp o en un mail." });
     }
   };
+  // Un solo nombre, "cierre de caja", como el comprobante; en el historial va dentro del panel
+  // (h2: la página ya tiene su título).
+  const Title = onDone ? "h1" : "h2";
   return (
     <div className="mx-auto flex max-w-md flex-col gap-4 p-4 lg:p-6">
-      <h1 className="m-0 text-[22px] font-semibold">Turno cerrado</h1>
+      <Title className="m-0 text-[22px] font-semibold">Cierre de caja</Title>
       <pre
         role="document"
         aria-label="Comprobante de cierre"
@@ -39,7 +42,7 @@ export function ClosingReceipt({ lines, onDone }: { lines: string[]; onDone?: ()
           Compartir
         </Button>
       </div>
-      {onDone && <Button onClick={onDone}>Listo</Button>}
+      {onDone && <Button onClick={onDone}>Volver a Caja</Button>}
     </div>
   );
 }

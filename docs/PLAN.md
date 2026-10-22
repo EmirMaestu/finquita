@@ -164,7 +164,7 @@ Cinco usuarios nuevos recorrieron la app (docs/QA-USUARIOS.md). Las tareas agrup
   Listo cuando: cada uno tiene su test.
 - [~] T62 · **Auditoría UI y cámara: lo que confunde.** Los Q99 a Q159 de docs/QA-USUARIOS.md, por pantalla, en el orden de la tabla.
   Listo cuando: cada Q tildado en QA-USUARIOS.md con su test.
-- [ ] T63 · **Auditoría UI: detalles.** Los Q160 a Q207, por pantalla.
+- [~] T63 · **Auditoría UI: detalles.** Los Q160 a Q207, por pantalla.
   Listo cuando: cada Q tildado en QA-USUARIOS.md.
 - [x] T64 · **Ronda 2: lo que rompió el destructor y lo que siguió.** Formularios que rechazan basura con mensaje y todos los errores juntos (fondo del cierre que no pasa lo contado, apertura y billetes solo con montos, medios de pago y billetes de Ajustes, conteo con tope y confirmación al aprobar, enteros en lo que se vende por unidad, códigos de barras numéricos, dañados y vencimientos en Recepción, DNI y teléfono, Varios con tope, categorías únicas, PIN obligatorio para cajero y repositor, negocio y proveedor sin HTML); PIN con teclado después de "Cambiar de usuario"; sesión vencida que lleva a entrar; proveedores solo para quien recibe o pide; descuento que se muestra al reabrir; "codigo" al importar. Cierra Q01, Q30, Q59, Q61, Q63, Q64, Q65, Q66, Q68, Q90, Q91 y, de la ronda 2, Q208, Q210, Q211, Q214 a Q229, Q232, Q234, Q236, Q239 y Q241 (Q209, Q213, Q231 y Q235 van a BLOCKERS.md; Q212, Q230, Q233, Q237, Q238 y Q240 quedan para T65).
   Listo cuando: tests de validación en shared y en la API; e2e en verde.

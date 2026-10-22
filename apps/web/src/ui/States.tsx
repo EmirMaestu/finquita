@@ -69,8 +69,11 @@ export function NoPermission({ who }: { who: string }) {
   return (
     <div className="flex flex-col items-center gap-3 rounded-card border border-borde bg-superficie px-6 py-10 text-center">
       <Lock size={28} className="text-texto-suave" aria-hidden />
-      <div className="text-base font-semibold">No tenés permiso para ver esto</div>
-      <div className="text-sm text-texto-suave">Lo puede ver: {who}.</div>
+      {/* Sirve para ver y para hacer (vender, ajustar), no solo para "ver esto". */}
+      <div className="text-base font-semibold">Tu usuario no tiene permiso para esto</div>
+      <div className="text-sm text-texto-suave">
+        Lo puede usar: {who}. Si lo necesitás, pedíselo al dueño.
+      </div>
     </div>
   );
 }

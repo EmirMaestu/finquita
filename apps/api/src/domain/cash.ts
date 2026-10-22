@@ -89,6 +89,7 @@ export type CashEntry = {
   reason?: string | null;
   category?: string | null;
   note?: string | null;
+  photoUrl?: string | null;
   refType?: string | null;
   refId?: string | null;
   memberId?: string | null;
@@ -109,6 +110,7 @@ export async function addCash(tx: DbOrTx, e: CashEntry): Promise<string> {
     reason: e.reason ?? null,
     category: e.category ?? null,
     note: e.note ?? null,
+    photoUrl: e.photoUrl ?? null,
     refType: e.refType ?? null,
     refId: e.refId ?? null,
     memberId: e.memberId ?? null,
@@ -177,6 +179,7 @@ export async function cashMovement(tx: DbOrTx, ctx: OpContext, p: OpPayload<"cas
     reason: p.reason,
     category: p.category ?? null,
     note: p.note ?? null,
+    photoUrl: p.photoId ? `/api/files/${p.photoId}` : null,
     refType,
     refId,
     memberId: ctx.memberId,

@@ -21,8 +21,8 @@ import {
   Truck,
   Wallet,
 } from "lucide-react";
-import { Navigate, useNavigate } from "react-router";
-import { useGrant, useMe } from "../../app/session";
+import { Link, Navigate, useNavigate } from "react-router";
+import { useCan, useGrant, useMe } from "../../app/session";
 import { useShell } from "../../app/shell";
 import { api } from "../../data/api";
 import { scanRouter } from "../../scan/GlobalScan";
@@ -92,14 +92,22 @@ function Header() {
   const me = useMe();
   const shell = useShell();
   const reg = shell.register;
+  const canShift = useCan("shift");
   return (
     <div>
       <h1 className="m-0 text-[26px] font-semibold">Hola, {me?.member.name.split(" ")[0]}</h1>
       <div className="text-sm text-texto-suave">
         {longDate()} ·{" "}
-        {reg?.open
-          ? `Caja abierta por ${reg.cashier ?? "—"} desde ${reg.since ?? ""}`
-          : "Caja cerrada"}
+        {reg?.open ? (
+          `Caja abierta por ${reg.cashier ?? "—"} desde ${reg.since ?? ""}`
+        ) : canShift ? (
+          // Con la caja cerrada, el texto lleva a abrirla.
+          <Link to="/caja" className="font-semibold text-primario underline">
+            Caja cerrada · Abrir caja
+          </Link>
+        ) : (
+          "Caja cerrada"
+        )}
       </div>
     </div>
   );

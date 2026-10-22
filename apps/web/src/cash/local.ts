@@ -86,6 +86,7 @@ export type ManualMove = {
   category?: "cleaning" | "freight" | "maintenance" | "salary_advance" | "other" | null;
   note?: string | null;
   invoiceId?: string | null;
+  photoId?: string | null;
 };
 
 /** Retiro, gasto, ingreso o pago a proveedor (con quién autorizó, si hizo falta PIN). */
@@ -107,6 +108,7 @@ export async function addCashMoveLocal(
     category: m.category ?? null,
     note: m.note ?? null,
     invoiceId: m.invoiceId ?? null,
+    photoId: m.photoId ?? null,
   };
   assertOp("cash.movement", payload);
   await localDb().cashMoves.put({

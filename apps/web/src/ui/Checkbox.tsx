@@ -48,7 +48,19 @@ export function Checkbox({
       </span>
     </span>
   );
-  if (!showLabel) return box;
+  // Sin texto, la zona tocable igual mide 44 px (la casilla sola, 18 px, no se acierta con el
+  // pulgar); el margen negativo la deja en el mismo lugar.
+  if (!showLabel)
+    return (
+      // biome-ignore lint/a11y/useKeyWithClickEvents: el teclado va al input de adentro; el clic no debe abrir la fila.
+      <label
+        htmlFor={id}
+        onClick={(e) => e.stopPropagation()}
+        className="-m-[13px] inline-flex cursor-pointer p-[13px]"
+      >
+        {box}
+      </label>
+    );
   return (
     <label htmlFor={id} className="flex min-h-11 cursor-pointer items-center gap-3 text-sm">
       {box}

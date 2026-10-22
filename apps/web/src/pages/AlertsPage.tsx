@@ -128,7 +128,8 @@ export function AlertsPage() {
     mutationFn: () => api("/api/alerts/read-all", { body: {} }),
     onSuccess: refresh,
   });
-  const kinds = [...new Set((q.data?.items ?? []).map((a) => a.kind))];
+  // Todos los tipos, no solo los de los avisos cargados (con la lista vacía no había ninguno).
+  const kinds = Object.keys(ALERT_LABEL) as AlertKindCode[];
   // Lo de "Requiere atención" de Inicio se calcula en vivo (no es un aviso): se muestra acá también.
   const role = useMe()?.member.role;
   const attention = useQuery({

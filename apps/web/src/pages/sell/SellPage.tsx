@@ -36,7 +36,7 @@ import { useLocalPromotions } from "../../data/promotions";
 import { useSettings } from "../../data/settings";
 import type { LocalProduct } from "../../data/types";
 import { beep } from "../../scan/beep";
-import { scanRouter } from "../../scan/GlobalScan";
+import { type ScanSource, scanRouter } from "../../scan/GlobalScan";
 import { stripScanLeak } from "../../scan/useScanner";
 import { completeSale, type Payment } from "../../sell/complete";
 import { productIndex } from "../../sell/searchIndex";
@@ -300,7 +300,8 @@ export function SellPage() {
             ms: 3000,
           });
       }
-      focusSearch();
+      // Con la cámara abierta el buscador queda tapado: enfocarlo solo desplaza la página.
+      if (!scanRouter.isCameraOpen()) focusSearch();
     },
     [focusSearch],
   );
@@ -317,7 +318,7 @@ export function SellPage() {
   const dialogRef = useRef<Dialog>(null);
   dialogRef.current = dialog;
   const onCode = useCallback(
-    async (code: string) => {
+    async (code: string, from?: ScanSource) => {
       // Con el cobro u otra ventana abierta, un escaneo no hace nada.
       if (dialogRef.current) {
         beep("error");
@@ -325,7 +326,8 @@ export function SellPage() {
       }
       // Un escaneo con el cartel de "Venta lista" arranca la próxima venta.
       setDone(null);
-      setQuery((q) => stripScanLeak(q, code));
+      // Solo la pistola deja escapar su primer dígito al buscador ("coca 7" con la cámara queda).
+      if (from !== "camera") setQuery((q) => stripScanLeak(q, code));
       const idx = await productIndex(version);
       const p = idx.search(code, 1)[0];
       const exact =
@@ -353,7 +355,7 @@ export function SellPage() {
   );
 
   // La venta toma los escaneos (pistola y cámara).
-  useEffect(() => scanRouter.claim((c) => void onCode(c)), [onCode]);
+  useEffect(() => scanRouter.claim((c, from) => void onCode(c, from)), [onCode]);
 
   // Desde la ficha rápida: "Vender".
   useEffect(() => {
@@ -809,8 +811,12 @@ export function SellPage() {
         <div className="flex items-center gap-2.5 rounded-lg bg-alerta-suave px-3.5 py-2.5 text-[13px] font-medium text-alerta">
           <ShieldAlert size={16} aria-hidden />
           <span className="flex-1">{adultNotice}</span>
-          <button type="button" className="font-semibold" onClick={() => setAdultNotice(null)}>
-            Listo
+          <button
+            type="button"
+            className="inline-flex h-11 items-center rounded-lg px-3 font-semibold lg:h-9"
+            onClick={() => setAdultNotice(null)}
+          >
+            Entendido
           </button>
         </div>
       )}
@@ -1046,7 +1052,7 @@ export function SellPage() {
             locked={drawerGrant === "pin"}
             onClick={() => void openDrawer()}
           >
-            Cajón
+            Cajón · F10
           </Button>
         </div>
         <div className="flex items-center justify-between gap-2 text-xs text-texto-suave">
