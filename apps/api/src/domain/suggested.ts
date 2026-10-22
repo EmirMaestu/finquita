@@ -50,6 +50,8 @@ export type SuggestedOrder = {
   totalCents: number;
   /** Pedidos de este proveedor en camino (por eso puede no haber nada para pedir). */
   openOrders: number[];
+  /** Borradores de este proveedor: se avisan para no armar dos pedidos iguales. */
+  drafts: { id: string; number: number }[];
 };
 
 const OPEN: ("sent" | "confirmed" | "changed" | "partial")[] = [
@@ -118,6 +120,21 @@ export async function suggestedOrders(
     .where(inArray(purchaseOrders.status, OPEN))) {
     openBySupplier.set(o.supplierId, [...(openBySupplier.get(o.supplierId) ?? []), o.number]);
   }
+  const draftsBySupplier = new Map<string, { id: string; number: number }[]>();
+  for (const o of await db
+    .select({
+      id: purchaseOrders.id,
+      supplierId: purchaseOrders.supplierId,
+      number: purchaseOrders.number,
+    })
+    .from(purchaseOrders)
+    .where(eq(purchaseOrders.status, "draft"))) {
+    draftsBySupplier.set(o.supplierId, [
+      ...(draftsBySupplier.get(o.supplierId) ?? []),
+      { id: o.id, number: o.number },
+    ]);
+  }
+
   const short = new Set(
     (
       await db
@@ -177,6 +194,7 @@ export async function suggestedOrders(
       lines,
       totalCents,
       openOrders: openBySupplier.get(s.id) ?? [],
+      drafts: draftsBySupplier.get(s.id) ?? [],
     };
   });
 }

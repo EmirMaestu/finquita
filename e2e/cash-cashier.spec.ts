@@ -36,8 +36,12 @@ test("el cajero vende, va a Caja desde Vender y cierra el turno con su nombre", 
   await expect(page.getByRole("region", { name: "Efectivo esperado" })).toBeVisible({
     timeout: 20_000,
   });
-  await page.getByRole("button", { name: "Arqueo y cierre" }).click();
+  // Con teclado (ronda 3): en Caja el foco está en "Arqueo y cierre" y Enter entra al cierre,
+  // con el foco en el primer billete.
+  await expect(page.getByRole("button", { name: /Arqueo y cierre/ })).toBeFocused();
+  await page.keyboard.press("Enter");
   await expect(page.getByRole("heading", { name: /Arqueo y cierre/ })).toBeVisible();
+  await expect(page.getByRole("textbox", { name: /^billetes de/ }).first()).toBeFocused();
 
   // Un monto que no se entiende se marca en su campo y no deja ver el resultado.
   const debit = page.getByLabel("Débito (posnet)");
@@ -54,12 +58,25 @@ test("el cajero vende, va a Caja desde Vender y cierra el turno con su nombre", 
     timeout: 20_000,
   });
 
-  await page.getByRole("button", { name: "Ver resultado" }).click();
+  // Enter en un billete muestra el resultado (con el turno ya cargado); la diferencia lleva un
+  // solo signo.
+  await expect(page.getByRole("button", { name: /Ver resultado/ })).toBeEnabled({
+    timeout: 20_000,
+  });
+  await page
+    .getByRole("textbox", { name: /^billetes de/ })
+    .first()
+    .press("Enter");
+  const result = page.getByRole("region", { name: "Resultado" });
+  await expect(result).toBeVisible();
+  await expect(result.getByRole("row", { name: /Efectivo/ })).not.toContainText(/[−-]\s*[−-]/);
   const note = page.getByLabel(/Comentario/);
-  if (await note.isVisible()) await note.fill("Prueba de cierre");
+  await expect(note).toBeFocused();
+  await note.fill("Prueba de cierre");
   const close = page.getByRole("button", { name: /Cerrar turno/ });
   await expect(close).toContainText("avisar al dueño");
-  await close.click();
+  // Enter en el comentario cierra.
+  await note.press("Enter");
   await authorizeIfAsked(page);
   await expect(page.getByText("CIERRE DE CAJA")).toBeVisible();
   await expect(page.getByText(/Cajero: Tomás|Cerró: Tomás/)).toBeVisible();

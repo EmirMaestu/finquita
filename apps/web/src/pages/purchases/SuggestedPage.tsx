@@ -2,7 +2,7 @@ import { formatDate, formatMoney, formatQty, orderNumber } from "@mostrador/shar
 import { useQuery } from "@tanstack/react-query";
 import { CircleAlert, CircleCheck } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import { NoPermissionFor } from "../../app/guards";
 import { useCan } from "../../app/session";
 import { api } from "../../data/api";
@@ -38,6 +38,7 @@ export type SuggestedOrder = {
   minOrderCents: number | null;
   count: number;
   openOrders?: number[];
+  drafts?: { id: string; number: number }[];
   totalCents?: number;
   lines?: SuggestedLine[];
 };
@@ -45,11 +46,24 @@ export type SuggestedOrder = {
 const qtyText = (q: number, unit: "unit" | "kg") => formatQty(q, unit);
 const parseQty = (s: string) => Number(s.replace(/\./g, "").replace(",", ".")) || 0;
 
+/** Lo que está mal en la cantidad a pedir, dicho al lado del campo (ronda 3). */
+export function qtyProblem(raw: string, l: Pick<SuggestedLine, "unit">): string | null {
+  const n = parseQty(raw);
+  if (n < 0) return "No puede ser negativa";
+  if (n > 100_000) return "Hasta 100.000";
+  if (l.unit === "unit" && !Number.isInteger(n)) return "Se pide por unidad: un número entero";
+  return null;
+}
+
 /** Pedido sugerido por proveedor: tabla editable (Tab y Enter) con la cuenta explicada. */
 export function SuggestedPage({
   actions,
 }: {
-  actions?: (o: SuggestedOrder, qty: Record<string, number>) => React.ReactNode;
+  actions?: (
+    o: SuggestedOrder,
+    qty: Record<string, number>,
+    problem: string | null,
+  ) => React.ReactNode;
 }) {
   const can = useCan("build_orders");
   const wide = useWide();
@@ -100,29 +114,48 @@ export function SuggestedPage({
     next?.select();
   };
 
-  const qtyInput = (l: SuggestedLine, i: number) => (
-    <input
-      aria-label={`Pedir ${l.name}`}
-      data-sug-row={i}
-      inputMode="decimal"
-      value={qty[l.productId] ?? ""}
-      onFocus={(e) => {
-        setFocus(l.productId);
-        e.currentTarget.select();
-      }}
-      onChange={(e) =>
-        setQty((q) => ({
-          ...q,
-          [l.productId]: e.target.value.replace(/[^\d,]/g, ""),
-        }))
-      }
-      onKeyDown={(e) => onEnter(e, i)}
-      className={cx(
-        "tnum w-20 rounded-md border border-borde-fuerte bg-superficie px-2 text-right font-semibold",
-        wide ? "h-9" : "h-11 text-base",
-      )}
-    />
-  );
+  const problems = lines
+    .map((l) => ({ l, p: qtyProblem(qty[l.productId] ?? "", l) }))
+    .filter((x) => x.p);
+  const qtyInput = (l: SuggestedLine, i: number) => {
+    const p = qtyProblem(qty[l.productId] ?? "", l);
+    const pack =
+      !p && l.packQty && n(l.productId) % l.packQty
+        ? `No completa ${(l.packName ?? "la caja").toLowerCase()} de ${l.packQty}`
+        : null;
+    return (
+      <span className="inline-flex flex-col items-end gap-0.5">
+        <input
+          aria-label={`Pedir ${l.name}`}
+          data-sug-row={i}
+          inputMode="decimal"
+          value={qty[l.productId] ?? ""}
+          onFocus={(e) => {
+            setFocus(l.productId);
+            e.currentTarget.select();
+          }}
+          onChange={(e) =>
+            setQty((q) => ({
+              ...q,
+              [l.productId]: e.target.value.replace(/[^\d,.-]/g, ""),
+            }))
+          }
+          onKeyDown={(e) => onEnter(e, i)}
+          aria-invalid={p ? true : undefined}
+          className={cx(
+            "tnum w-20 rounded-md border bg-superficie px-2 text-right font-semibold",
+            p ? "border-peligro" : "border-borde-fuerte",
+            wide ? "h-9" : "h-11 text-base",
+          )}
+        />
+        {p ? (
+          <span className="text-xs font-semibold text-peligro">{p}</span>
+        ) : pack ? (
+          <span className="text-xs text-alerta">{pack}</span>
+        ) : null}
+      </span>
+    );
+  };
   return (
     <div className="flex flex-col gap-4 p-4 lg:p-6">
       <div className="flex flex-wrap items-center gap-3">
@@ -179,6 +212,23 @@ export function SuggestedPage({
                       ? ` · mínimo ${formatMoney(order.minOrderCents)}`
                       : ""}
                   </div>
+                  {(order.drafts ?? []).length > 0 && (
+                    <div
+                      role="status"
+                      className="mt-2 rounded-lg bg-alerta-suave px-3 py-2 text-[13px] text-alerta"
+                    >
+                      Ya tenés{" "}
+                      {(order.drafts ?? []).map((d, i) => (
+                        <span key={d.id}>
+                          {i > 0 ? ", " : ""}
+                          <Link className="font-semibold underline" to={`/compras/pedidos/${d.id}`}>
+                            el pedido {orderNumber(d.number)}
+                          </Link>
+                        </span>
+                      ))}{" "}
+                      en borrador para {order.supplierName}. Si guardás este, quedan dos pedidos.
+                    </div>
+                  )}
                 </div>
                 {wide ? (
                   <div className="overflow-x-auto">
@@ -329,9 +379,23 @@ export function SuggestedPage({
                       )}
                     </>
                   )}
+                  {problems.length > 0 && (
+                    <div role="alert" className="text-[13px] font-semibold text-peligro">
+                      Revisá{" "}
+                      {problems.length === 1
+                        ? problems[0]?.l.name
+                        : `${problems.length} cantidades`}
+                      :{" "}
+                      {problems.length === 1
+                        ? problems[0]?.p?.toLowerCase()
+                        : "están marcadas en rojo"}
+                      .
+                    </div>
+                  )}
                   {actions?.(
                     order,
                     Object.fromEntries(lines.map((l) => [l.productId, n(l.productId)])),
+                    problems.length ? "Revisá las cantidades marcadas en rojo." : null,
                   )}
                 </section>
               </aside>

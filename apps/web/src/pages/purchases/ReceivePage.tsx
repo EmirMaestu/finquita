@@ -538,6 +538,18 @@ function Receiving({
     const ex = extras[l.key] ?? { damaged: num(l.damaged) > 0, lot: !!l.lotCode || !!l.expiresOn };
     const step = (d: number) =>
       set(l.key, { received: String(Math.max(0, roundQty(rec + d))).replace(".", ",") });
+    // Cada error en su campo, en el momento (ronda 3: costo −100 proponía precio −$ 100).
+    const costCents = l.cost.trim() ? parseMoney(l.cost) : null;
+    const costError =
+      l.cost.trim() && (costCents === null || costCents < 0)
+        ? "Poné un monto, por ejemplo 1500"
+        : null;
+    const expiresError =
+      l.expiresOn && l.expiresOn < new Date(Date.now() - 30 * 86_400_000).toISOString().slice(0, 10)
+        ? "Esa fecha ya pasó, revisala"
+        : null;
+    const damagedError =
+      num(l.damaged) > rec ? `No pueden ser más que los ${qtyText(rec, l.unit)} recibidos` : null;
     return (
       <section
         aria-label={`Recibiendo ${l.name}`}
@@ -613,6 +625,7 @@ function Receiving({
             label="Dañados (no entran al stock)"
             inputMode="decimal"
             value={l.damaged}
+            error={damagedError}
             onChange={(e) => set(l.key, { damaged: e.target.value.replace(/[^\d,]/g, "") })}
           />
         )}
@@ -627,6 +640,7 @@ function Receiving({
               label="Vence"
               type="date"
               value={l.expiresOn}
+              error={expiresError}
               onChange={(e) => set(l.key, { expiresOn: e.target.value })}
             />
           </div>
@@ -637,16 +651,19 @@ function Receiving({
               label="Costo por unidad"
               inputMode="decimal"
               value={l.cost}
+              error={costError}
               onChange={(e) =>
                 set(l.key, { cost: e.target.value, newPriceCents: null, later: false })
               }
             />
-            <CostNotice
-              line={l}
-              rounding={settings.pricing.roundingCents}
-              onUpdate={(p) => set(l.key, { newPriceCents: p })}
-              onLater={() => set(l.key, { later: true })}
-            />
+            {!costError && (
+              <CostNotice
+                line={l}
+                rounding={settings.pricing.roundingCents}
+                onUpdate={(p) => set(l.key, { newPriceCents: p })}
+                onLater={() => set(l.key, { later: true })}
+              />
+            )}
           </>
         )}
         <Button variant="secondary" onClick={doneLine}>
@@ -747,13 +764,18 @@ function Receiving({
                 )}
               >
                 <span className="min-w-0 flex-1 truncate">{l.name}</span>
-                <span className="tnum text-sm text-texto-suave">
-                  {l.ordered != null ? qtyText(l.ordered, l.unit) : "—"} →{" "}
-                  <strong className="text-texto">
-                    {l.received === "" ? "…" : qtyText(num(l.received), l.unit)}
-                  </strong>
+                {/* Con palabras: "12 → …" no se entendía (ronda 3). */}
+                <span className="tnum text-right text-sm text-texto-suave">
+                  {l.ordered != null ? `Pedido ${qtyText(l.ordered, l.unit)} · ` : "Sin pedir · "}
+                  {l.received === "" ? (
+                    "falta contar"
+                  ) : (
+                    <strong className="text-texto">Llegó {qtyText(num(l.received), l.unit)}</strong>
+                  )}
                 </span>
-                {l.received !== "" && (
+                {l.received !== "" && lineProblem(l) ? (
+                  <TriangleAlert size={18} className="text-peligro" aria-label="Para revisar" />
+                ) : l.received !== "" ? (
                   <CircleCheck
                     size={18}
                     className={
@@ -763,7 +785,7 @@ function Receiving({
                     }
                     aria-hidden
                   />
-                )}
+                ) : null}
               </button>
             </li>
           ))}

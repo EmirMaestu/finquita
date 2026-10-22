@@ -47,17 +47,19 @@ export function SuggestedFlow() {
     },
     onError: (e) =>
       toast({
-        text: e instanceof ApiError ? e.message : "No se pudo guardar el pedido.",
+        text:
+          e instanceof ApiError || e instanceof Error ? e.message : "No se pudo guardar el pedido.",
         tone: "error",
       }),
   });
   return (
     <SuggestedPage
-      actions={(o, qty) => (
+      actions={(o, qty, problem) => (
         <div className="mt-1 flex flex-col gap-2">
           <Button
             icon={<MessageCircle size={18} />}
             busy={create.isPending}
+            disabled={Boolean(problem)}
             onClick={() => create.mutate({ o, qty, next: "send" })}
           >
             Enviar por WhatsApp
@@ -66,7 +68,7 @@ export function SuggestedFlow() {
             <Button
               variant="secondary"
               className="flex-1"
-              disabled={create.isPending}
+              disabled={create.isPending || Boolean(problem)}
               onClick={() => create.mutate({ o, qty, next: "draft" })}
             >
               Guardar borrador
@@ -75,7 +77,7 @@ export function SuggestedFlow() {
               variant="secondary"
               className="flex-1"
               icon={<Download size={18} />}
-              disabled={create.isPending}
+              disabled={create.isPending || Boolean(problem)}
               onClick={() => create.mutate({ o, qty, next: "pdf" })}
             >
               Descargar PDF

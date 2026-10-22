@@ -172,7 +172,14 @@ export function useScanner({ onScan, enabled = true, ...rest }: ScannerOptions) 
     const handler = (e: KeyboardEvent) => {
       if (releasing) return;
       target = e.target;
-      if (detector.keydown(e, { numeric: isNumericField(target), keypad: inKeypad(target) })) {
+      // "* 99999" en el buscador es una cantidad, no un código (ronda 3: abría el alta rápida).
+      const typingQty = target instanceof HTMLInputElement && /^\s*\*/.test(target.value);
+      if (
+        detector.keydown(e, {
+          numeric: isNumericField(target) || typingQty,
+          keypad: inKeypad(target),
+        })
+      ) {
         e.preventDefault();
         e.stopPropagation();
       }

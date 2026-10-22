@@ -54,7 +54,7 @@ export function SessionGate({ children }: { children: ReactNode }) {
   return (
     <SessionProvider me={me}>
       <SyncOnLogin me={me} />
-      <IdleLock />
+      <IdleLock onPassword={() => setScreen("password")} />
       <LiveShell
         base={{
           businessName: me.business?.name ?? "Mostrador",
@@ -74,7 +74,7 @@ const IDLE_MS = 5 * 60_000;
  * En un dispositivo habilitado, la sesión con PIN se bloquea sola tras unos minutos sin uso
  * (nunca en el medio de una venta).
  */
-function IdleLock() {
+function IdleLock({ onPassword }: { onPassword: () => void }) {
   const locked = useLockScreen();
   const reason = useLockReason();
   const signOut = useSignOut();
@@ -97,6 +97,8 @@ function IdleLock() {
     <LockScreen
       onCancel={reason === "switch" ? () => lockScreen.close() : undefined}
       onPassword={() => {
+        // Directo al email: sin pasar otra vez por "¿Quién sos?" (ronda 3).
+        onPassword();
         lockScreen.close();
         void signOut();
       }}

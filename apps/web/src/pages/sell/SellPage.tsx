@@ -519,7 +519,21 @@ export function SellPage() {
       }
       if (k === "*" && /^\d+$/.test(query.trim())) {
         stop();
-        sale.set({ multiplier: Number(query.trim()) });
+        const n = Number(query.trim());
+        if (n < 1 || n > 999) {
+          toast({ text: "Para multiplicar, de 1 a 999: por ejemplo 3 *", tone: "error" });
+          return setQuery("");
+        }
+        sale.set({ multiplier: n });
+        return setQuery("");
+      }
+      // "-5 *" o "1,5 *" no son un multiplicador: se dice, no se ignora (ronda 3).
+      if (k === "*" && /^-?[\d.,]+$/.test(query.trim())) {
+        stop();
+        toast({
+          text: "Para multiplicar, un número entero de 1 a 999: por ejemplo 3 *",
+          tone: "error",
+        });
         return setQuery("");
       }
       // "* 3" con una línea elegida: la deja en 3 unidades (el orden inverso de "3 *").
@@ -532,7 +546,16 @@ export function SellPage() {
           for (let i = 0; i < Math.abs(n - line.qty); i++)
             c = bumpQty(c, s.selected, n > line.qty ? 1 : -1);
           sale.setCart(c, s.selected);
-        }
+        } else if (line)
+          toast({ text: "La cantidad va de 1 a 999: por ejemplo * 3 y Enter", tone: "error" });
+        return setQuery("");
+      }
+      if (k === "Enter" && /^\*/.test(query.trim())) {
+        stop();
+        toast({
+          text: "Para cambiar la cantidad: elegí la línea y tipeá * 3 y Enter",
+          tone: "error",
+        });
         return setQuery("");
       }
       if (k === "Escape") {

@@ -11,11 +11,12 @@ import {
   signedMoney,
 } from "@mostrador/shared";
 import { useQuery } from "@tanstack/react-query";
-import { CircleAlert, EyeOff, Minus, Plus } from "lucide-react";
+import { CircleAlert, EyeOff } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { NoPermissionFor } from "../../app/guards";
 import { useCan, useMe } from "../../app/session";
+import { useViewport } from "../../app/useViewport";
 import { requestPin } from "../../auth/pinAuth";
 import { closeShiftLocal, loadShiftView } from "../../cash/local";
 import { useRegister } from "../../cash/useRegister";
@@ -69,6 +70,8 @@ export function CloseShiftPage() {
   const can = useCan("shift");
   const me = useMe();
   const navigate = useNavigate();
+  const { layout } = useViewport();
+  const desktop = layout === "desktop" || layout === "wide";
   const settings = useSettings();
   const reg = useRegister();
   const shift = reg.shift;
@@ -247,7 +250,18 @@ export function CloseShiftPage() {
         </h1>
         <span className="text-texto-suave">{reg.cashierName}</span>
       </div>
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[480px_minmax(0,1fr)]">
+      {/* Enter: en el conteo, "Ver resultado"; en el resultado, cerrar (ronda 3: con teclado). */}
+      <section
+        aria-label="Arqueo"
+        className="grid grid-cols-1 gap-4 lg:grid-cols-[480px_minmax(0,1fr)]"
+        onKeyDown={(e) => {
+          if (e.key !== "Enter" || !(e.target instanceof HTMLInputElement)) return;
+          e.preventDefault();
+          if (step === "count") {
+            if (v && !otherInvalid) setStep("result");
+          } else if (step === "result" && !leftError && !(needsNote && !note.trim())) void close();
+        }}
+      >
         <section
           aria-label="Contá el efectivo"
           className="flex flex-col overflow-hidden rounded-card border border-borde bg-superficie"
@@ -265,7 +279,7 @@ export function CloseShiftPage() {
               </span>
             )}
           </div>
-          {settings.cash.denominations.map((d) => {
+          {settings.cash.denominations.map((d, i) => {
             const n = counts[String(d)] ?? 0;
             return (
               <div
@@ -277,6 +291,7 @@ export function CloseShiftPage() {
                   big
                   label={`billetes de ${formatMoney(d * 100)}`}
                   value={n}
+                  autoFocus={desktop && i === 0 && step === "count"}
                   onChange={(x) => setCounts((c) => ({ ...c, [String(d)]: x }))}
                 />
                 <span className="tnum text-right text-texto-suave">
@@ -322,7 +337,7 @@ export function CloseShiftPage() {
             {step === "count" && (
               <div className="flex flex-wrap items-center gap-3">
                 <Button onClick={() => setStep("result")} disabled={!v || otherInvalid}>
-                  Ver resultado
+                  Ver resultado{desktop ? " · Enter" : ""}
                 </Button>
                 {!v && (
                   <span className="text-[13px] text-texto-suave">
@@ -371,14 +386,7 @@ export function CloseShiftPage() {
                               : "",
                         )}
                       >
-                        <span className="inline-flex items-center gap-1">
-                          {r.differenceCents > 0 ? (
-                            <Plus size={14} aria-hidden />
-                          ) : r.differenceCents < 0 ? (
-                            <Minus size={14} aria-hidden />
-                          ) : null}
-                          {signedMoney(r.differenceCents)}
-                        </span>
+                        {signedMoney(r.differenceCents)}
                       </td>
                     </tr>
                   ))}
@@ -405,6 +413,7 @@ export function CloseShiftPage() {
               <div className="mx-5 mt-3">
                 <TextField
                   label={needsNote ? "Comentario (obligatorio)" : "Comentario"}
+                  autoFocus
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
                   placeholder="¿Qué pasó?"
@@ -434,12 +443,13 @@ export function CloseShiftPage() {
                   locked={othersShift && isCashier}
                 >
                   {me?.member.role === "owner" ? "Cerrar turno" : "Cerrar turno y avisar al dueño"}
+                  {desktop ? " · Enter" : ""}
                 </Button>
               </div>
             </section>
           )}
         </div>
-      </div>
+      </section>
     </div>
   );
 }

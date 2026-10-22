@@ -1,4 +1,4 @@
-import { formatDate, formatMoney, formatQty, parseDecimal } from "@mostrador/shared";
+import { formatDate, formatMoney, formatQty, parseDecimal, plural } from "@mostrador/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CircleCheck, ScanBarcode } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -43,6 +43,15 @@ type CountLine = {
   differenceQty?: number | null;
   differenceCents?: number;
 };
+/**
+ * Una diferencia muy grande (+99.951 latas) casi siempre es un error de tipeo: se marca para
+ * revisarla en vez de pintarla de verde (ronda 3).
+ */
+function bigDifference(l: CountLine): boolean {
+  const d = Math.abs(l.differenceQty ?? 0);
+  return d >= 100 && d > 5 * Math.max(1, l.systemQty ?? 0);
+}
+
 type CountDetail = {
   id: string;
   name: string;
@@ -323,7 +332,9 @@ export function CountPage() {
         body: lineIds ? { lineIds } : {},
       }),
     onSuccess: (r) => {
-      toast({ text: `Aprobado: ${r.approved} productos, ${r.moved} con diferencia` });
+      toast({
+        text: `Aprobado: ${plural(r.approved, "producto", "productos")}, ${r.moved} con diferencia`,
+      });
       void qc.invalidateQueries({ queryKey: ["count", id] });
     },
   });
@@ -437,13 +448,16 @@ export function CountPage() {
                 <span
                   className={cx(
                     "tnum min-w-24 text-right text-sm font-semibold",
-                    l.differenceQty < 0
-                      ? "text-peligro"
-                      : l.differenceQty > 0
-                        ? "text-exito"
-                        : "text-texto-suave",
+                    bigDifference(l)
+                      ? "rounded bg-alerta-suave px-1.5 text-alerta"
+                      : l.differenceQty < 0
+                        ? "text-peligro"
+                        : l.differenceQty > 0
+                          ? "text-exito"
+                          : "text-texto-suave",
                   )}
                 >
+                  {bigDifference(l) && <span className="block text-xs">¿Seguro? Revisalo</span>}
                   {l.differenceQty > 0 ? "+" : l.differenceQty < 0 ? "−" : ""}
                   {formatQty(Math.abs(l.differenceQty), unit)}
                   {l.differenceCents !== undefined && l.differenceCents !== 0 && (
@@ -470,7 +484,7 @@ export function CountPage() {
             if (
               left &&
               !window.confirm(
-                `Quedan ${left} productos sin contar: van como "no contados". ¿Terminás igual? Lo revisa un encargado o el dueño.`,
+                `${left === 1 ? "Queda 1 producto" : `Quedan ${left} productos`} sin contar: van como "no contados". ¿Terminás igual? Lo revisa un encargado o el dueño.`,
               )
             )
               return;
@@ -500,10 +514,11 @@ export function CountPage() {
               );
               const plus = moved.filter((l) => (l.countedQty ?? 0) > (l.systemQty ?? 0)).length;
               const minus = moved.length - plus;
+              const big = moved.filter(bigDifference).length;
               if (
                 moved.length &&
                 !window.confirm(
-                  `Vas a ajustar el stock de ${moved.length} productos (${plus} suben, ${minus} bajan). No se deshace. ¿Aprobar todo?`,
+                  `Vas a ajustar el stock de ${plural(moved.length, "producto", "productos")} (${plus} ${plus === 1 ? "sube" : "suben"}, ${minus} ${minus === 1 ? "baja" : "bajan"}).${big ? ` ${big === 1 ? "Uno tiene" : `${big} tienen`} una diferencia muy grande: revisá que el número esté bien.` : ""} No se deshace. ¿Aprobar todo?`,
                 )
               )
                 return;

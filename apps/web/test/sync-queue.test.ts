@@ -314,6 +314,27 @@ describe("motor de sincronización", () => {
     await engine.idle();
   });
 
+  it("al volver internet avisa que se subió lo guardado sin conexión", async () => {
+    const server = fakeServer();
+    server.offline = true;
+    const client = new SyncClient(db, server.transport);
+    const notify = vi.fn();
+    const engine = new SyncEngine(client, { ...fakeEnv().env, notify });
+    await client.enqueue(sale());
+    await engine.kick();
+    expect(notify).not.toHaveBeenCalled();
+    server.offline = false;
+    await engine.kick();
+    expect(notify).toHaveBeenCalledWith(
+      "Volvió internet: se subió la venta guardada en el dispositivo.",
+    );
+    // Una sola vez: el ciclo siguiente no repite el aviso.
+    await engine.kick();
+    expect(notify).toHaveBeenCalledTimes(1);
+    setSyncStatus({ justDrained: false });
+    await engine.idle();
+  });
+
   it("un solo ciclo a la vez", async () => {
     const server = fakeServer();
     const client = new SyncClient(db, server.transport);

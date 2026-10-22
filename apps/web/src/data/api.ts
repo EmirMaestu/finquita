@@ -99,9 +99,16 @@ export async function api<T = unknown>(path: string, opts: RequestOptions = {}):
   }
   const text = await res.text();
   const data = text ? safeJson(text) : null;
-  if (res.status === 401 && !path.startsWith("/api/auth") && path !== "/api/me") {
+  // Entrar (email, PIN equivocado) también responde 401: eso no es una sesión vencida.
+  const expired =
+    res.status === 401 &&
+    Boolean(pinToken || sessionKnown) &&
+    !path.startsWith("/api/auth") &&
+    !path.startsWith("/api/pin/") &&
+    path !== "/api/me";
+  if (expired) {
     // Había sesión y ya no: se avisa en pantalla, sin tirar lo que se estaba cargando.
-    if (pinToken || sessionKnown) sessionExpired.set(true);
+    sessionExpired.set(true);
   }
   if (!res.ok) {
     const e = (data as { error?: { code?: string; message?: string; details?: unknown } } | null)
@@ -110,7 +117,10 @@ export async function api<T = unknown>(path: string, opts: RequestOptions = {}):
     throw new ApiError(
       res.status,
       e?.code ?? "error",
-      e?.message ?? "Algo salió mal. Probá de nuevo.",
+      // En el formulario se dice qué hacer, no "Iniciá sesión para seguir." (ronda 3).
+      expired
+        ? "Tu sesión venció: entrá de nuevo y volvé a guardar (lo cargado sigue acá)."
+        : (e?.message ?? "Algo salió mal. Probá de nuevo."),
       e?.details,
     );
   }

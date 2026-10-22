@@ -9,12 +9,14 @@ export function Stepper({
   min = 0,
   label,
   big,
+  autoFocus,
 }: {
   value: number;
   onChange: (v: number) => void;
   min?: number;
   label: string;
   big?: boolean;
+  autoFocus?: boolean;
 }) {
   const size = big ? "size-12" : "size-9";
   return (
@@ -34,6 +36,14 @@ export function Stepper({
       <input
         aria-label={label}
         inputMode="numeric"
+        ref={(el) => {
+          // Foco al aparecer (el primer billete del arqueo, con teclado).
+          if (el && autoFocus && document.activeElement !== el && !el.dataset.focused) {
+            el.dataset.focused = "1";
+            el.focus();
+          }
+        }}
+        onFocus={(e) => e.currentTarget.select()}
         value={value}
         onKeyDown={(e) => {
           if (e.key.length === 1 && /[^\d]/.test(e.key) && !e.ctrlKey && !e.metaKey) {

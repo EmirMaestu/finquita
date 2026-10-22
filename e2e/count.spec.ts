@@ -38,6 +38,41 @@ test("conteo chico: Nico cuenta a ciegas y el encargado aprueba", async ({ brows
   await expect(list).toContainText("Sistema 9");
   await expect(list).toContainText("−1");
   await julian.getByRole("button", { name: "Aprobar todo" }).click();
-  await expect(julian.getByText("Aprobado: 1 productos, 1 con diferencia")).toBeVisible();
+  await expect(julian.getByText("Aprobado: 1 producto, 1 con diferencia")).toBeVisible();
   await expect(julian.getByText("Aprobado", { exact: true })).toBeVisible();
+});
+
+test("conteo con una diferencia absurda: se marca para revisar y no se aprueba sin avisar", async ({
+  browser,
+}) => {
+  const julian = await browser.newPage();
+  await loginWithPin(julian, "Julián", "2345");
+  await julian.goto("/productos/conteos");
+  await julian.getByRole("button", { name: "Nuevo conteo" }).click();
+  const form = julian.getByRole("dialog", { name: "Nuevo conteo" });
+  await form.getByLabel("Nombre").fill("Aceites, número raro");
+  await form.getByLabel("Categoría").selectOption({ label: "Almacén › Aceites" });
+  await form.getByRole("button", { name: "Crear conteo" }).click();
+  await expect(julian.getByRole("heading", { name: "Aceites, número raro" })).toBeVisible();
+  await scanWithGun(julian, "7790000003011");
+  const entry = julian.getByRole("dialog", { name: "Aceite de girasol 1,5 L" });
+  await expect(entry).toBeVisible();
+  for (const d of "9999") await entry.getByRole("button", { name: d, exact: true }).click();
+  await entry.getByRole("button", { name: /Guardar/ }).click();
+  julian.on("dialog", (d) => d.accept());
+  await julian.getByRole("button", { name: "Terminar conteo" }).click();
+  await julian.reload();
+  const list = julian.getByRole("list", { name: "Productos del conteo" });
+  // Ronda 3: +9.990 latas no va en verde: se pide revisarlo.
+  await expect(list).toContainText("¿Seguro? Revisalo");
+  julian.removeAllListeners("dialog");
+  const asked = new Promise<string>((r) =>
+    julian.once("dialog", (d) => {
+      r(d.message());
+      void d.dismiss();
+    }),
+  );
+  await julian.getByRole("button", { name: "Aprobar todo" }).click();
+  expect(await asked).toContain("diferencia muy grande");
+  await expect(list).toContainText("¿Seguro? Revisalo");
 });

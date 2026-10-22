@@ -33,18 +33,26 @@ import { useWide } from "../../ui/useMedia";
 
 const SECTIONS = [
   ["negocio", "Negocio", "Nombre, dirección, CUIT, condición fiscal y horario"],
-  ["usuarios", "Usuarios", "Invitar, rol, PIN, permisos finos y desactivar"],
-  ["cajas", "Cajas", "Puestos de cobro, fondo, tolerancia, conteo ciego y billetes"],
+  ["usuarios", "Usuarios", "Invitar, rol, PIN, qué puede hacer cada uno y desactivar"],
+  [
+    "cajas",
+    "Cajas",
+    "Puestos de cobro, fondo, diferencia aceptada, contar sin ver lo esperado y billetes",
+  ],
   ["medios", "Medios de pago", "Activar, recargos, alias y CVU, QR y comisiones"],
   ["precios", "Precios y stock", "Redondeo, ganancia, descuentos y vender sin stock"],
   ["dispositivos", "Dispositivos", "Prueba de la pistola, impresora, planilla de códigos"],
   ["tickets", "Tickets", "Encabezado, pie, impresión automática y copias"],
-  ["whatsapp", "WhatsApp", "Fase 2: el bot. Hoy, pedidos con enlace"],
-  ["avisos", "Avisos", "Qué aviso le llega a cada rol, en la app y por push"],
+  ["whatsapp", "WhatsApp", "Hoy, pedidos a proveedores por WhatsApp. El bot llega más adelante"],
+  ["avisos", "Avisos", "Qué aviso le llega a cada rol, en la app y como notificación del celular"],
   ["facturacion", "Facturación electrónica", "Próximamente"],
   ["datos", "Datos", "Importar, exportar y copias de seguridad"],
   ["actividad", "Actividad", "Quién cambió qué y cuándo"],
-  ["funciones", "Funciones", "Modo simple: prendé lo que necesites"],
+  [
+    "funciones",
+    "Funciones",
+    "Prendé promociones, lotes y vencimientos, conteos de inventario y varias cajas",
+  ],
 ] as const;
 type SectionId = (typeof SECTIONS)[number][0];
 
@@ -553,6 +561,7 @@ function PaymentsSection({ s }: { s: SettingsMap }) {
   const save = useSave("payments");
   const [alias, setAlias] = useState(s.payments.alias);
   const [cvu, setCvu] = useState(s.payments.cvu);
+  const cvuError = cvu.trim() && !/^\d{22}$/.test(cvu.trim()) ? "Son 22 números, sin letras" : null;
   const fileRef = useRef<HTMLInputElement>(null);
   const methods = Object.keys(s.payments.methods) as (keyof SettingsMap["payments"]["methods"])[];
   return (
@@ -598,23 +607,29 @@ function PaymentsSection({ s }: { s: SettingsMap }) {
           </Card>
         );
       })}
-      <Card
-        title="Transferencia y QR"
-        footer={
-          <Button onClick={() => save.mutate({ alias: alias.trim(), cvu: cvu.trim() })}>
-            Guardar
-          </Button>
-        }
-      >
+      {/* Todo se guarda solo, como los interruptores: no hay un botón para unos y no para
+          otros (ronda 3). */}
+      <Card title="Transferencia y QR">
         <div className="grid gap-3 sm:grid-cols-2">
-          <TextField label="Alias" value={alias} onChange={(e) => setAlias(e.target.value)} />
+          <TextField
+            label="Alias"
+            value={alias}
+            onChange={(e) => setAlias(e.target.value)}
+            onBlur={() => alias.trim() !== s.payments.alias && save.mutate({ alias: alias.trim() })}
+          />
           <TextField
             label="CVU"
             inputMode="numeric"
             value={cvu}
-            onChange={(e) => setCvu(e.target.value.replace(/\D/g, "").slice(0, 22))}
+            onChange={(e) => setCvu(e.target.value)}
+            onBlur={() =>
+              !cvuError && cvu.trim() !== s.payments.cvu && save.mutate({ cvu: cvu.trim() })
+            }
+            error={cvuError}
+            hint="22 números."
           />
         </div>
+        <p className="m-0 text-xs text-texto-suave">Se guarda solo al salir de cada campo.</p>
         <div className="flex items-center gap-3">
           {s.payments.qrImage ? (
             <img
@@ -783,6 +798,9 @@ function ThisDevice() {
         <TextField
           label="Nombre del dispositivo"
           value={name}
+          // Viene con un nombre propuesto: al entrar se selecciona entero, así lo que se tipea
+          // lo reemplaza en vez de mezclarse (ronda 3: "Mac del mostMac del mostradorrador").
+          onFocus={(e) => e.currentTarget.select()}
           onChange={(e) => setName(e.target.value)}
         />
         <SelectField
@@ -956,7 +974,7 @@ function AlertsSection({ s }: { s: SettingsMap }) {
             {roles.map((r) => (
               <th key={r} className="px-2 py-2 text-center">
                 {ROLE_LABEL[r]}
-                <span className="block font-normal">app · push</span>
+                <span className="block font-normal">app · notificación</span>
               </th>
             ))}
           </tr>
@@ -976,7 +994,7 @@ function AlertsSection({ s }: { s: SettingsMap }) {
                   />{" "}
                   <input
                     type="checkbox"
-                    aria-label={`${ALERT_LABEL[k]}: ${ROLE_LABEL[r]} por push`}
+                    aria-label={`${ALERT_LABEL[k]}: ${ROLE_LABEL[r]} por notificación`}
                     checked={s.alerts[k].push.includes(r)}
                     onChange={(e) => toggle(k, "push", r, e.target.checked)}
                     className="size-4"
@@ -988,7 +1006,7 @@ function AlertsSection({ s }: { s: SettingsMap }) {
         </tbody>
       </table>
       <p className="m-0 px-4 py-3 text-xs text-texto-suave">
-        WhatsApp como canal se suma en la fase 2, con el bot.
+        WhatsApp como canal se suma más adelante, con el bot.
       </p>
     </section>
   );
@@ -1029,7 +1047,7 @@ function WhatsappSection() {
   const navigate = useNavigate();
   return (
     <Card
-      title="Fase 2"
+      title="Más adelante"
       footer={
         <Button variant="secondary" onClick={() => navigate("/compras/proveedores")}>
           Ir a Proveedores
@@ -1037,7 +1055,7 @@ function WhatsappSection() {
       }
     >
       <p className="m-0 text-sm">
-        El bot que manda los pedidos y responde consultas llega en la fase 2.
+        El bot que manda los pedidos y responde consultas llega más adelante.
       </p>
       <p className="m-0 text-sm text-texto-suave">
         Hoy, el WhatsApp de cada proveedor se carga en su ficha y el pedido sale con un botón que

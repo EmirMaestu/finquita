@@ -175,6 +175,39 @@ export type Category = {
   children: Category[];
 };
 
-export function fetchCategories(): Promise<Category[]> {
-  return api<Category[]>("/api/categories");
+/**
+ * Categorías del servidor; si no responde (sin internet o recién entrado), las de la copia local,
+ * así la lista nunca queda solo en "Sin categoría" (ronda 3).
+ */
+export async function fetchCategories(): Promise<Category[]> {
+  try {
+    return await api<Category[]>("/api/categories");
+  } catch (err) {
+    const rows = (await localDb().categories.toArray()) as unknown as {
+      id: string;
+      name: string;
+      parentId: string | null;
+      defaultMarginBp?: number | null;
+    }[];
+    if (!rows.length) throw err;
+    const node = (r: (typeof rows)[number]): Category => ({
+      id: r.id,
+      name: r.name,
+      parentId: r.parentId ?? null,
+      defaultMarginBp: r.defaultMarginBp ?? null,
+      products: 0,
+      children: [],
+    });
+    const byName = (a: Category, b: Category) => a.name.localeCompare(b.name, "es");
+    return rows
+      .filter((r) => !r.parentId)
+      .map((r) => ({
+        ...node(r),
+        children: rows
+          .filter((c) => c.parentId === r.id)
+          .map(node)
+          .sort(byName),
+      }))
+      .sort(byName);
+  }
 }

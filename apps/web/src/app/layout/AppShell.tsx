@@ -87,6 +87,7 @@ export function AppShell() {
     return (
       <div className="flex h-full flex-col bg-fondo" data-layout={layout} data-mode="counter">
         <CounterTopBar />
+        <SessionExpiredBar />
         <main className="min-h-0 flex-1">
           <Outlet />
         </main>
@@ -110,6 +111,8 @@ export function AppShell() {
   return (
     <div className="flex h-full flex-col bg-fondo" data-layout={layout}>
       <DesktopTopBar onToggleSidebar={toggle} />
+      {/* En la compu también: es la que pide el PIN cuando la sesión vence (ronda 3). */}
+      <SessionExpiredBar />
       <div className="flex min-h-0 flex-1">
         {collapsed ? <Rail /> : <Sidebar />}
         <main className="min-w-0 flex-1 overflow-y-auto">

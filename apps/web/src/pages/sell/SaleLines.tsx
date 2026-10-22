@@ -81,7 +81,9 @@ export function SaleTable({
                     >
                       <Minus size={16} />
                     </button>
-                    <span className="tnum min-w-12 text-center">{formatQty(l.qty, l.unit)}</span>
+                    <span className="tnum min-w-12 whitespace-nowrap text-center">
+                      {formatQty(l.qty, l.unit)}
+                    </span>
                     <button
                       type="button"
                       aria-label={`Sumar ${l.description}`}

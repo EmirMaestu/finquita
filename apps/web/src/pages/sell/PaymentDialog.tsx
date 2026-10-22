@@ -261,9 +261,12 @@ export function PaymentDialog({
             </div>
           )}
           <div className="flex flex-col gap-2">
-            <div className="text-xs font-semibold tracking-[.06em] text-texto-suave uppercase">
-              Pagos
-            </div>
+            {/* Sin pagos cargados, el rótulo solo no dice nada (ronda 3: "PAGOS" vacío). */}
+            {summary.length > 0 && (
+              <div className="text-xs font-semibold tracking-[.06em] text-texto-suave uppercase">
+                Pagos
+              </div>
+            )}
             {summary.map((p) => (
               <div
                 key={p.key}
@@ -328,7 +331,8 @@ export function PaymentDialog({
         </div>
 
         <div className="flex flex-col gap-4 p-5 lg:p-7">
-          <div className="hidden items-center justify-between lg:flex">
+          {/* Título arriba y la ayuda debajo: en la misma línea se encimaban (ronda 3). */}
+          <div className="hidden flex-col gap-0.5 lg:flex">
             <span className="text-xl font-semibold">Cobrar</span>
             <span className="text-[13px] text-texto-suave">
               Enter agrega el pago (y cobra si ya cubre el total) · Ctrl ⏎ cobra · Esc vuelve

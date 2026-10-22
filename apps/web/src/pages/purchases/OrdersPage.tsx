@@ -266,19 +266,19 @@ function OrderView({ id }: { id: string }) {
           <thead>
             <tr className="text-left text-xs text-texto-suave">
               <th className="py-1.5 font-semibold">Producto</th>
-              <th className="py-1.5 text-right font-semibold">Pedido</th>
-              <th className="py-1.5 text-right font-semibold">Confirmado</th>
-              <th className="py-1.5 text-right font-semibold">Recibido</th>
+              <th className="py-1.5 pl-3 text-right font-semibold">Pedido</th>
+              <th className="py-1.5 pl-3 text-right font-semibold">Confirmado</th>
+              <th className="py-1.5 pl-3 text-right font-semibold">Recibido</th>
             </tr>
           </thead>
           <tbody>
             {o.lines.map((l) => (
               <tr key={l.id} className="border-t border-borde">
                 <td className="py-1.5 pr-2">{l.description}</td>
-                <td className="tnum py-1.5 text-right">{q(l.qtyOrdered, l.unit)}</td>
+                <td className="tnum py-1.5 pl-3 text-right">{q(l.qtyOrdered, l.unit)}</td>
                 <td
                   className={cx(
-                    "tnum py-1.5 text-right",
+                    "tnum py-1.5 pl-3 text-right",
                     l.qtyConfirmed != null &&
                       l.qtyConfirmed !== l.qtyOrdered &&
                       "font-semibold text-alerta",
@@ -286,7 +286,7 @@ function OrderView({ id }: { id: string }) {
                 >
                   {q(l.qtyConfirmed, l.unit)}
                 </td>
-                <td className="tnum py-1.5 text-right">{q(l.qtyReceived, l.unit)}</td>
+                <td className="tnum py-1.5 pl-3 text-right">{q(l.qtyReceived, l.unit)}</td>
               </tr>
             ))}
           </tbody>
