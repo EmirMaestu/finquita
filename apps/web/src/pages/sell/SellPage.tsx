@@ -17,6 +17,7 @@ import {
   plural,
   removeLine,
   todayAR,
+  updateLine,
 } from "@mostrador/shared";
 import { Lock, Pause, ShieldAlert, User } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -92,30 +93,100 @@ type Done = {
 
 /** Descuento general (F4): porcentaje o monto; por encima del tope, el cajero necesita PIN. */
 /** Cantidad de una línea, tocando el número en el celular. */
+/**
+ * Tocar una línea: cantidad (con el teclado), descuento a ese producto, precio (con permiso) y
+ * nota (§ Vender, "Tocar una línea abre cantidad, descuento por ítem, precio y nota").
+ */
+/** Hora de la última tecla de un carácter: un Enter pegado a ella es el final de un escaneo. */
+let lastCharAt = 0;
+
 function QtyDialog({
   line,
+  canPrice,
   onApply,
   onClose,
 }: {
   line: CartLine | null;
-  onApply: (n: number) => void;
+  canPrice: boolean;
+  onApply: (
+    n: number,
+    extra: { discountCents: number; unitPriceCents: number; note: string | null },
+  ) => void;
   onClose: () => void;
 }) {
   const [typed, setTyped] = useState("");
-  const n = typed ? Number(typed) : null;
+  const [discount, setDiscount] = useState(
+    line?.discountCents ? moneyInput(line.discountCents) : "",
+  );
+  const [price, setPrice] = useState(line ? moneyInput(line.unitPriceCents) : "");
+  const [note, setNote] = useState(line?.note ?? "");
   if (!line) return null;
+  const n = typed ? Number(typed) : null;
+  const qty = n ?? line.qty;
+  const priceCents = canPrice ? parseMoney(price) : line.unitPriceCents;
+  const discountCents = discount.trim() ? parseMoney(discount) : 0;
+  const lineSub = Math.round((priceCents ?? 0) * qty);
+  const error =
+    priceCents === null || priceCents <= 0
+      ? "Precio: poné un monto, por ejemplo 4600"
+      : discountCents === null || discountCents < 0
+        ? "Descuento: poné un monto, por ejemplo 500"
+        : discountCents > lineSub
+          ? `El descuento no puede pasar de ${formatMoney(lineSub)}`
+          : note.length > 200
+            ? "La nota es muy larga (hasta 200 letras)"
+            : null;
+  const apply = () =>
+    !error &&
+    onApply(qty, {
+      discountCents: discountCents ?? 0,
+      unitPriceCents: priceCents ?? line.unitPriceCents,
+      note: note.trim() || null,
+    });
   return (
     <Sheet open onClose={onClose} title={line.description}>
-      <div className="flex flex-col gap-4" data-keypad>
-        <output aria-label="Cantidad" className="tnum text-center text-[40px] font-semibold">
-          {typed || line.qty}
-        </output>
-        <NumPad
-          big
-          onKey={(k) => setTyped((t) => (k === "back" ? t.slice(0, -1) : (t + k).slice(0, 3)))}
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4" data-keypad>
+          <output aria-label="Cantidad" className="tnum text-center text-[40px] font-semibold">
+            {typed || formatQty(line.qty, line.unit)}
+          </output>
+          {line.unit === "unit" && (
+            <NumPad
+              big
+              onKey={(k) => setTyped((t) => (k === "back" ? t.slice(0, -1) : (t + k).slice(0, 3)))}
+            />
+          )}
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <TextField
+            label="Descuento a este producto ($)"
+            inputMode="decimal"
+            value={discount}
+            onChange={(e) => setDiscount(e.target.value)}
+            placeholder="0"
+          />
+          {canPrice && (
+            <TextField
+              label={line.unit === "kg" ? "Precio por kg" : "Precio"}
+              inputMode="decimal"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+            />
+          )}
+        </div>
+        <TextField
+          label="Nota"
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          placeholder="Ej.: sin cortar"
         />
-        <Button size="xl" onClick={() => onApply(n ?? line.qty)}>
-          {n === 0 ? "Quitar de la venta" : `Dejar en ${n ?? line.qty}`}
+        {error && (
+          <div role="alert" className="text-[13px] font-semibold text-peligro">
+            {error}
+          </div>
+        )}
+        <Button size="xl" disabled={Boolean(error)} onClick={apply}>
+          {n === 0 ? "Quitar de la venta" : "Listo"}
         </Button>
       </div>
     </Sheet>
@@ -180,6 +251,7 @@ function DiscountDialog({
 export function SellPage() {
   const canSell = useCan("sell");
   const discountGrant = useGrant("discount_over_cap");
+  const priceGrant = useGrant("change_prices");
   const drawerGrant = useGrant("open_drawer");
   const me = useMe();
   const navigate = useNavigate();
@@ -347,6 +419,16 @@ export function SellPage() {
         return;
       }
       beep("error");
+      // Si el catálogo todavía no bajó nunca (recién habilitado), no es un código nuevo: se
+      // dice que se está bajando, en vez de ofrecer cargarlo.
+      if (!(await localDb().getMeta<string>("sync.cursor"))) {
+        toast({
+          text: "Todavía estamos bajando los productos. Probá de nuevo en un momento.",
+          tone: "info",
+          ms: 5000,
+        });
+        return;
+      }
       // El diálogo de código desconocido necesita la pantalla: la cámara se cierra.
       scanRouter.closeCamera();
       setDialog({ kind: "unknown", code });
@@ -482,6 +564,7 @@ export function SellPage() {
   useEffect(() => {
     if (dialog || done || locked) return;
     const h = (e: KeyboardEvent) => {
+      if (e.key.length === 1) lastCharAt = e.timeStamp;
       const s = sale.get();
       const idx = s.cart.lines.findIndex((l) => l.id === s.selected);
       const searching = query.trim().length > 0;
@@ -571,6 +654,13 @@ export function SellPage() {
       if (k === "Enter" && s.selected && warnings.some((w) => w.lineId === s.selected)) {
         stop();
         return setWarnings((w) => w.filter((x) => x.lineId !== s.selected));
+      }
+      // Enter con el buscador vacío abre la línea elegida (cantidad, descuento, precio y nota).
+      // (No el Enter con que termina un escaneo: ese llega pegado a los dígitos.)
+      if (k === "Enter" && s.selected && !query.trim() && e.timeStamp - lastCharAt > 150) {
+        stop();
+        const sel = s.selected;
+        return setDialog({ kind: "qty", lineId: sel });
       }
       if (k === "ArrowDown" || k === "ArrowUp") {
         stop();
@@ -728,12 +818,28 @@ export function SellPage() {
       {dialog?.kind === "qty" && (
         <QtyDialog
           line={cart.lines.find((l) => l.id === dialog.lineId) ?? null}
-          onApply={(n) => {
+          canPrice={priceGrant === "allow"}
+          onApply={async (n, extra) => {
             const line = sale.get().cart.lines.find((l) => l.id === dialog.lineId);
             if (line && n > 0 && n <= 999) {
+              // El descuento por producto sobre el tope pide PIN, como el de toda la venta.
+              const sub = cartTotals(sale.get().cart).subtotalCents;
+              if (
+                extra.discountCents > line.discountCents &&
+                overDiscountCap(sub, extra.discountCents, settings.pricing.discountCapBp) &&
+                discountGrant === "pin"
+              ) {
+                const a = await requestPin(
+                  "discount_over_cap",
+                  `Descuento de ${formatMoney(extra.discountCents)} en ${line.description}, sobre el tope. Pedido por ${me?.member.name}.`,
+                );
+                if (!a) return;
+              }
               let c = sale.get().cart;
-              for (let i = 0; i < Math.abs(n - line.qty); i++)
-                c = bumpQty(c, line.id, n > line.qty ? 1 : -1);
+              if (line.unit === "unit")
+                for (let i = 0; i < Math.abs(n - line.qty); i++)
+                  c = bumpQty(c, line.id, n > line.qty ? 1 : -1);
+              c = updateLine(c, line.id, extra);
               sale.setCart(c, line.id);
             }
             if (line && n === 0) sale.setCart(removeLine(sale.get().cart, line.id), null);
@@ -931,7 +1037,12 @@ export function SellPage() {
           <SaleTable
             lines={cart.lines}
             selected={selected}
-            onSelect={(id) => sale.set({ selected: id })}
+            // Tocar la línea ya elegida la abre (como Enter).
+            onSelect={(id) =>
+              sale.get().selected === id
+                ? setDialog({ kind: "qty", lineId: id })
+                : sale.set({ selected: id })
+            }
             warnings={warnings}
             onDismissWarning={(id) => setWarnings((w) => w.filter((x) => x.lineId !== id))}
             onQty={(id, dir) => sale.setCart(bumpQty(cart, id, dir))}

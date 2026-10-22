@@ -329,6 +329,8 @@ function FixedExpenses() {
 
 function ReportView({ kind }: { kind: Kind }) {
   const [params, setParams] = useSearchParams();
+  // En el celular, cada fila es una tarjeta (la tabla obligaba a desplazar de costado).
+  const wide = useWide();
   const meta = KINDS.find((k) => k.kind === kind);
   const q = useReport(kind, params);
   const preset = (params.get("preset") as PeriodPreset | null) ?? "month";
@@ -430,7 +432,7 @@ function ReportView({ kind }: { kind: Kind }) {
               </div>
             ))}
             <span className="flex-1" />
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button
                 variant="secondary"
                 icon={<FileSpreadsheet size={18} />}
@@ -504,6 +506,52 @@ function ReportView({ kind }: { kind: Kind }) {
               </div>
               {!t.rows.length ? (
                 <div className="px-4 py-4 text-sm text-texto-suave">Nada en este período.</div>
+              ) : !wide ? (
+                <ul className="m-0 list-none p-0" aria-label={t.title}>
+                  {t.rows
+                    .slice(0, 200)
+                    .map((row, i) => ({ row, rowKey: `${t.key}:${i}` }))
+                    .map(({ row, rowKey }) => {
+                      const [first, ...rest] = t.columns;
+                      const drill = t.drill ? (row[t.drill.column] as string | null) : null;
+                      const go =
+                        drill && drill !== "none" && t.drill
+                          ? () => set({ [t.drill?.param ?? "categoryId"]: drill })
+                          : undefined;
+                      const body = (
+                        <>
+                          <span className="block font-semibold">
+                            {first ? fmt(row[first.key] ?? null, first.kind) : ""}
+                          </span>
+                          <span className="mt-1 grid grid-cols-2 gap-x-3 gap-y-0.5 text-[13px]">
+                            {rest.map((c) => (
+                              <span key={c.key} className="contents">
+                                <span className="text-texto-suave">{c.label}</span>
+                                <span className="tnum text-right">
+                                  {fmt(row[c.key] ?? null, c.kind)}
+                                </span>
+                              </span>
+                            ))}
+                          </span>
+                        </>
+                      );
+                      return (
+                        <li key={rowKey} className="border-t border-borde first:border-t-0">
+                          {go ? (
+                            <button
+                              type="button"
+                              onClick={go}
+                              className="w-full px-4 py-3 text-left"
+                            >
+                              {body}
+                            </button>
+                          ) : (
+                            <div className="px-4 py-3">{body}</div>
+                          )}
+                        </li>
+                      );
+                    })}
+                </ul>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse text-sm">

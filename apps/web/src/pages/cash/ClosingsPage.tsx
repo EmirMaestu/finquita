@@ -11,6 +11,7 @@ import {
   toDateStr,
 } from "@mostrador/shared";
 import { useQuery } from "@tanstack/react-query";
+import { ChevronLeft } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { NoPermissionFor } from "../../app/guards";
@@ -21,6 +22,7 @@ import { Button } from "../../ui/Button";
 import { FilterChip } from "../../ui/Chip";
 import { cx } from "../../ui/cx";
 import { EmptyState, ErrorState, SkeletonList } from "../../ui/States";
+import { useWide } from "../../ui/useMedia";
 import { ClosingReceipt } from "./ClosingReceipt";
 
 type ShiftRow = {
@@ -92,6 +94,7 @@ export function ClosingsPage() {
   const can = useCan("shift");
   const [daily, setDaily] = useState(false);
   const [open, setOpen] = useState<string | null>(null);
+  const wide = useWide();
   const q = useQuery({
     queryKey: ["closings"],
     queryFn: () => api<ShiftRow[]>("/api/shifts?limit=60"),
@@ -139,7 +142,11 @@ export function ClosingsPage() {
       ) : (
         <div className={cx("grid gap-4", open ? "lg:grid-cols-[minmax(0,1fr)_420px]" : "")}>
           <ul
-            className="m-0 list-none overflow-hidden rounded-card border border-borde bg-superficie p-0"
+            className={cx(
+              "m-0 list-none overflow-hidden rounded-card border border-borde bg-superficie p-0",
+              // En el celular, el comprobante va solo, con "volver" (antes quedaba abajo de todo).
+              !wide && open && !daily && "hidden",
+            )}
             aria-label="Cierres"
           >
             <li
@@ -216,6 +223,16 @@ export function ClosingsPage() {
               aria-label="Comprobante"
               className="rounded-card border border-borde bg-superficie"
             >
+              {!wide && (
+                <Button
+                  variant="ghost"
+                  className="m-2"
+                  icon={<ChevronLeft size={18} />}
+                  onClick={() => setOpen(null)}
+                >
+                  Cierres
+                </Button>
+              )}
               <Receipt key={open} id={open} />
             </aside>
           )}

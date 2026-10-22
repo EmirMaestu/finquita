@@ -79,8 +79,9 @@ type SaleRow = {
   local?: boolean;
 };
 
+/** Medio o estado; se combina con el día y el cajero (antes cada filtro borraba al otro). */
 const FILTERS = [
-  { id: "today", label: "Hoy" },
+  { id: "all", label: "Todas" },
   { id: "cash", label: "Efectivo" },
   { id: "card", label: "Tarjeta" },
   { id: "account", label: "Fiado" },
@@ -468,19 +469,38 @@ export function SalesHistoryPage() {
   const navigate = useNavigate();
   const params = useParams();
   const { version } = useSyncStatus();
-  const [filter, setFilter] = useState<(typeof FILTERS)[number]["id"]>("today");
+  const [filter, setFilter] = useState<(typeof FILTERS)[number]["id"]>("all");
+  // Día: hoy, una fecha elegida o todas.
+  const [day, setDay] = useState<string | null>(todayAR());
+  const [memberId, setMemberId] = useState("");
+  const me = useMe();
+  const seesOthers = me?.member.role !== "cashier";
+  // Las personas salen de la copia local (también sin conexión).
+  const people = useQuery({
+    queryKey: ["local-members"],
+    queryFn: async () =>
+      ((await localDb().members.toArray()) as unknown as { id: string; name: string }[]).sort(
+        (a, b) => a.name.localeCompare(b.name, "es"),
+      ),
+    enabled: can && seesOthers,
+  });
   const [number, setNumber] = useState("");
   const [open, setOpen] = useState<string | null>(null);
   const q = useQuery({
-    queryKey: ["sales", filter, number, version],
+    queryKey: ["sales", filter, day, memberId, number, version],
     // Sin permiso de vender no se pide nada (eran ocho 403 con el repositor).
     enabled: can,
     placeholderData: (p) => p,
     queryFn: async (): Promise<{ rows: SaleRow[]; offline: boolean }> => {
       const p = new URLSearchParams();
       if (number) p.set("number", number);
-      else if (filter === "today") p.set("from", todayAR());
+      else if (day) {
+        p.set("from", day);
+        p.set("to", day);
+      }
+      if (memberId) p.set("memberId", memberId);
       if (filter === "cash") p.set("method", "cash");
+      if (filter === "card") p.set("method", "card");
       if (filter === "account") p.set("method", "account");
       if (filter === "voided") p.set("status", "voided");
       if (filter === "returned") p.set("status", "returned");
@@ -553,6 +573,36 @@ export function SalesHistoryPage() {
           </FilterChip>
         ))}
       </div>
+      <div className="flex flex-wrap items-end gap-2">
+        <FilterChip active={day === todayAR()} onClick={() => setDay(todayAR())}>
+          Hoy
+        </FilterChip>
+        <FilterChip active={day === null} onClick={() => setDay(null)}>
+          Todos los días
+        </FilterChip>
+        <TextField
+          label="Fecha"
+          type="date"
+          value={day ?? ""}
+          onChange={(e) => setDay(e.target.value || null)}
+          className="w-44"
+        />
+        {seesOthers && (
+          <SelectField
+            label="Cajero"
+            value={memberId}
+            onChange={(e) => setMemberId(e.target.value)}
+            className="w-44"
+          >
+            <option value="">Todos</option>
+            {(people.data ?? []).map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.name}
+              </option>
+            ))}
+          </SelectField>
+        )}
+      </div>
       {q.data?.offline && (
         <OfflineBanner>Sin conexión: se ven las ventas de este dispositivo.</OfflineBanner>
       )}
@@ -570,9 +620,9 @@ export function SalesHistoryPage() {
           ) : !rows.length ? (
             <EmptyState
               title="No hay ventas con ese filtro"
-              body={filter === "today" ? "Todavía no hay ventas hoy." : undefined}
+              body={day === todayAR() ? "Todavía no hay ventas hoy." : undefined}
               action={
-                filter === "today" ? (
+                day === todayAR() ? (
                   <Button onClick={() => navigate("/vender")}>Nueva venta</Button>
                 ) : undefined
               }

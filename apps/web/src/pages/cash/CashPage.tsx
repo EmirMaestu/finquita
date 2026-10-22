@@ -223,7 +223,8 @@ export function CashPage() {
           {formatTime(new Date(shift.openedAt))} · {elapsed(shift.openedAt)}
         </span>
         <span className="flex-1" />
-        <div className="flex flex-wrap gap-2">
+        {/* En el celular: Retiro, Gasto e Ingreso en una fila de tres y el cierre a lo ancho. */}
+        <div className="grid w-full grid-cols-3 gap-2 lg:flex lg:w-auto lg:flex-wrap">
           <Button variant="secondary" onClick={() => setSheet("withdrawal")}>
             Retiro{desktop ? " · F9" : ""}
           </Button>
@@ -233,11 +234,20 @@ export function CashPage() {
           <Button variant="secondary" onClick={() => setSheet("income")}>
             Ingreso
           </Button>
-          <Button variant="ghost" onClick={() => navigate("/caja/historial")}>
+          <Button
+            variant="ghost"
+            className="col-span-3 lg:col-span-1"
+            onClick={() => navigate("/caja/historial")}
+          >
             Cierres
           </Button>
           {/* En la compu, F8 y Enter llevan del mostrador al cierre (ronda 3). */}
-          <Button autoFocus={desktop} onClick={() => navigate("/caja/cierre")}>
+          <Button
+            size={desktop ? "md" : "xl"}
+            className="col-span-3 lg:col-span-1"
+            autoFocus={desktop}
+            onClick={() => navigate("/caja/cierre")}
+          >
             Arqueo y cierre{desktop ? " · Enter" : ""}
           </Button>
         </div>

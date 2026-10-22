@@ -175,3 +175,24 @@ test("efectivo rápido con el teclado: Ctrl+3 suma $ 10.000", async ({ page }) =
   await expect(pay.getByRole("status", { name: "Monto" })).toHaveText("$ 10.000");
   await page.keyboard.press("Escape");
 });
+
+test("Enter abre la línea elegida: descuento a ese producto y nota (T62)", async ({ page }) => {
+  await loginWithPin(page, "Tomás", "4567");
+  await page.goto("/vender");
+  await ensureShiftOpen(page);
+  await expect(page.getByRole("button", { name: /Pan francés/ })).toBeVisible({ timeout: 20_000 });
+  await scanWithGun(page, "7790000001017");
+  await expect(page.getByRole("status", { name: "Total" })).toHaveText("$ 4.600");
+  // El Enter del escaneo no abre nada; uno tipeado después, sí.
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await page.waitForTimeout(300);
+  await page.keyboard.press("Enter");
+  const line = page.getByRole("dialog", { name: /Coca-Cola/ });
+  await expect(line).toBeVisible();
+  // Dentro del tope de descuento sin PIN.
+  await line.getByLabel("Descuento a este producto ($)").fill("300");
+  await line.getByLabel("Nota").fill("Lata abollada");
+  await line.getByRole("button", { name: "Listo" }).click();
+  await expect(line).toBeHidden();
+  await expect(page.getByRole("status", { name: "Total" })).toHaveText("$ 4.300");
+});

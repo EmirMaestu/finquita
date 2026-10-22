@@ -97,6 +97,23 @@ export function CloseShiftPage() {
     if (shift && me && loadedFor.current === shift.id && step !== "done")
       saveDraft(shift.id, me.member.id, { counts, other, note, left });
   }, [shift, me, step, counts, other, note, left]);
+  // Esc: del resultado vuelve a contar; contando, vuelve a Caja (lo contado queda guardado).
+  useEffect(() => {
+    if (step === "done") return;
+    const h = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || document.querySelector("[role=dialog]")) return;
+      e.preventDefault();
+      if (step === "result") setStep("count");
+      else navigate("/caja");
+    };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [step, navigate]);
+  // Al pedir el resultado, se lleva la pantalla hasta él (en el celular quedaba abajo de todo).
+  useEffect(() => {
+    if (step === "result")
+      document.querySelector("[aria-label='Resultado']")?.scrollIntoView?.({ block: "start" });
+  }, [step]);
   const view = useQuery({
     queryKey: ["shift-close", shift?.id],
     queryFn: () => (shift ? loadShiftView(shift) : null),

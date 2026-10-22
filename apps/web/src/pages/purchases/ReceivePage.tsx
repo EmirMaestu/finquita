@@ -599,26 +599,25 @@ function Receiving({
         </div>
         <div className="flex flex-wrap gap-2">
           {missing > 0 && <Chip tone="alerta">Faltan {qtyText(missing, l.unit)}</Chip>}
-          <button
-            type="button"
+          {/* Botones de verdad (48 px, con estado), no chips con un botón invisible alrededor. */}
+          <Button
+            variant="secondary"
+            aria-pressed={ex.damaged}
+            className={cx(ex.damaged && "border-peligro text-peligro")}
             onClick={() => setExtras((x) => ({ ...x, [l.key]: { ...ex, damaged: !ex.damaged } }))}
           >
-            <Chip size="md" tone={ex.damaged ? "peligro" : "neutro"}>
-              Dañado
-            </Chip>
-          </button>
-          <button
-            type="button"
-            onClick={() => setExtras((x) => ({ ...x, [l.key]: { ...ex, lot: !ex.lot } }))}
-          >
-            <Chip
-              size="md"
-              tone={ex.lot || l.tracksExpiry ? "info" : "neutro"}
-              className={settings.features.lots || l.tracksExpiry ? "" : "hidden"}
+            Dañado
+          </Button>
+          {(settings.features.lots || l.tracksExpiry) && (
+            <Button
+              variant="secondary"
+              aria-pressed={ex.lot || l.tracksExpiry}
+              className={cx((ex.lot || l.tracksExpiry) && "border-info text-info")}
+              onClick={() => setExtras((x) => ({ ...x, [l.key]: { ...ex, lot: !ex.lot } }))}
             >
               Lote y vencimiento
-            </Chip>
-          </button>
+            </Button>
+          )}
         </div>
         {ex.damaged && (
           <TextField

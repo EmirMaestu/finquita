@@ -1,6 +1,6 @@
 import { formatDate, formatMoney, formatQty, ORDER_STATUS } from "@mostrador/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { MessageCircle, Star } from "lucide-react";
+import { ChevronLeft, MessageCircle, Star } from "lucide-react";
 import { useState } from "react";
 import { NoPermissionFor } from "../../app/guards";
 import { useCan } from "../../app/session";
@@ -11,6 +11,7 @@ import { cx } from "../../ui/cx";
 import { SelectField, TextField } from "../../ui/Field";
 import { Sheet } from "../../ui/Sheet";
 import { EmptyState, ErrorState, SkeletonList } from "../../ui/States";
+import { useWide } from "../../ui/useMedia";
 import {
   type SupplierLink,
   SupplierLinkSheet,
@@ -360,6 +361,8 @@ export function SuppliersPage() {
   const canEdit = useCan("build_orders");
   const [open, setOpen] = useState<string | null>(null);
   const [form, setForm] = useState<{ s: Supplier | null } | null>(null);
+  // En el celular la ficha va sola, a pantalla completa, con "volver" (antes quedaba abajo de todo).
+  const wide = useWide();
   const q = useQuery({ queryKey: ["suppliers"], queryFn: () => api<Supplier[]>("/api/suppliers") });
   const total = (q.data ?? []).reduce((s, x) => s + (x.balanceCents ?? 0), 0);
   if (!canSee) return <NoPermissionFor perm="count_receive" />;
@@ -397,7 +400,10 @@ export function SuppliersPage() {
       ) : (
         <div className={cx("grid gap-4", open ? "lg:grid-cols-[minmax(0,1fr)_420px]" : "")}>
           <ul
-            className="m-0 list-none overflow-hidden rounded-card border border-borde bg-superficie p-0"
+            className={cx(
+              "m-0 list-none overflow-hidden rounded-card border border-borde bg-superficie p-0",
+              !wide && open && "hidden",
+            )}
             aria-label="Proveedores"
           >
             {q.data.map((s) => (
@@ -451,6 +457,16 @@ export function SuppliersPage() {
               aria-label="Ficha del proveedor"
               className="rounded-card border border-borde bg-superficie"
             >
+              {!wide && (
+                <Button
+                  variant="ghost"
+                  className="m-2"
+                  icon={<ChevronLeft size={18} />}
+                  onClick={() => setOpen(null)}
+                >
+                  Proveedores
+                </Button>
+              )}
               <SupplierDetailView key={open} id={open} onEdit={(s) => setForm({ s })} />
             </aside>
           )}

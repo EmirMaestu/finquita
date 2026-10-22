@@ -300,7 +300,7 @@ export function SuggestedPage({
                       <li
                         key={l.productId}
                         className={cx(
-                          "flex items-center gap-3 border-t border-borde px-4 py-2.5",
+                          "flex flex-wrap items-center gap-3 border-t border-borde px-4 py-2.5",
                           focus === l.productId && "bg-primario-suave/50",
                         )}
                       >
@@ -320,6 +320,12 @@ export function SuggestedPage({
                           </span>
                         </button>
                         {qtyInput(l, i)}
+                        {/* En el celular la cuenta va debajo del producto elegido, no al final. */}
+                        {focus === l.productId && (
+                          <p className="m-0 w-full basis-full text-[13px] text-texto-suave">
+                            {l.explanation}
+                          </p>
+                        )}
                       </li>
                     ))}
                   </ul>
@@ -336,7 +342,7 @@ export function SuggestedPage({
                 </div>
               </section>
               <aside className="flex flex-col gap-3">
-                {focused && (
+                {focused && wide && (
                   <section
                     aria-label="La cuenta"
                     className="rounded-card border border-borde bg-superficie p-4 text-sm"

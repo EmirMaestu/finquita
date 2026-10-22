@@ -162,7 +162,7 @@ Cinco usuarios nuevos recorrieron la app (docs/QA-USUARIOS.md). Las tareas agrup
   Listo cuando: un test busca en apps/web las palabras en inglés de la lista y no las encuentra.
 - [x] T61 · **Auditoría UI: lo que bloquea.** Búsqueda global (Ctrl+K y lupa); el bloqueo por inactividad no se destraba sin PIN; cliente e historial desde Vender en el celular; pantalla de categorías; errores visibles en Cambiar categoría; "Elegir tickets" con texto. Cierra Q92 a Q98.
   Listo cuando: cada uno tiene su test.
-- [~] T62 · **Auditoría UI y cámara: lo que confunde.** Los Q99 a Q159 de docs/QA-USUARIOS.md, por pantalla, en el orden de la tabla.
+- [x] T62 · **Auditoría UI y cámara: lo que confunde.** Los Q99 a Q159 de docs/QA-USUARIOS.md, por pantalla, en el orden de la tabla. Revisados uno por uno contra el código el 22/10. Q100 queda para la prueba en el iPhone (PRUEBA-MANUAL) y Q139 a medias (el cierre sigue en una página; DECISIONS).
   Listo cuando: cada Q tildado en QA-USUARIOS.md con su test.
 - [x] T63 · **Auditoría UI: detalles.** Los Q160 a Q207, por pantalla. Quedan a medias Q174, Q187, Q198, Q200 y Q204, y abierto Q202 (filtros y deslizar en Productos); Q163 y Q184 no se cambian (DECISIONS).
   Listo cuando: cada Q tildado en QA-USUARIOS.md.

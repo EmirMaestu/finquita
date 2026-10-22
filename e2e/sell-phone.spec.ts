@@ -44,7 +44,7 @@ test("en el iPhone, tocar la cantidad abre el teclado y la deja en 3", async ({ 
   await page.getByRole("button", { name: /Cantidad de Huevos maple/ }).click();
   const dialog = page.getByRole("dialog", { name: /Huevos maple/ });
   await dialog.getByRole("button", { name: "3", exact: true }).click();
-  await dialog.getByRole("button", { name: "Dejar en 3" }).click();
+  await dialog.getByRole("button", { name: "Listo" }).click();
   await expect(
     page.getByRole("button", { name: /Cantidad de Huevos maple x 30: 3/ }),
   ).toBeVisible();

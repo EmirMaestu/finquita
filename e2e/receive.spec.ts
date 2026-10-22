@@ -57,12 +57,10 @@ test("recepción del pedido 0042 en el iPhone: falta yogur y el dueño completa 
 
   const leche = await scan("7790000002014", "Leche entera 1 L sachet");
   await leche.getByLabel("Recibido Leche entera 1 L sachet").fill("24");
-  await leche.getByRole("button", { name: "Lote y vencimiento" }).click();
-  await leche.getByLabel("Lote").fill("L-881");
-  // Una fecha que no vence nunca en la prueba (las de más de 30 días atrás se rechazan).
-  const vence = new Date(Date.now() + 60 * 86_400_000).toISOString().slice(0, 10);
-  await leche.getByLabel("Vence").fill(vence);
-  await leche.getByRole("button", { name: "Listo" }).click();
+  // Con lotes apagados (modo simple) no se ofrece "Lote y vencimiento" (antes había un botón
+  // invisible que igual abría los campos).
+  await expect(leche.getByRole("button", { name: "Lote y vencimiento" })).toHaveCount(0);
+  await leche.getByRole("button", { name: /^Listo/ }).click();
 
   await nico.getByRole("button", { name: "Todo lo demás como pedido" }).click();
   await expect(nico.getByRole("status", { name: "Avance" })).toHaveText("14 de 14");

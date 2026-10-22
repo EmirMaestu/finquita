@@ -25,6 +25,7 @@ import { guessDevice } from "../../lib/device";
 import { scanRouter } from "../../scan/GlobalScan";
 import { syncEngine } from "../../sync";
 import { Button } from "../../ui/Button";
+import { Checkbox } from "../../ui/Checkbox";
 import { Chip } from "../../ui/Chip";
 import { cx } from "../../ui/cx";
 import { SelectField, TextField, Toggle } from "../../ui/Field";
@@ -976,6 +977,39 @@ function AlertsSection({ s }: { s: SettingsMap }) {
     const next = on ? [...new Set([...row[ch], r])] : row[ch].filter((x) => x !== r);
     save.mutate({ [k]: { ...row, [ch]: next } });
   };
+  const wide = useWide();
+  // En el celular, un bloque por aviso con una fila por rol y casillas de 44 px (la tabla de
+  // ocho columnas no entraba).
+  if (!wide)
+    return (
+      <section aria-label="Matriz de avisos" className="flex flex-col gap-3">
+        {ALERT_KINDS.map((k) => (
+          <div key={k} className="rounded-card border border-borde bg-superficie px-4 py-3">
+            <div className="mb-1 font-semibold">{ALERT_LABEL[k]}</div>
+            {roles.map((r) => (
+              <div key={r} className="flex items-center gap-3 border-t border-borde py-1">
+                <span className="flex-1 text-sm">{ROLE_LABEL[r]}</span>
+                <Checkbox
+                  showLabel
+                  label="App"
+                  checked={s.alerts[k].app.includes(r)}
+                  onChange={(v) => toggle(k, "app", r, v)}
+                />
+                <Checkbox
+                  showLabel
+                  label="Notificación"
+                  checked={s.alerts[k].push.includes(r)}
+                  onChange={(v) => toggle(k, "push", r, v)}
+                />
+              </div>
+            ))}
+          </div>
+        ))}
+        <p className="m-0 text-xs text-texto-suave">
+          WhatsApp como canal se suma más adelante, con el bot.
+        </p>
+      </section>
+    );
   return (
     <section
       aria-label="Matriz de avisos"

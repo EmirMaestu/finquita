@@ -646,7 +646,10 @@ export function OrdersPage() {
         </nav>
       )}
       <div
-        className={cx("grid gap-4", wide && id ? "grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]" : "")}
+        className={cx(
+          "grid gap-4",
+          wide && id ? "grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]" : "grid-cols-[minmax(0,1fr)]",
+        )}
       >
         {showList && (
           <div className="flex flex-col gap-4">

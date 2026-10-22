@@ -186,6 +186,9 @@ describe("historial de ventas", () => {
     });
     expect((await julian.get("/api/sales?status=voided")).body).toEqual([]);
     expect((await julian.get("/api/sales?method=debit")).body).toEqual([]);
+    // "Tarjeta" es débito o crédito: una venta en efectivo no aparece.
+    expect((await julian.get("/api/sales?method=card")).body).toEqual([]);
+    expect((await julian.get("/api/sales?method=cash")).body.length).toBeGreaterThan(0);
     expect(
       (await tomas.get("/api/sales")).body.every(
         (s: { memberId: string }) => s.memberId === byNumber.body[0].memberId,
