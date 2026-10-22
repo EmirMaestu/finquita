@@ -9,6 +9,7 @@ import { Button } from "../../ui/Button";
 import { Chip } from "../../ui/Chip";
 import { ErrorState, Skeleton } from "../../ui/States";
 import { Tabs } from "../../ui/Tabs";
+import { useWide } from "../../ui/useMedia";
 import { AdjustStockSheet } from "./AdjustStockSheet";
 import { ProductChips, StockChip } from "./StockChip";
 import {
@@ -111,6 +112,15 @@ export function ProductDetailView({
   onBack?: () => void;
 }) {
   const [tab, setTab] = useState<Tab>("general");
+  // En el celular, secciones apiladas (§ Productos 2); en la compu, pestañas.
+  const stacked = !useWide();
+  const show = (t: Tab) => stacked || tab === t;
+  const head = (label: string) =>
+    stacked ? (
+      <h3 className="m-0 mt-3 text-xs font-semibold tracking-[.06em] text-texto-suave uppercase">
+        {label}
+      </h3>
+    ) : null;
   const seeCosts = useCan("view_costs");
   const canEdit = useCan("change_prices");
   const canAdjust = useCan("adjust_stock");
@@ -133,6 +143,13 @@ export function ProductDetailView({
   const unit = p.saleUnit === "unit" ? "unit" : "kg";
   const primary = p.suppliers.find((s) => s.isPrimary) ?? p.suppliers[0];
   const lastChange = p.history.find((h) => h.action === "product.price_changed");
+  // "Último cambio 28/09 · +6 %": cuánto cambió el precio, no solo cuándo.
+  const before = Number(lastChange?.before?.priceCents);
+  const after = Number(lastChange?.after?.priceCents);
+  const lastChangePct =
+    before > 0 && after > 0 && after !== before
+      ? Math.round(((after - before) / before) * 100)
+      : null;
 
   return (
     <div className="flex h-full flex-col">
@@ -164,20 +181,23 @@ export function ProductDetailView({
           </div>
         </div>
       </div>
-      <Tabs
-        className="mt-3.5 px-4 lg:px-[18px]"
-        value={tab}
-        onChange={setTab}
-        tabs={[
-          { id: "general", label: "General" },
-          { id: "precio", label: "Precio" },
-          { id: "stock", label: "Stock" },
-          { id: "proveedores", label: "Proveedores" },
-          { id: "historial", label: "Historial" },
-        ]}
-      />
+      {!stacked && (
+        <Tabs
+          className="mt-3.5 px-4 lg:px-[18px]"
+          value={tab}
+          onChange={setTab}
+          tabs={[
+            { id: "general", label: "General" },
+            { id: "precio", label: "Precio" },
+            { id: "stock", label: "Stock" },
+            { id: "proveedores", label: "Proveedores" },
+            { id: "historial", label: "Historial" },
+          ]}
+        />
+      )}
       <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto px-4 py-3.5 text-[13px] lg:px-[18px]">
-        {tab === "general" && (
+        {head("General")}
+        {show("general") && (
           <div>
             <Row label="Tipo">
               {p.kind === "service"
@@ -212,7 +232,8 @@ export function ProductDetailView({
             )}
           </div>
         )}
-        {tab === "precio" && (
+        {head("Precio")}
+        {show("precio") && (
           <>
             <div className="grid grid-cols-2 gap-2.5">
               {seeCosts && (
@@ -246,6 +267,19 @@ export function ProductDetailView({
               <>
                 <div className="flex justify-between text-xs text-texto-suave">
                   <span>Costo y precio</span>
+                  {/* Qué línea es cada una. */}
+                  <span className="flex items-center gap-3">
+                    <span className="inline-flex items-center gap-1">
+                      <span aria-hidden className="inline-block h-0.5 w-4 bg-primario" /> Precio
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                      <span
+                        aria-hidden
+                        className="inline-block w-4 border-t-2 border-dashed border-texto-apagado"
+                      />{" "}
+                      Costo
+                    </span>
+                  </span>
                 </div>
                 <PriceChart p={p} />
               </>
@@ -266,12 +300,16 @@ export function ProductDetailView({
               {lastChange && (
                 <Row label="Último cambio">
                   {formatDate(new Date(lastChange.createdAt)).slice(0, 5)}
+                  {lastChangePct !== null
+                    ? ` · ${lastChangePct > 0 ? "+" : "−"}${Math.abs(lastChangePct)} %`
+                    : ""}
                 </Row>
               )}
             </div>
           </>
         )}
-        {tab === "stock" && (
+        {head("Stock")}
+        {show("stock") && (
           <>
             <div>
               <Row label="Stock">{formatQty(p.stockQty, unit)}</Row>
@@ -316,7 +354,8 @@ export function ProductDetailView({
             ))}
           </>
         )}
-        {tab === "proveedores" && (
+        {head("Proveedores")}
+        {show("proveedores") && (
           <>
             {p.suppliers.length ? (
               <ul className="m-0 list-none p-0" aria-label="Proveedores del producto">
@@ -404,7 +443,8 @@ export function ProductDetailView({
             )}
           </>
         )}
-        {tab === "historial" &&
+        {head("Historial")}
+        {show("historial") &&
           (p.history.length ? (
             p.history.map((h) => (
               <div key={h.id} className="flex flex-col gap-0.5 border-t border-borde py-2">

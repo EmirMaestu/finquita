@@ -25,6 +25,7 @@ import { FilterChip } from "../../ui/Chip";
 import { cx } from "../../ui/cx";
 import { TextField } from "../../ui/Field";
 import { EmptyState, ErrorState, SkeletonList } from "../../ui/States";
+import { toast } from "../../ui/toast";
 import { useWide } from "../../ui/useMedia";
 
 type Kind = "sales" | "profitability" | "stock" | "cash" | "purchases" | "credit" | "result";
@@ -171,9 +172,7 @@ function Bars({ chart }: { chart: NonNullable<Report["chart"]> }) {
                 style={{ height: `${(p.value / max) * 100}%` }}
               />
             </div>
-            {!many && (
-              <span className="text-[11px] whitespace-nowrap text-texto-suave">{p.label}</span>
-            )}
+            {!many && <span className="text-xs whitespace-nowrap text-texto-suave">{p.label}</span>}
           </div>
         ))}
       </div>
@@ -201,7 +200,7 @@ function Heatmap({ grid }: { grid: number[][] }) {
       className="overflow-x-auto rounded-card border border-borde bg-superficie p-4"
     >
       <div className="mb-2 text-sm font-semibold">Día × hora</div>
-      <table className="border-separate border-spacing-0.5 text-[11px]">
+      <table className="border-separate border-spacing-0.5 text-xs">
         <thead>
           <tr>
             <th />
@@ -265,6 +264,8 @@ function FixedExpenses() {
   const del = useMutation({
     mutationFn: (id: string) => api(`/api/fixed-expenses/${id}`, { method: "DELETE" }),
     onSuccess: done,
+    onError: (e) =>
+      toast({ text: e instanceof Error ? e.message : "No se pudo borrar.", tone: "error" }),
   });
   return (
     <section
@@ -279,7 +280,15 @@ function FixedExpenses() {
         <div key={f.id} className="flex items-center gap-2 border-t border-borde py-1.5">
           <span className="flex-1">{f.name}</span>
           <span className="tnum">{formatMoney(f.monthlyCents)} por mes</span>
-          <Button variant="ghost" onClick={() => del.mutate(f.id)} aria-label={`Borrar ${f.name}`}>
+          <Button
+            variant="ghost"
+            onClick={() =>
+              window.confirm(
+                `¿Borrar "${f.name}" de los gastos fijos? Deja de restarse en el resultado.`,
+              ) && del.mutate(f.id)
+            }
+            aria-label={`Borrar ${f.name}`}
+          >
             Borrar
           </Button>
         </div>
@@ -561,7 +570,7 @@ function Card({ k }: { k: (typeof KINDS)[number] }) {
             q.data.headline.deltaBp >= 0 ? "text-exito" : "text-peligro",
           )}
         >
-          {fmt(q.data.headline.deltaBp, "percent")} vs. el período anterior
+          {fmt(q.data.headline.deltaBp, "percent")} contra el período anterior
         </span>
       )}
     </button>

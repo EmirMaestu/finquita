@@ -99,7 +99,7 @@ export function ShelfLabelsPage() {
             onClick={() => window.print()}
             disabled={!q.data?.items.length}
           >
-            Imprimir {q.data?.items.length ?? 0}
+            Imprimir {q.data?.items.length ?? 0} etiquetas
           </Button>
         </div>
         <div className="flex flex-wrap gap-2">

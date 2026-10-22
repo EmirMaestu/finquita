@@ -183,7 +183,11 @@ export function CountsPage() {
   const countsOn = useSettings().features.counts;
   const navigate = useNavigate();
   const [creating, setCreating] = useState(false);
-  const q = useQuery({ queryKey: ["counts"], queryFn: () => api<CountRow[]>("/api/counts") });
+  const q = useQuery({
+    queryKey: ["counts"],
+    queryFn: () => api<CountRow[]>("/api/counts"),
+    enabled: can,
+  });
   if (!can) return <NoPermissionFor perm="count_receive" />;
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-4 p-4 lg:p-6">
@@ -313,18 +317,25 @@ export function CountPage() {
   const navigate = useNavigate();
   const [entry, setEntry] = useState<CountLine | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const can = useCan("count_receive");
   const q = useQuery({
     queryKey: ["count", id],
     queryFn: () => api<CountDetail>(`/api/counts/${id}`),
+    enabled: can,
   });
+  // Si algo falla, se dice (antes no pasaba nada y parecía guardado).
+  const failed = (e: unknown) =>
+    toast({ text: e instanceof Error ? e.message : "No se pudo. Probá de nuevo.", tone: "error" });
   const save = useMutation({
     mutationFn: (a: { productId: string; countedQty: number }) =>
       api(`/api/counts/${id}/lines`, { method: "PUT", body: a }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["count", id] }),
+    onError: failed,
   });
   const submit = useMutation({
     mutationFn: () => api(`/api/counts/${id}/submit`, { body: {} }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["count", id] }),
+    onError: failed,
   });
   const approve = useMutation({
     mutationFn: (lineIds?: string[]) =>
@@ -337,6 +348,7 @@ export function CountPage() {
       });
       void qc.invalidateQueries({ queryKey: ["count", id] });
     },
+    onError: failed,
   });
   const lines = q.data?.lines ?? [];
   const open = q.data?.status === "open";
@@ -367,6 +379,7 @@ export function CountPage() {
     });
   }, [open, byCode, lines]);
 
+  if (!can) return <NoPermissionFor perm="count_receive" />;
   if (q.isPending) return <SkeletonList className="p-6" />;
   if (q.isError) return <ErrorState onRetry={() => q.refetch()} />;
   const c = q.data;

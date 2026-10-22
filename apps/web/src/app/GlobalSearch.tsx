@@ -43,7 +43,7 @@ export const ACTIONS: Action[] = [
   { label: "Historial de cierres", path: "/caja/historial", perm: "shift" },
   { label: "Cambiar precios", path: "/productos/precios", perm: "change_prices" },
   { label: "Modo carga", path: "/productos/carga" },
-  { label: "Importar desde Excel", path: "/productos/importar", perm: "change_prices" },
+  { label: "Importar productos (Excel o CSV)", path: "/productos/importar", perm: "change_prices" },
   { label: "Recibir mercadería", path: "/compras/recepcion", perm: "count_receive" },
   { label: "Pedido sugerido", path: "/compras/sugerido", perm: "build_orders" },
   { label: "Proveedores", path: "/compras/proveedores", perm: "build_orders" },

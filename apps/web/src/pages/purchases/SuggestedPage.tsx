@@ -374,7 +374,7 @@ export function SuggestedPage({
                           )}
                           {reachesMin
                             ? `Supera el mínimo de ${formatMoney(order.minOrderCents)}`
-                            : `Falta ${formatMoney(order.minOrderCents - total)} para el mínimo`}
+                            : `Faltan ${formatMoney(order.minOrderCents - total)} para el pedido mínimo de ${formatMoney(order.minOrderCents)}`}
                         </div>
                       )}
                     </>

@@ -96,7 +96,7 @@ export function AdjustStockSheet({
       title={`Ajustar stock · ${name}`}
       footer={
         <Button className="flex-1" onClick={() => submit()} disabled={!valid || busy}>
-          {grant === "approval" ? "Enviar para aprobar" : "Ajustar"}
+          {grant === "approval" ? "Enviar para aprobar" : "Ajustar stock"}
         </Button>
       }
     >

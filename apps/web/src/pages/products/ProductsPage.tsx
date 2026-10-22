@@ -217,7 +217,7 @@ export function ProductsPage() {
   const actions = [
     { label: "Modo carga", onSelect: () => navigate("/productos/carga"), hidden: !canCreate },
     {
-      label: "Importar desde Excel",
+      label: "Importar productos",
       onSelect: () => navigate("/productos/importar"),
       hidden: !canEdit,
     },

@@ -117,7 +117,7 @@ export function LoadModePage() {
             )}
             <button
               type="button"
-              className="text-sm font-semibold text-primario"
+              className="min-h-12 text-sm font-semibold text-primario lg:min-h-10"
               onClick={() => setCode("")}
             >
               Cargar sin código

@@ -667,7 +667,7 @@ function Receiving({
           </>
         )}
         <Button variant="secondary" onClick={doneLine}>
-          Listo
+          Listo, siguiente producto
         </Button>
       </section>
     );
@@ -720,7 +720,7 @@ function Receiving({
             <button
               key={p.id}
               type="button"
-              className="rounded-md px-3 py-2 text-left hover:bg-neutro-suave"
+              className="min-h-12 rounded-md px-3 py-2 text-left hover:bg-neutro-suave lg:min-h-10"
               onClick={() => {
                 setSearch("");
                 void addProduct(p.id);
@@ -791,7 +791,8 @@ function Receiving({
           ))}
         </ul>
       )}
-      <div className="flex flex-wrap items-center gap-2">
+      {/* Barra fija abajo con "Confirmar recepción" (diseño 05): no hay que bajar hasta el final. */}
+      <div className="sticky bottom-[88px] z-10 flex flex-wrap items-center gap-2 rounded-card border border-borde bg-superficie px-3 py-2 shadow-sm lg:bottom-2">
         <input
           ref={fileRef}
           type="file"

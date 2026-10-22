@@ -191,7 +191,7 @@ function ConfirmSheet({ order, onClose }: { order: OrderDetail; onClose: () => v
       title="Lo que confirmó el proveedor"
       footer={
         <Button className="flex-1" onClick={() => save.mutate()}>
-          Guardar
+          Guardar lo que confirmó
         </Button>
       }
     >
@@ -211,7 +211,7 @@ function ConfirmSheet({ order, onClose }: { order: OrderDetail; onClose: () => v
               onChange={(e) =>
                 setGot((g) => ({ ...g, [l.id]: e.target.value.replace(/[^\d,]/g, "") }))
               }
-              className="tnum h-10 w-20 rounded-md border border-borde-fuerte px-2 text-right font-semibold"
+              className="tnum h-12 w-20 rounded-md border border-borde-fuerte px-2 text-right font-semibold lg:h-10"
             />
           </li>
         ))}
@@ -332,15 +332,18 @@ function OrderView({ id }: { id: string }) {
           </Button>
         )}
         {o.nextSteps.includes("confirmed") && (
-          <Button onClick={() => step.mutate("confirmed")}>Marcar confirmado</Button>
+          <Button variant="secondary" onClick={() => step.mutate("confirmed")}>
+            Marcar confirmado
+          </Button>
         )}
         {o.nextSteps.includes("changed") && (
           <Button variant="secondary" onClick={() => setConfirming(true)}>
-            Confirmado con cambios
+            Cargar cambios del proveedor
           </Button>
         )}
         {["sent", "confirmed", "changed", "partial"].includes(o.status) && (
-          <Button variant="secondary" onClick={() => navigate(`/compras/recepcion?pedido=${o.id}`)}>
+          // Lo que sigue con un pedido en camino es recibirlo: va como primaria (diseño 05).
+          <Button onClick={() => navigate(`/compras/recepcion?pedido=${o.id}`)}>
             Recibir mercadería
           </Button>
         )}
@@ -443,7 +446,7 @@ function StandingForm({ onClose }: { onClose: () => void }) {
           disabled={!supplierId || !lines.length || save.isPending}
           onClick={() => save.mutate()}
         >
-          Guardar
+          Guardar pedido fijo
         </Button>
       }
     >
@@ -461,19 +464,22 @@ function StandingForm({ onClose }: { onClose: () => void }) {
           ))}
         </SelectField>
         <TextField label="Nombre" value={name} onChange={(e) => setName(e.target.value)} />
-        <div className="flex flex-wrap gap-1.5">
-          {WEEK.map((d, i) => (
-            <FilterChip
-              key={d}
-              active={days.includes(i)}
-              onClick={() =>
-                setDays((x) => (x.includes(i) ? x.filter((y) => y !== i) : [...x, i].sort()))
-              }
-            >
-              {d}
-            </FilterChip>
-          ))}
-        </div>
+        <fieldset className="m-0 flex flex-col gap-1.5 border-0 p-0">
+          <legend className="mb-1.5 text-[13px] font-semibold">Días en que se manda</legend>
+          <div className="flex flex-wrap gap-1.5">
+            {WEEK.map((d, i) => (
+              <FilterChip
+                key={d}
+                active={days.includes(i)}
+                onClick={() =>
+                  setDays((x) => (x.includes(i) ? x.filter((y) => y !== i) : [...x, i].sort()))
+                }
+              >
+                {d}
+              </FilterChip>
+            ))}
+          </div>
+        </fieldset>
         <TextField
           label="Agregar producto"
           value={search}
@@ -485,7 +491,7 @@ function StandingForm({ onClose }: { onClose: () => void }) {
             <button
               key={p.id}
               type="button"
-              className="rounded-md px-2 py-1.5 text-left text-sm hover:bg-neutro-suave"
+              className="min-h-12 rounded-md px-2 py-1.5 text-left text-sm hover:bg-neutro-suave lg:min-h-10"
               onClick={() => {
                 setLines((l) => [
                   ...l.filter((x) => x.productId !== p.id),
@@ -509,7 +515,7 @@ function StandingForm({ onClose }: { onClose: () => void }) {
                   x.map((y) => (y.productId === l.productId ? { ...y, qty: e.target.value } : y)),
                 )
               }
-              className="tnum h-10 w-20 rounded-md border border-borde-fuerte px-2 text-right"
+              className="tnum h-12 w-20 rounded-md border border-borde-fuerte px-2 text-right lg:h-10"
             />
             <Button
               variant="ghost"

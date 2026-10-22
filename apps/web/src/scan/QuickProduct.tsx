@@ -58,6 +58,8 @@ export function QuickProduct({ product, onClose }: { product: LocalProduct; onCl
           className={`tnum text-lg font-semibold ${stock !== null && stock <= 0 ? "text-peligro" : ""}`}
         >
           {stock === null ? "…" : formatQty(stock, product.saleUnit === "unit" ? "unit" : "kg")}
+          {/* Un estado nunca va solo con color. */}
+          {stock !== null && stock < 0 ? " · negativo" : stock === 0 ? " · sin stock" : ""}
         </span>
       </div>
     </Sheet>

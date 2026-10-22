@@ -115,6 +115,11 @@ export function PriceListPage() {
   );
   if (!can) return <NoPermissionFor perm="view_costs" />;
   const m = preview.data;
+  // "86 costos cambian, en promedio +7 %" (§ Flujos clave 4).
+  const moved = (m?.matched ?? []).filter((x) => x.changeBp != null && x.changeBp !== 0);
+  const avgBp = moved.length
+    ? Math.round(moved.reduce((t, x) => t + (x.changeBp ?? 0), 0) / moved.length)
+    : null;
   return (
     <div className="flex flex-col gap-4 p-4 lg:p-6">
       <div className="flex flex-wrap items-center gap-3">
@@ -217,7 +222,9 @@ export function PriceListPage() {
           <div className="flex flex-wrap items-center gap-3 text-sm">
             <span>
               <strong>{m.matched.length}</strong> relacionados · <strong>{m.changed}</strong>{" "}
-              cambian de costo · <strong>{m.unmatched.length}</strong> sin relacionar
+              cambian de costo
+              {avgBp !== null ? `, en promedio ${avgBp > 0 ? "+" : "−"}${formatPercent(Math.abs(avgBp))}` : ""} ·{" "}
+              <strong>{m.unmatched.length}</strong> sin relacionar
             </span>
             <span className="flex-1" />
             <Button disabled={!m.matched.length || apply.isPending} onClick={() => apply.mutate()}>
@@ -298,7 +305,7 @@ export function PriceListPage() {
                         <button
                           key={p.id}
                           type="button"
-                          className="rounded-md px-2 py-1.5 text-left hover:bg-neutro-suave"
+                          className="min-h-12 rounded-md px-2 py-1.5 text-left hover:bg-neutro-suave lg:min-h-10"
                           onClick={() => {
                             setLinks((l) => ({ ...l, [String(u.index)]: p.id }));
                             setLinking(null);

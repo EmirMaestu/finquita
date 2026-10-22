@@ -182,7 +182,7 @@ function PromoForm({ onClose }: { onClose: () => void }) {
               <li key={p.id}>
                 <button
                   type="button"
-                  className="w-full rounded-md px-2 py-2 text-left hover:bg-neutro-suave"
+                  className="min-h-12 w-full rounded-md px-2 py-2 text-left hover:bg-neutro-suave lg:min-h-10"
                   onClick={() => {
                     setPicked((x) => [
                       ...x.filter((y) => y.productId !== p.id),
@@ -222,7 +222,8 @@ function PromoForm({ onClose }: { onClose: () => void }) {
             onChange={(e) => setEndsOn(e.target.value)}
           />
         </div>
-        <fieldset className="m-0 flex flex-wrap gap-2 border-0 p-0" aria-label="Días">
+        <fieldset className="m-0 flex flex-wrap gap-2 border-0 p-0">
+          <legend className="mb-1.5 w-full text-[13px] font-semibold">Días de la semana</legend>
           {DAYS.map((d, i) => (
             <FilterChip
               key={d}

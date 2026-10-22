@@ -12,7 +12,7 @@ import {
   waLink,
 } from "@mostrador/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { MessageCircle, Search, Share2 } from "lucide-react";
+import { ChevronLeft, MessageCircle, Search, Share2 } from "lucide-react";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { NoPermissionFor } from "../../app/guards";
@@ -559,9 +559,12 @@ function CustomerView({ id, onEdit }: { id: string; onEdit: (d: Detail) => void 
             )
           }
         >
-          PDF
+          Descargar PDF
         </Button>
         <span className="flex-1" />
+        {c.balanceCents <= 0 && (
+          <span className="self-center text-[13px] text-texto-suave">Nada que cobrar</span>
+        )}
         <Button onClick={() => setCollecting(true)} disabled={c.balanceCents <= 0}>
           Cobrar fiado
         </Button>
@@ -613,7 +616,10 @@ export function CustomersPage() {
         <>
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="m-0 flex-1 text-[22px] font-semibold">Clientes y fiado</h1>
-            <Button onClick={() => setForm({ c: null })}>Nuevo cliente</Button>
+            {/* Con la ficha abierta, la primaria es "Cobrar fiado": esta pasa a secundaria. */}
+            <Button variant={id ? "secondary" : "primary"} onClick={() => setForm({ c: null })}>
+              Nuevo cliente
+            </Button>
           </div>
           {t && (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -658,7 +664,7 @@ export function CustomersPage() {
                 {counts.data ? ` · ${counts.data[f]}` : ""}
               </FilterChip>
             ))}
-            <label className="ml-auto flex h-10 items-center gap-2 rounded-lg border border-borde bg-superficie px-3">
+            <label className="ml-auto flex h-12 items-center gap-2 rounded-lg lg:h-10 border border-borde bg-superficie px-3">
               <Search size={16} className="text-texto-suave" aria-hidden />
               <input
                 aria-label="Buscar cliente"
@@ -758,8 +764,13 @@ export function CustomersPage() {
             className="rounded-card border border-borde bg-superficie"
           >
             {!wide && (
-              <Button variant="ghost" className="m-2" onClick={() => navigate("/clientes")}>
-                ← Clientes
+              <Button
+                variant="ghost"
+                className="m-2"
+                icon={<ChevronLeft size={18} />}
+                onClick={() => navigate("/clientes")}
+              >
+                Clientes y fiado
               </Button>
             )}
             <CustomerView key={id} id={id} onEdit={(c) => setForm({ c })} />

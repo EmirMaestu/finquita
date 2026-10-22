@@ -144,7 +144,7 @@ function SupplierForm({ supplier, onClose }: { supplier?: Supplier | null; onClo
           busyLabel="Guardando…"
           onClick={() => save.mutate()}
         >
-          Guardar
+          Guardar proveedor
         </Button>
       }
     >

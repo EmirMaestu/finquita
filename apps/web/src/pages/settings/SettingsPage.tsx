@@ -21,6 +21,7 @@ import { useNavigate, useParams } from "react-router";
 import { NoPermissionFor } from "../../app/guards";
 import { useCan } from "../../app/session";
 import { ApiError, api, credentials, downloadFile } from "../../data/api";
+import { guessDevice } from "../../lib/device";
 import { scanRouter } from "../../scan/GlobalScan";
 import { syncEngine } from "../../sync";
 import { Button } from "../../ui/Button";
@@ -80,10 +81,12 @@ const pctInRange = (bp: number | null, min: number) =>
       }),
       false);
 
-function useSettingsServer() {
+function useSettingsServer(enabled = true) {
   return useQuery({
     queryKey: ["settings-server"],
     queryFn: () => api<SettingsMap>("/api/settings"),
+    // Sin permiso no se pide (la API respondía 403 y llenaba la consola).
+    enabled,
   });
 }
 
@@ -427,7 +430,7 @@ function PinField({ onSave }: { onSave: (pin: string) => void }) {
           setV("");
         }}
       >
-        Cambiar
+        Cambiar PIN
       </Button>
     </div>
   );
@@ -514,7 +517,7 @@ function RegistersSection({ s }: { s: SettingsMap }) {
       ))}
       {s.features.multiRegister ? (
         <Button variant="secondary" className="self-start" onClick={() => add.mutate()}>
-          Agregar caja
+          Agregar puesto de cobro
         </Button>
       ) : (
         <p className="m-0 text-sm text-texto-suave">
@@ -747,8 +750,10 @@ function ThisDevice() {
     queryFn: () => api<Register[]>("/api/registers"),
   });
   const [has, setHas] = useState(() => !!credentials.get().deviceToken);
-  const [name, setName] = useState("Mac del mostrador");
-  const [kind, setKind] = useState<"mac" | "iphone" | "tablet" | "other">("mac");
+  // El nombre y el tipo propuestos salen del equipo desde el que se abre (no siempre es la Mac).
+  const guess = guessDevice();
+  const [name, setName] = useState(guess.name);
+  const [kind, setKind] = useState<"mac" | "iphone" | "tablet" | "other">(guess.kind);
   const [registerId, setRegisterId] = useState("");
   const enable = useMutation({
     mutationFn: () =>
@@ -1017,7 +1022,7 @@ function AlertsSection({ s }: { s: SettingsMap }) {
 function InvoicingSection({ s }: { s: SettingsMap }) {
   const save = useSave("invoicing");
   return (
-    <Card title="Próximamente">
+    <Card title="Factura electrónica · próximamente">
       <p className="m-0 text-sm">
         Desde el cobro vas a poder emitir factura A, B o C con CAE de ARCA, sin salir de Mostrador.
       </p>
@@ -1279,7 +1284,7 @@ export function SettingsPage() {
   const navigate = useNavigate();
   const { section } = useParams();
   const [term, setTerm] = useState("");
-  const q = useSettingsServer();
+  const q = useSettingsServer(can);
   if (!can) return <NoPermissionFor perm="settings" />;
   const t = term.trim().toLowerCase();
   const list = SECTIONS.filter(
@@ -1290,13 +1295,13 @@ export function SettingsPage() {
     | null;
   const nav = (
     <nav aria-label="Secciones de ajustes" className="flex flex-col gap-1">
-      <label className="mb-2 flex h-10 items-center gap-2 rounded-lg border border-borde bg-superficie px-3">
+      <label className="mb-2 flex h-12 items-center gap-2 rounded-lg border border-borde bg-superficie px-3 lg:h-10">
         <Search size={16} className="text-texto-suave" aria-hidden />
         <input
           aria-label="Buscar en ajustes"
           value={term}
           onChange={(e) => setTerm(e.target.value)}
-          placeholder="Buscar"
+          placeholder="Buscar un ajuste"
           className="w-full bg-transparent outline-none"
         />
       </label>

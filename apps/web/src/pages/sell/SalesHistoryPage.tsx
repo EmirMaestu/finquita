@@ -468,6 +468,8 @@ export function SalesHistoryPage() {
   const [open, setOpen] = useState<string | null>(null);
   const q = useQuery({
     queryKey: ["sales", filter, number, version],
+    // Sin permiso de vender no se pide nada (eran ocho 403 con el repositor).
+    enabled: can,
     placeholderData: (p) => p,
     queryFn: async (): Promise<{ rows: SaleRow[]; offline: boolean }> => {
       const p = new URLSearchParams();

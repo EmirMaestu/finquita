@@ -38,6 +38,9 @@ export function SuggestedFlow() {
       });
     },
     onSuccess: async (r, v) => {
+      // Se dice qué quedó: el PDF y el borrador también crean el pedido (en Borrador).
+      if (v.next !== "send")
+        toast({ text: `Pedido ${String(r.number).padStart(4, "0")} guardado como borrador` });
       if (v.next === "pdf")
         await downloadFile(
           `/api/orders/${r.id}/pdf`,

@@ -103,7 +103,7 @@ export function ExpiryPage() {
                           variant="danger"
                           onClick={() => remove.mutate({ id: l.id, action: "waste" })}
                         >
-                          Dar de baja
+                          Dar de baja como merma
                         </Button>
                       </>
                     )}

@@ -224,7 +224,7 @@ function NewPayable({ onClose }: { onClose: () => void }) {
           disabled={!f.supplierId || !(parseMoney(f.amount) ?? 0) || save.isPending}
           onClick={() => save.mutate()}
         >
-          Guardar
+          Guardar comprobante
         </Button>
       }
     >
@@ -302,7 +302,8 @@ export function PayablesPage() {
         <FilterChip active={view === "paid"} onClick={() => setView("paid")}>
           Pagadas
         </FilterChip>
-        <Button variant="secondary" onClick={() => setCreating(true)}>
+        {/* La acción de la pantalla es una sola y va como primaria (en cada fila, secundaria). */}
+        <Button className="ml-auto" onClick={() => setCreating(true)}>
           Cargar comprobante
         </Button>
       </div>
@@ -335,6 +336,8 @@ export function PayablesPage() {
         ) : !q.data.items.length ? (
           <EmptyState
             title={view === "pending" ? "No hay nada para pagar" : "Todavía no hay pagos"}
+            body="Cargá la factura o el remito del proveedor para llevar lo que le debés."
+            action={<Button onClick={() => setCreating(true)}>Cargar comprobante</Button>}
           />
         ) : (
           <ul

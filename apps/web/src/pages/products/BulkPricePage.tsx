@@ -234,7 +234,7 @@ export function BulkPricePage() {
               onClick={() => apply.mutate()}
               disabled={!online || apply.isPending || !preview.data.summary.changed}
             >
-              Confirmar {preview.data.summary.changed} precios
+              Aplicar {preview.data.summary.changed} precios nuevos
             </Button>
           </div>
         </section>
