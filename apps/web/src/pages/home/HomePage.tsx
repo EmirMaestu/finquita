@@ -2,6 +2,7 @@ import {
   formatMoney,
   formatPercent,
   formatQty,
+  formatTime,
   METHOD_LABEL,
   type PaymentMethodCode,
 } from "@mostrador/shared";
@@ -445,23 +446,33 @@ export function HomePage() {
       <Header />
       {q.isPending ? (
         <SkeletonList rows={6} />
-      ) : q.isError ? (
+      ) : !q.data ? (
         <ErrorState
           message="El panel del día se ve con conexión. Vender y la caja andan igual."
           onRetry={() => q.refetch()}
         />
       ) : (
         <>
-          <Numbers n={q.data.numbers} />
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
-            <AttentionList items={q.data.attention} />
-            <div className="flex flex-col gap-4">
-              <Shortcuts />
-              <Methods methods={q.data.methods} />
+          {/* Si falló la última actualización, se sigue mostrando lo que había, con la hora. */}
+          {q.isError && (
+            <div
+              role="status"
+              className="flex items-center gap-2 rounded-lg bg-alerta-suave px-3 py-2 text-[13px] text-alerta"
+            >
+              <span className="flex-1">
+                Actualizado a las {formatTime(new Date(q.dataUpdatedAt))}: sin conexión, no se pudo
+                traer lo último.
+              </span>
+              <button
+                type="button"
+                className="h-11 rounded-lg px-3 font-semibold lg:h-9"
+                onClick={() => q.refetch()}
+              >
+                Reintentar
+              </button>
             </div>
-          </div>
-          <HourChart data={q.data.byHour} />
-          <TopAndDeliveries d={q.data} />
+          )}
+          {/* Sin ventas hoy, lo primero que se ve es qué hacer (no un panel en cero). */}
           {!q.data.numbers.tickets && !q.data.attention.length && (
             <EmptyState
               title="Todavía no hay ventas hoy"
@@ -474,6 +485,16 @@ export function HomePage() {
               }
             />
           )}
+          <Numbers n={q.data.numbers} />
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
+            <AttentionList items={q.data.attention} />
+            <div className="flex flex-col gap-4">
+              <Shortcuts />
+              {q.data.numbers.tickets > 0 && <Methods methods={q.data.methods} />}
+            </div>
+          </div>
+          <HourChart data={q.data.byHour} />
+          <TopAndDeliveries d={q.data} />
         </>
       )}
     </div>

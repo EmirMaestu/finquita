@@ -8,7 +8,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { Printer } from "lucide-react";
 import { useState } from "react";
-import { useSearchParams } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { fetchProducts, type ProductItem } from "../../data/products";
 import { Button } from "../../ui/Button";
 import { FilterChip } from "../../ui/Chip";
@@ -76,6 +76,7 @@ function Label({
 /** Etiquetas de góndola: productos elegidos o los que cambiaron hoy, en A4. */
 export function ShelfLabelsPage() {
   const [params] = useSearchParams();
+  const navigate = useNavigate();
   const ids = params.get("ids");
   const [source, setSource] = useState<"ids" | "today">(ids ? "ids" : "today");
   const [template, setTemplate] = useState<Template>("chica");
@@ -129,6 +130,17 @@ export function ShelfLabelsPage() {
         <EmptyState
           title={source === "today" ? "Hoy no cambió ningún precio" : "No hay productos elegidos"}
           body="Elegí productos en la lista y tocá Etiquetas."
+          action={
+            source === "today" ? (
+              <Button variant="secondary" onClick={() => navigate("/productos")}>
+                Elegir en la lista
+              </Button>
+            ) : (
+              <Button variant="secondary" onClick={() => setSource("today")}>
+                Los que cambiaron hoy
+              </Button>
+            )
+          }
         />
       ) : (
         <section

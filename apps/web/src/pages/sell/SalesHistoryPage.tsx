@@ -197,6 +197,7 @@ function ReturnDialog({ sale, onClose }: { sale: SaleDetail; onClose: () => void
                 </span>
                 {l.unit === "unit" ? (
                   <Stepper
+                    big
                     label={l.description}
                     value={qty[l.id] ?? 0}
                     onChange={(v) => setQty((q) => ({ ...q, [l.id]: Math.min(max, v) }))}
@@ -209,11 +210,15 @@ function ReturnDialog({ sale, onClose }: { sale: SaleDetail; onClose: () => void
                     {formatQty(max, "kg")}
                   </FilterChip>
                 )}
-                <span className="inline-flex overflow-hidden rounded-lg border border-borde text-xs font-semibold">
+                {/* Qué pasa con lo devuelto, dicho como pregunta (antes: "Góndola / Merma" sueltos). */}
+                <fieldset
+                  aria-label={`¿Qué pasa con ${l.description}?`}
+                  className="m-0 inline-flex overflow-hidden rounded-lg border border-borde p-0 text-xs font-semibold"
+                >
                   {(
                     [
-                      ["shelf", "Góndola"],
-                      ["waste", "Merma"],
+                      ["shelf", "Vuelve a la góndola"],
+                      ["waste", "Va a merma"],
                     ] as const
                   ).map(([id, label]) => (
                     <button
@@ -222,14 +227,14 @@ function ReturnDialog({ sale, onClose }: { sale: SaleDetail; onClose: () => void
                       aria-pressed={d === id}
                       onClick={() => setDest((x) => ({ ...x, [l.id]: id }))}
                       className={cx(
-                        "h-8 px-2.5",
+                        "h-12 px-2.5 lg:h-8",
                         d === id ? "bg-texto text-fondo" : "bg-superficie",
                       )}
                     >
                       {label}
                     </button>
                   ))}
-                </span>
+                </fieldset>
               </li>
             );
           })}

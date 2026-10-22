@@ -8,10 +8,11 @@ import {
 } from "@mostrador/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { useSearchParams } from "react-router";
 import { NoPermissionFor } from "../../app/guards";
 import { useCan } from "../../app/session";
 import { ApiError, api } from "../../data/api";
-import { fetchCategories, fetchProducts } from "../../data/products";
+import { fetchCategories, fetchProduct, fetchProducts } from "../../data/products";
 import { Button } from "../../ui/Button";
 import { Chip, FilterChip } from "../../ui/Chip";
 import { SelectField, TextField } from "../../ui/Field";
@@ -38,13 +39,22 @@ const STATUS_LABEL = {
   ended: ["Terminada", "neutro"],
 } as const;
 
-function PromoForm({ onClose }: { onClose: () => void }) {
+function PromoForm({
+  onClose,
+  initial,
+}: {
+  onClose: () => void;
+  /** Producto que ya viene elegido (desde Vencimientos: "Armar promo"). */
+  initial?: { productId: string; name: string } | null;
+}) {
   const qc = useQueryClient();
   const cats = useQuery({ queryKey: ["categories"], queryFn: fetchCategories });
   const [kind, setKind] = useState<PromotionKind>("two_for_one");
   const [name, setName] = useState("");
   const [search, setSearch] = useState("");
-  const [picked, setPicked] = useState<{ productId: string; name: string; qty: number }[]>([]);
+  const [picked, setPicked] = useState<{ productId: string; name: string; qty: number }[]>(
+    initial ? [{ ...initial, qty: 1 }] : [],
+  );
   const [categoryId, setCategoryId] = useState("");
   const [percent, setPercent] = useState("50");
   const [n, setN] = useState("2");
@@ -247,7 +257,16 @@ function PromoForm({ onClose }: { onClose: () => void }) {
 /** Promociones por estado: activa, programada y terminada. */
 export function PromotionsPage() {
   const can = useCan("change_prices");
+  const [params, setParams] = useSearchParams();
+  const fromExpiry = params.get("producto");
+  const initial = useQuery({
+    queryKey: ["product", fromExpiry],
+    queryFn: () => fetchProduct(fromExpiry ?? ""),
+    enabled: Boolean(fromExpiry) && can,
+  });
   const [creating, setCreating] = useState(false);
+  // Desde Vencimientos llega con ?producto=: se abre la promo con ese producto ya elegido.
+  const open = creating || Boolean(fromExpiry && initial.data);
   const q = useQuery({ queryKey: ["promotions"], queryFn: () => api<Promo[]>("/api/promotions") });
   const today = todayAR();
   if (!can) return <NoPermissionFor perm="change_prices" />;
@@ -289,7 +308,19 @@ export function PromotionsPage() {
           })}
         </ul>
       )}
-      {creating && <PromoForm onClose={() => setCreating(false)} />}
+      {open && (
+        <PromoForm
+          initial={
+            fromExpiry && initial.data
+              ? { productId: initial.data.id, name: initial.data.name }
+              : null
+          }
+          onClose={() => {
+            setCreating(false);
+            if (fromExpiry) setParams({}, { replace: true });
+          }}
+        />
+      )}
     </div>
   );
 }

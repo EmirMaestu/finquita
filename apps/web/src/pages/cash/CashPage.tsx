@@ -17,6 +17,7 @@ import { useViewport } from "../../app/useViewport";
 import { loadShiftView } from "../../cash/local";
 import { OtherShiftNotice } from "../../cash/OtherShiftNotice";
 import { useRegister } from "../../cash/useRegister";
+import { syncEngine } from "../../sync";
 import { useSyncStatus } from "../../sync/status";
 import { Button } from "../../ui/Button";
 import { Chip, FilterChip } from "../../ui/Chip";
@@ -78,7 +79,14 @@ export function CashPage() {
   if (!reg.ready) return <Skeleton className="m-6 h-64" />;
   if (!reg.registerId)
     return (
-      <ErrorState message="Todavía no bajó la configuración de las cajas. Revisá la conexión." />
+      <ErrorState
+        message={
+          navigator.onLine
+            ? "Todavía no bajó la configuración de las cajas."
+            : "Sin conexión: la configuración de las cajas baja al volver internet."
+        }
+        onRetry={() => void syncEngine().kick()}
+      />
     );
   if (!shift) {
     return (

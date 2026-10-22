@@ -211,8 +211,13 @@ export function CountsPage() {
                 ? "Creá uno por categoría o por góndola y asignáselo a alguien."
                 : "Los conteos los crea un encargado o el dueño y te los asigna: cuando haya uno para vos, aparece acá y en Inicio."
           }
+          // "Nuevo conteo" ya está arriba: acá, solo el camino para prenderlos si están apagados.
           action={
-            canCreate ? <Button onClick={() => setCreating(true)}>Nuevo conteo</Button> : undefined
+            !countsOn && canSettings ? (
+              <Button variant="secondary" onClick={() => navigate("/ajustes/funciones")}>
+                Ir a Funciones
+              </Button>
+            ) : undefined
           }
         />
       ) : (

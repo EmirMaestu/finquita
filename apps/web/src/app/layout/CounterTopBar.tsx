@@ -41,11 +41,16 @@ export function CounterTopBar() {
         <RegisterChip register={shell.register} />
       </button>
       <ConnectionChip connection={shell.connection} />
-      <span className="inline-flex h-9 items-center gap-2 rounded-lg border border-borde px-3 text-[13px] font-semibold">
+      {/* Abre las ventas en espera, como F6 (antes parecía un botón y no hacía nada). */}
+      <button
+        type="button"
+        onClick={() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "F6" }))}
+        className="inline-flex h-9 items-center gap-2 rounded-lg border border-borde px-3 text-[13px] font-semibold hover:bg-neutro-suave"
+      >
         <Pause size={16} aria-hidden />
         En espera
-        <span className="rounded-full bg-acento-suave px-1.5 text-[11px]">{held.length}</span>
-      </span>
+        <span className="rounded-full bg-acento-suave px-1.5 text-xs">{held.length}</span>
+      </button>
       <UserMenu />
     </header>
   );

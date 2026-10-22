@@ -87,7 +87,7 @@ const STEP_LABEL: Partial<Record<OrderStatus, string>> = {
   sent: "Marcar enviado",
   confirmed: "Marcar confirmado",
   changed: "Confirmado con cambios",
-  closed: "Cerrar",
+  closed: "Cerrar pedido",
   cancelled: "Cancelar pedido",
 };
 
@@ -97,6 +97,10 @@ const q = (n: number | null, unit: "unit" | "kg") => (n == null ? "—" : format
 /** Vista previa del mensaje y del PDF antes de abrir el chat (wa.me). */
 export function SendSheet({ order, onClose }: { order: OrderDetail; onClose: () => void }) {
   const qc = useQueryClient();
+  // WhatsApp es el camino solo con permiso (matriz) y con el teléfono del proveedor cargado;
+  // si no, se copia el texto o se baja el PDF y se marca enviado a mano.
+  const canWhatsapp = useCan("send_orders");
+  const viaWhatsapp = canWhatsapp && Boolean(order.message.phone);
   const mark = useMutation({
     mutationFn: (via: "whatsapp" | "pdf") =>
       api(`/api/orders/${order.id}/status`, { body: { status: "sent", via } }),
@@ -127,15 +131,34 @@ export function SendSheet({ order, onClose }: { order: OrderDetail; onClose: () 
           >
             PDF para adjuntar
           </Button>
-          <a
-            href={order.message.url}
-            target="_blank"
-            rel="noreferrer"
-            onClick={() => mark.mutate("whatsapp")}
-            className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-primario px-4 font-semibold text-white no-underline"
-          >
-            <MessageCircle size={18} aria-hidden /> Abrir WhatsApp
-          </a>
+          {!viaWhatsapp && (
+            <Button
+              variant="secondary"
+              onClick={() =>
+                navigator.clipboard
+                  ?.writeText(order.message.text)
+                  .then(() => toast({ text: "Texto copiado" }))
+                  .catch(() => toast({ text: "No se pudo copiar", tone: "error" }))
+              }
+            >
+              Copiar texto
+            </Button>
+          )}
+          {viaWhatsapp ? (
+            <a
+              href={order.message.url}
+              target="_blank"
+              rel="noreferrer"
+              onClick={() => mark.mutate("whatsapp")}
+              className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-primario px-4 font-semibold text-white no-underline"
+            >
+              <MessageCircle size={18} aria-hidden /> Abrir WhatsApp
+            </a>
+          ) : (
+            <Button className="flex-1" busy={mark.isPending} onClick={() => mark.mutate("pdf")}>
+              Marcar enviado
+            </Button>
+          )}
         </div>
       }
     >
@@ -144,7 +167,8 @@ export function SendSheet({ order, onClose }: { order: OrderDetail; onClose: () 
           Para {order.supplier.name}
           {order.message.phone
             ? ` · +${order.message.phone}`
-            : " · sin WhatsApp cargado: elegís el contacto en el chat"}
+            : " · sin WhatsApp cargado: copiá el texto o mandá el PDF"}
+          {!canWhatsapp && " · mandarlo por WhatsApp lo hace el dueño"}
         </div>
         <section aria-label="Mensaje">
           <pre className="m-0 max-h-[50vh] overflow-auto rounded-xl bg-[#E7F6E7] p-4 font-sans text-[14px] leading-snug whitespace-pre-wrap text-texto">
@@ -152,8 +176,9 @@ export function SendSheet({ order, onClose }: { order: OrderDetail; onClose: () 
           </pre>
         </section>
         <p className="m-0 text-xs text-texto-suave">
-          Al abrir WhatsApp el pedido queda como enviado. El PDF lo adjuntás en el chat si el
-          proveedor lo pide.
+          {viaWhatsapp
+            ? "Al abrir WhatsApp el pedido queda como enviado. El PDF lo adjuntás en el chat si el proveedor lo pide."
+            : 'Cuando lo mandes, tocá "Marcar enviado".'}
         </p>
       </div>
     </Sheet>
@@ -225,6 +250,7 @@ function OrderView({ id }: { id: string }) {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const [confirming, setConfirming] = useState(false);
+  const canWhatsapp = useCan("send_orders");
   const d = useQuery({
     queryKey: ["order", id],
     queryFn: () => api<OrderDetail>(`/api/orders/${id}`),
@@ -316,7 +342,7 @@ function OrderView({ id }: { id: string }) {
             icon={<MessageCircle size={18} />}
             onClick={() => setParams((p) => ({ ...Object.fromEntries(p), enviar: "1" }))}
           >
-            Enviar por WhatsApp
+            {canWhatsapp ? "Enviar por WhatsApp" : "Enviar pedido"}
           </Button>
         )}
         {o.status === "draft" && (
@@ -605,6 +631,10 @@ export function OrdersPage() {
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="m-0 hidden text-[22px] font-semibold lg:block">Compras</h1>
         <PurchasesTabs />
+        {/* Un pedido nuevo se arma desde el sugerido de cada proveedor. */}
+        <Button className="ml-auto" onClick={() => navigate("/compras/sugerido")}>
+          Nuevo pedido
+        </Button>
       </div>
       {showList && (
         <nav className="flex gap-2 overflow-x-auto" aria-label="Estados">

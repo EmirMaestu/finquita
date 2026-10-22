@@ -7,7 +7,7 @@ import { useGrant } from "../../app/session";
 import { ApiError, api } from "../../data/api";
 import { useSettings } from "../../data/settings";
 import { Button } from "../../ui/Button";
-import { TextField } from "../../ui/Field";
+import { TextField, Toggle } from "../../ui/Field";
 import { ErrorState, SkeletonList } from "../../ui/States";
 import { toast } from "../../ui/toast";
 
@@ -107,19 +107,13 @@ export function ReceiptCostsPage() {
                 >
                   <strong>{ch.text}</strong>
                   <span>{ch.priceText}</span>
-                  <label className="flex items-center gap-2 font-semibold">
-                    <input
-                      type="checkbox"
-                      checked={price[l.id] != null}
-                      onChange={(e) =>
-                        setPrice((p) => ({
-                          ...p,
-                          [l.id]: e.target.checked ? ch.suggestedPriceCents : null,
-                        }))
-                      }
-                    />
-                    Actualizar precio
-                  </label>
+                  <Toggle
+                    label="Actualizar precio"
+                    checked={price[l.id] != null}
+                    onChange={(v) =>
+                      setPrice((p) => ({ ...p, [l.id]: v ? ch.suggestedPriceCents : null }))
+                    }
+                  />
                 </div>
               )}
             </li>
@@ -140,6 +134,11 @@ export function ReceiptCostsPage() {
       >
         Guardar costos
       </Button>
+      {!q.data.costsPending && (
+        <p className="m-0 text-sm text-texto-suave">
+          Los costos de esta recepción ya están cargados.
+        </p>
+      )}
     </div>
   );
 }

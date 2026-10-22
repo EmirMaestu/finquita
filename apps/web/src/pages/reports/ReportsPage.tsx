@@ -14,7 +14,14 @@ import {
   writeXlsx,
 } from "@mostrador/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowDownRight, ArrowUpRight, ChevronLeft, Download, FileSpreadsheet } from "lucide-react";
+import {
+  ArrowDownRight,
+  ArrowUpRight,
+  ChevronLeft,
+  Download,
+  FileSpreadsheet,
+  Share2,
+} from "lucide-react";
 import { useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import { NoPermissionFor } from "../../app/guards";
@@ -435,7 +442,7 @@ function ReportView({ kind }: { kind: Kind }) {
                   )
                 }
               >
-                Excel
+                Descargar Excel
               </Button>
               <Button
                 variant="ghost"
@@ -448,7 +455,28 @@ function ReportView({ kind }: { kind: Kind }) {
                   )
                 }
               >
-                CSV
+                Descargar CSV
+              </Button>
+              <Button
+                variant="ghost"
+                icon={<Share2 size={18} />}
+                onClick={() => {
+                  // En el celular, el archivo va directo a WhatsApp o al mail.
+                  const file = new File(
+                    [writeXlsx(exportRows(r), meta?.title) as BlobPart],
+                    `${kind}-${r.range.from}.xlsx`,
+                    { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" },
+                  );
+                  const nav = navigator as Navigator & {
+                    canShare?: (d: ShareData) => boolean;
+                    share?: (d: ShareData) => Promise<void>;
+                  };
+                  if (nav.share && nav.canShare?.({ files: [file] }))
+                    void nav.share({ files: [file], title: meta?.title }).catch(() => {});
+                  else toast({ text: "Este equipo no comparte archivos: usá Descargar." });
+                }}
+              >
+                Compartir
               </Button>
             </div>
           </section>
@@ -511,6 +539,16 @@ function ReportView({ kind }: { kind: Kind }) {
                                 "border-t border-borde",
                                 drill && drill !== "none" && "cursor-pointer hover:bg-neutro-suave",
                               )}
+                              // Las filas que bajan de nivel también andan con teclado (Enter).
+                              tabIndex={drill && drill !== "none" ? 0 : undefined}
+                              onKeyDown={
+                                drill && drill !== "none" && t.drill
+                                  ? (e) => {
+                                      if (e.key === "Enter")
+                                        set({ [t.drill?.param ?? "categoryId"]: drill });
+                                    }
+                                  : undefined
+                              }
                               onClick={
                                 drill && drill !== "none" && t.drill
                                   ? () => set({ [t.drill?.param ?? "categoryId"]: drill })
@@ -561,7 +599,11 @@ function Card({ k }: { k: (typeof KINDS)[number] }) {
       <span className="text-sm text-texto-suave">{k.question}</span>
       <span className="font-semibold">{k.title}</span>
       <span className="tnum text-2xl font-semibold">
-        {q.data ? fmt(q.data.headline.value, q.data.headline.kind) : "…"}
+        {q.data
+          ? fmt(q.data.headline.value, q.data.headline.kind)
+          : q.isError
+            ? "No se pudo cargar"
+            : "…"}
       </span>
       {q.data?.headline.deltaBp != null && (
         <span

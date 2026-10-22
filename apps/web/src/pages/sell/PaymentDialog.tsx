@@ -244,7 +244,7 @@ export function PaymentDialog({
               type="button"
               aria-label="Volver a la venta"
               onClick={onClose}
-              className="inline-flex size-10 items-center justify-center rounded-lg lg:hidden"
+              className="inline-flex size-12 items-center justify-center rounded-lg lg:hidden"
             >
               <X size={20} />
             </button>
@@ -381,7 +381,7 @@ export function PaymentDialog({
                     box.current?.focus();
                   }}
                   className={cx(
-                    "h-10 rounded-full px-3 text-xs font-semibold lg:h-8",
+                    "h-12 rounded-full px-3 text-xs font-semibold lg:h-8",
                     card === c ? "bg-texto text-fondo" : "border border-borde bg-superficie",
                   )}
                 >
@@ -407,7 +407,7 @@ export function PaymentDialog({
                     aria-pressed={transfer === c}
                     onClick={() => setTransfer(c)}
                     className={cx(
-                      "h-10 rounded-full px-3 text-xs font-semibold lg:h-8",
+                      "h-12 rounded-full px-3 text-xs font-semibold lg:h-8",
                       transfer === c ? "bg-texto text-fondo" : "border border-borde bg-superficie",
                     )}
                   >
@@ -529,7 +529,7 @@ export function PaymentDialog({
                       key={b}
                       type="button"
                       onClick={() => setTyped((t) => String((Number(t ?? "0") || 0) + b / 100))}
-                      className="flex h-12 items-center justify-center gap-2 rounded-lg border border-borde bg-superficie text-[15px] font-semibold hover:bg-neutro-suave"
+                      className="flex h-14 items-center justify-center gap-2 rounded-lg border border-borde bg-superficie text-[15px] font-semibold hover:bg-neutro-suave"
                     >
                       {formatMoney(b)}
                       <kbd

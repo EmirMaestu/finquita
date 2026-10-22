@@ -1,6 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { Download, MessageCircle } from "lucide-react";
 import { useNavigate } from "react-router";
+import { useCan } from "../../app/session";
 import { ApiError, api, downloadFile } from "../../data/api";
 import { Button } from "../../ui/Button";
 import { toast } from "../../ui/toast";
@@ -9,6 +10,7 @@ import { type SuggestedOrder, SuggestedPage } from "./SuggestedPage";
 /** El sugerido con sus acciones: guardar borrador, enviar por WhatsApp o bajar el PDF. */
 export function SuggestedFlow() {
   const navigate = useNavigate();
+  const canWhatsapp = useCan("send_orders");
   const create = useMutation({
     mutationFn: ({
       o,
@@ -65,7 +67,7 @@ export function SuggestedFlow() {
             disabled={Boolean(problem)}
             onClick={() => create.mutate({ o, qty, next: "send" })}
           >
-            Enviar por WhatsApp
+            {canWhatsapp ? "Enviar por WhatsApp" : "Guardar y enviar"}
           </Button>
           <div className="flex gap-2">
             <Button

@@ -17,8 +17,15 @@ export function ClosingReceipt({ lines, onDone }: { lines: string[]; onDone?: ()
     const nav = navigator as Navigator & { share?: (d: ShareData) => Promise<void> };
     if (nav.share) await nav.share({ title: "Cierre de caja", text }).catch(() => {});
     else {
-      await navigator.clipboard?.writeText(text).catch(() => {});
-      toast({ text: "Copiado: pegalo en WhatsApp o en un mail." });
+      // Se avisa "copiado" solo si se pudo copiar.
+      const ok = await (
+        navigator.clipboard?.writeText(text).then(() => true) ?? Promise.resolve(false)
+      ).catch(() => false);
+      toast(
+        ok
+          ? { text: "Copiado: pegalo en WhatsApp o en un mail." }
+          : { text: "No se pudo copiar: usá Imprimir.", tone: "error" },
+      );
     }
   };
   // Un solo nombre, "cierre de caja", como el comprobante; en el historial va dentro del panel

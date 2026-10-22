@@ -211,6 +211,8 @@ export function PriceListPage() {
         )}
         <Button
           className="self-end"
+          // Con la vista previa a la vista, la primaria pasa a "Guardar costos".
+          variant={preview.data ? "secondary" : "primary"}
           disabled={!supplierId || !rows.length || preview.isPending}
           onClick={() => preview.mutate()}
         >
@@ -223,11 +225,16 @@ export function PriceListPage() {
             <span>
               <strong>{m.matched.length}</strong> relacionados · <strong>{m.changed}</strong>{" "}
               cambian de costo
-              {avgBp !== null ? `, en promedio ${avgBp > 0 ? "+" : "−"}${formatPercent(Math.abs(avgBp))}` : ""} ·{" "}
-              <strong>{m.unmatched.length}</strong> sin relacionar
+              {avgBp !== null
+                ? `, en promedio ${avgBp > 0 ? "+" : "−"}${formatPercent(Math.abs(avgBp))}`
+                : ""}{" "}
+              · <strong>{m.unmatched.length}</strong> sin relacionar
             </span>
             <span className="flex-1" />
-            <Button disabled={!m.matched.length || apply.isPending} onClick={() => apply.mutate()}>
+            <Button
+              disabled={!m.matched.length || apply.isPending || apply.isSuccess}
+              onClick={() => apply.mutate()}
+            >
               Guardar costos
             </Button>
             {apply.isSuccess && (

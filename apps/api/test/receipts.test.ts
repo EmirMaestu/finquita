@@ -57,7 +57,7 @@ async function receive(by: "nico" | "carlos" | "tomas", payload: object) {
 describe("recepción del pedido 0042", () => {
   it("el repositor carga cantidades sin ver costos; el dueño completa los costos y queda la cuenta a pagar", async () => {
     const julian = await as(app(), ref.t.db, "julian");
-    await julian.post(`/api/orders/${ORDER_42}/status`, { status: "sent", via: "whatsapp" });
+    await julian.post(`/api/orders/${ORDER_42}/status`, { status: "sent", via: "pdf" });
     const nico = await as(app(), ref.t.db, "nico");
     expect(
       (await nico.get("/api/receipts/expected")).body.map((o: { number: number }) => o.number),

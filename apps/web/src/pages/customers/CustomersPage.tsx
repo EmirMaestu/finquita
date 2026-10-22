@@ -196,7 +196,7 @@ export function CollectSheet({ customer, onClose }: { customer: Detail; onClose:
   const qc = useQueryClient();
   const reg = useRegister();
   const [typed, setTyped] = useState("");
-  const [method, setMethod] = useState<"cash" | "transfer" | "debit">("cash");
+  const [method, setMethod] = useState<"cash" | "transfer" | "debit" | "credit">("cash");
   const [mode, setMode] = useState<"oldest" | "pick">("oldest");
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [receipt, setReceipt] = useState<string | null>(null);
@@ -257,16 +257,28 @@ export function CollectSheet({ customer, onClose }: { customer: Detail; onClose:
               Sin teléfono cargado: el recibo se manda a mano.
             </span>
           )}
-          <a
-            href={waLink(customer.phone, receipt)}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex h-11 items-center gap-2 rounded-lg bg-primario px-4 font-semibold text-white no-underline"
+          {customer.phone && (
+            <a
+              href={waLink(customer.phone, receipt)}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex h-11 items-center gap-2 rounded-lg bg-primario px-4 font-semibold text-white no-underline"
+            >
+              <MessageCircle size={18} aria-hidden /> Mandar por WhatsApp
+            </a>
+          )}
+          <Button
+            variant="secondary"
+            onClick={() => {
+              const nav = navigator as Navigator & { share?: (d: ShareData) => Promise<void> };
+              if (nav.share) void nav.share({ title: "Recibo", text: receipt }).catch(() => {});
+              else window.print();
+            }}
           >
-            <MessageCircle size={18} aria-hidden /> Mandar por WhatsApp
-          </a>
+            Compartir o imprimir
+          </Button>
           <Button variant="secondary" onClick={onClose}>
-            Listo
+            Cerrar
           </Button>
         </div>
       </Sheet>
@@ -339,8 +351,12 @@ export function CollectSheet({ customer, onClose }: { customer: Detail; onClose:
           <FilterChip active={method === "transfer"} onClick={() => setMethod("transfer")}>
             Transferencia o QR
           </FilterChip>
+          {/* Débito y crédito por separado: el recibo y la caja dicen cuál fue. */}
           <FilterChip active={method === "debit"} onClick={() => setMethod("debit")}>
-            Tarjeta
+            Débito
+          </FilterChip>
+          <FilterChip active={method === "credit"} onClick={() => setMethod("credit")}>
+            Crédito
           </FilterChip>
         </fieldset>
         {method === "cash" && (
@@ -734,7 +750,7 @@ export function CustomersPage() {
                       </span>
                       <span className="block truncate text-[13px] text-texto-suave">
                         {c.phone ?? "sin teléfono"}
-                        {c.oldestDebtDays != null ? ` · ${c.oldestDebtDays} días` : ""} ·{" "}
+                        {c.oldestDebtDays != null ? ` · deuda de ${c.oldestDebtDays} días` : ""} ·{" "}
                         {when(c.lastMovementAt)}
                       </span>
                     </span>
@@ -752,7 +768,11 @@ export function CustomersPage() {
                     >
                       {money(c.balanceCents)}
                     </span>
-                    {wide && <span className="w-32 text-right">{statusChip(c)}</span>}
+                    {wide ? (
+                      <span className="w-32 text-right">{statusChip(c)}</span>
+                    ) : (
+                      (c.overdueCents > 0 || c.overLimit) && statusChip(c)
+                    )}
                   </button>
                 </li>
               ))}

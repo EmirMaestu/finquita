@@ -42,8 +42,16 @@ const SECTIONS = [
   ],
   ["medios", "Medios de pago", "Activar, recargos, alias y CVU, QR y comisiones"],
   ["precios", "Precios y stock", "Redondeo, ganancia, descuentos y vender sin stock"],
-  ["dispositivos", "Dispositivos", "Prueba de la pistola, impresora, planilla de códigos"],
-  ["tickets", "Tickets", "Encabezado, pie, impresión automática y copias"],
+  [
+    "dispositivos",
+    "Dispositivos",
+    "Habilitar este equipo, prueba de la pistola y planilla de códigos",
+  ],
+  [
+    "tickets",
+    "Tickets",
+    "Impresora, ancho del papel, encabezado, pie, impresión automática y copias",
+  ],
   ["whatsapp", "WhatsApp", "Hoy, pedidos a proveedores por WhatsApp. El bot llega más adelante"],
   ["avisos", "Avisos", "Qué aviso le llega a cada rol, en la app y como notificación del celular"],
   ["facturacion", "Facturación electrónica", "Próximamente"],
@@ -943,6 +951,7 @@ function TicketsSection({ s }: { s: SettingsMap }) {
       </div>
       <Toggle
         label="Imprimir solo al cobrar"
+        hint="El ticket sale apenas se cobra, sin tocar Imprimir."
         checked={t.autoPrint}
         onChange={(v) => save.mutate({ autoPrint: v })}
       />

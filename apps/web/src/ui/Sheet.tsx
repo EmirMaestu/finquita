@@ -61,6 +61,29 @@ export function Sheet({
         role="dialog"
         aria-modal="true"
         aria-label={title}
+        onKeyDown={(e) => {
+          // Enter en un campo de una línea hace lo del botón principal del pie (como un
+          // formulario), salvo que el campo ya use el Enter o sea un teclado numérico.
+          const t = e.target;
+          if (
+            e.key !== "Enter" ||
+            e.defaultPrevented ||
+            e.nativeEvent.isComposing ||
+            !(t instanceof HTMLInputElement) ||
+            ["checkbox", "radio", "file", "button"].includes(t.type) ||
+            t.closest("[data-keypad]")
+          )
+            return;
+          const buttons = [
+            ...(ref.current?.querySelectorAll<HTMLButtonElement>("[data-sheet-footer] button") ??
+              []),
+          ].filter((x) => !x.disabled && x.classList.contains("bg-primario"));
+          // Solo la primaria (nunca "Sí, quitar" ni un secundario).
+          const main = buttons[buttons.length - 1];
+          if (!main) return;
+          e.preventDefault();
+          main.click();
+        }}
         className={cx(
           "relative flex max-h-[92vh] w-full flex-col bg-superficie shadow-xl",
           phone
@@ -88,7 +111,11 @@ export function Sheet({
             {error}
           </div>
         )}
-        {footer && <div className="flex gap-2 border-t border-borde p-4">{footer}</div>}
+        {footer && (
+          <div data-sheet-footer className="flex gap-2 border-t border-borde p-4">
+            {footer}
+          </div>
+        )}
       </div>
     </div>
   );
