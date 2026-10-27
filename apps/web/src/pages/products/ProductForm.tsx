@@ -17,6 +17,7 @@ import { fetchCategories, type ProductDetail, type ProductItem } from "../../dat
 import { scanRouter } from "../../scan/GlobalScan";
 import { Button, IconButton } from "../../ui/Button";
 import { SelectField, TextField, Toggle } from "../../ui/Field";
+import { MoreFields } from "../../ui/MoreFields";
 import { Sheet } from "../../ui/Sheet";
 import { toast } from "../../ui/toast";
 import { saveSupplierLink, useCanLinkSuppliers } from "./SupplierLinkSheet";
@@ -286,43 +287,6 @@ export function ProductForm({ open, onClose, product, onSaved, initialCode }: Pr
           )}
         </div>
         <TextField
-          label="Código interno (el de la planilla)"
-          value={plu}
-          onChange={(e) => setPlu(e.target.value)}
-          placeholder="Ej.: 1042"
-          hint="Para pesables y botones rápidos."
-        />
-        {!editing && canLink && (
-          <>
-            <SelectField
-              label="Proveedor principal"
-              value={supplierId}
-              onChange={(e) => setSupplierId(e.target.value)}
-              hint={
-                suppliers.isError
-                  ? "No pudimos traer los proveedores. Lo podés agregar después desde la ficha."
-                  : "Opcional. Lo usa el pedido sugerido."
-              }
-            >
-              <option value="">{suppliers.isPending ? "Cargando…" : "Sin proveedor"}</option>
-              {(suppliers.data ?? []).map((x) => (
-                <option key={x.id} value={x.id}>
-                  {x.name}
-                </option>
-              ))}
-            </SelectField>
-            <TextField
-              label="Código del proveedor"
-              value={supplierCode}
-              onChange={(e) => setSupplierCode(e.target.value)}
-              placeholder="Ej.: YPL-1K"
-              maxLength={40}
-              disabled={!supplierId}
-              hint={supplierId ? "Opcional." : "Elegí primero el proveedor."}
-            />
-          </>
-        )}
-        <TextField
           label="Stock mínimo"
           inputMode="decimal"
           value={minStock}
@@ -338,31 +302,94 @@ export function ProductForm({ open, onClose, product, onSaved, initialCode }: Pr
             placeholder="Opcional"
           />
         )}
-        <TextField
-          label="Ubicación"
-          value={location}
-          onChange={(e) => setLocation(e.target.value)}
-          placeholder="Ej.: Góndola 3"
-        />
-        <div className="flex flex-col lg:col-span-2">
-          <Toggle
-            label="Precio fijo"
-            hint="Queda afuera del cambio masivo de precios (cigarrillos)."
-            checked={fixedPrice}
-            onChange={setFixedPrice}
-          />
-          <Toggle
-            label="Mayores de 18"
-            hint="Acordate de pedir documento al vender."
-            checked={adult}
-            onChange={setAdult}
-          />
-          <Toggle
-            label="Botón rápido en Vender"
-            hint="Para lo que no tiene código: pan, fiambres, verdura."
-            checked={quick}
-            onChange={setQuick}
-          />
+        {/* Lo pesable necesita su código interno a la vista; lo demás es opcional y va plegado. */}
+        {unit === "kg" && (
+          <>
+            {" "}
+            <TextField
+              label="Código interno (el de la planilla)"
+              value={plu}
+              onChange={(e) => setPlu(e.target.value)}
+              placeholder="Ej.: 1042"
+              hint="Para pesables y botones rápidos."
+            />
+          </>
+        )}
+        <div className="lg:col-span-2">
+          <MoreFields
+            open={Boolean(location || fixedPrice || adult || quick || (unit !== "kg" && plu))}
+          >
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              {unit !== "kg" && (
+                <>
+                  {" "}
+                  <TextField
+                    label="Código interno (el de la planilla)"
+                    value={plu}
+                    onChange={(e) => setPlu(e.target.value)}
+                    placeholder="Ej.: 1042"
+                    hint="Para pesables y botones rápidos."
+                  />
+                </>
+              )}
+              {!editing && canLink && (
+                <>
+                  <SelectField
+                    label="Proveedor principal"
+                    value={supplierId}
+                    onChange={(e) => setSupplierId(e.target.value)}
+                    hint={
+                      suppliers.isError
+                        ? "No pudimos traer los proveedores. Lo podés agregar después desde la ficha."
+                        : "Opcional. Lo usa el pedido sugerido."
+                    }
+                  >
+                    <option value="">{suppliers.isPending ? "Cargando…" : "Sin proveedor"}</option>
+                    {(suppliers.data ?? []).map((x) => (
+                      <option key={x.id} value={x.id}>
+                        {x.name}
+                      </option>
+                    ))}
+                  </SelectField>
+                  <TextField
+                    label="Código del proveedor"
+                    value={supplierCode}
+                    onChange={(e) => setSupplierCode(e.target.value)}
+                    placeholder="Ej.: YPL-1K"
+                    maxLength={40}
+                    disabled={!supplierId}
+                    hint={supplierId ? "Opcional." : "Elegí primero el proveedor."}
+                  />
+                </>
+              )}
+              <TextField
+                label="Ubicación"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder="Ej.: Góndola 3"
+              />
+              <div className="flex flex-col lg:col-span-2">
+                <Toggle
+                  label="Precio fijo"
+                  hint="Queda afuera del cambio masivo de precios (cigarrillos)."
+                  checked={fixedPrice}
+                  onChange={setFixedPrice}
+                />
+                <Toggle
+                  label="Mayores de 18"
+                  hint="Acordate de pedir documento al vender."
+                  checked={adult}
+                  onChange={setAdult}
+                />
+                <Toggle
+                  label="Botón rápido en Vender"
+                  hint="Para lo que no tiene código: pan, fiambres, verdura."
+                  checked={quick}
+                  onChange={setQuick}
+                />
+              </div>
+            </div>
+          </MoreFields>
         </div>
       </form>
     </Sheet>

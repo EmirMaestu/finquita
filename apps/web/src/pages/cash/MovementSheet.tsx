@@ -232,12 +232,9 @@ export function MovementSheet({
             <span className="text-[13px] text-texto-suave">opcional</span>
           </div>
         )}
-        <div className="flex justify-between rounded-lg bg-fondo px-3 py-2 text-[13px] text-texto-suave">
-          <span>
-            {kind === "income" ? "Entra al" : "Sale del"} efectivo de {registerName}
-            {after !== null ? ` · queda ${formatMoney(after)}` : ""}
-          </span>
-          <span>Pedido por {me?.member.name}</span>
+        <div className="rounded-lg bg-fondo px-3 py-2 text-[13px] text-texto-suave">
+          {kind === "income" ? "Entra al" : "Sale del"} efectivo de {registerName}
+          {after !== null ? ` · queda ${formatMoney(after)}` : ""}
         </div>
         {error && (
           <div role="alert" className="text-[13px] font-semibold text-peligro">

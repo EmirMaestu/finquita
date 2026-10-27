@@ -16,6 +16,7 @@ import { fetchCategories, fetchProduct, fetchProducts } from "../../data/product
 import { Button } from "../../ui/Button";
 import { Chip, FilterChip } from "../../ui/Chip";
 import { SelectField, TextField } from "../../ui/Field";
+import { MoreFields } from "../../ui/MoreFields";
 import { Sheet } from "../../ui/Sheet";
 import { EmptyState, ErrorState, SkeletonList } from "../../ui/States";
 
@@ -101,6 +102,20 @@ function PromoForm({
     },
     onError: (e) => setError(e instanceof ApiError ? e.message : "No se pudo guardar."),
   });
+  const daysField = (
+    <fieldset className="m-0 flex flex-wrap gap-2 border-0 p-0">
+      <legend className="mb-1.5 w-full text-[13px] font-semibold">Días de la semana</legend>
+      {DAYS.map((d, i) => (
+        <FilterChip
+          key={d}
+          active={days.includes(i)}
+          onClick={() => setDays((x) => (x.includes(i) ? x.filter((y) => y !== i) : [...x, i]))}
+        >
+          {d}
+        </FilterChip>
+      ))}
+    </fieldset>
+  );
   return (
     <Sheet
       open
@@ -121,12 +136,6 @@ function PromoForm({
             </FilterChip>
           ))}
         </div>
-        <TextField
-          label="Nombre"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Se arma solo si lo dejás vacío"
-        />
         {kind === "nth_unit" && (
           <div className="grid grid-cols-2 gap-3">
             <TextField
@@ -218,32 +227,31 @@ function PromoForm({
             </button>
           ))}
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        {/* "Día de la semana" necesita los días a la vista; el resto es opcional y va plegado. */}
+        {kind === "weekday" && daysField}
+        <MoreFields label="Nombre y fechas (opcional)" open={Boolean(name || startsOn || endsOn)}>
           <TextField
-            label="Desde"
-            type="date"
-            value={startsOn}
-            onChange={(e) => setStartsOn(e.target.value)}
+            label="Nombre"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Se arma solo si lo dejás vacío"
           />
-          <TextField
-            label="Hasta"
-            type="date"
-            value={endsOn}
-            onChange={(e) => setEndsOn(e.target.value)}
-          />
-        </div>
-        <fieldset className="m-0 flex flex-wrap gap-2 border-0 p-0">
-          <legend className="mb-1.5 w-full text-[13px] font-semibold">Días de la semana</legend>
-          {DAYS.map((d, i) => (
-            <FilterChip
-              key={d}
-              active={days.includes(i)}
-              onClick={() => setDays((x) => (x.includes(i) ? x.filter((y) => y !== i) : [...x, i]))}
-            >
-              {d}
-            </FilterChip>
-          ))}
-        </fieldset>
+          <div className="grid grid-cols-2 gap-3">
+            <TextField
+              label="Desde"
+              type="date"
+              value={startsOn}
+              onChange={(e) => setStartsOn(e.target.value)}
+            />
+            <TextField
+              label="Hasta"
+              type="date"
+              value={endsOn}
+              onChange={(e) => setEndsOn(e.target.value)}
+            />
+          </div>
+          {kind !== "weekday" && daysField}
+        </MoreFields>
         {error && (
           <div role="alert" className="text-sm font-semibold text-peligro">
             {error}

@@ -26,6 +26,7 @@ import { Checkbox } from "../../ui/Checkbox";
 import { Chip, FilterChip } from "../../ui/Chip";
 import { cx } from "../../ui/cx";
 import { SelectField, TextField } from "../../ui/Field";
+import { MoreFields } from "../../ui/MoreFields";
 import { NumPad } from "../../ui/NumPad";
 import { Sheet } from "../../ui/Sheet";
 import { EmptyState, ErrorState, SkeletonList } from "../../ui/States";
@@ -162,12 +163,7 @@ export function CustomerForm({
           onChange={set("name")}
           placeholder="Rosa Giménez"
         />
-        <div className="grid grid-cols-2 gap-3">
-          <TextField label="Apodo" value={f.nickname} onChange={set("nickname")} />
-          <TextField label="Teléfono" inputMode="tel" value={f.phone} onChange={set("phone")} />
-        </div>
-        <TextField label="Dirección" value={f.address} onChange={set("address")} />
-        <TextField label="DNI (opcional)" inputMode="numeric" value={f.dni} onChange={set("dni")} />
+        <TextField label="Teléfono" inputMode="tel" value={f.phone} onChange={set("phone")} />
         <div className="grid grid-cols-2 gap-3">
           <TextField
             label="Límite"
@@ -185,6 +181,11 @@ export function CustomerForm({
             ))}
           </SelectField>
         </div>
+        <MoreFields open={Boolean(f.nickname || f.address || f.dni || error?.includes("DNI"))}>
+          <TextField label="Apodo" value={f.nickname} onChange={set("nickname")} />
+          <TextField label="Dirección" value={f.address} onChange={set("address")} />
+          <TextField label="DNI" inputMode="numeric" value={f.dni} onChange={set("dni")} />
+        </MoreFields>
       </div>
     </Sheet>
   );

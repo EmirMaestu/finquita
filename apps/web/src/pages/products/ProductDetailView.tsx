@@ -66,12 +66,8 @@ function PriceChart({ p }: { p: ProductDetail }) {
     prices.push(lastPrice);
     costs.push(lastCost);
   }
-  if (prices.length < 2)
-    return (
-      <div className="text-xs text-texto-suave">
-        Todavía no hay cambios de precio para graficar.
-      </div>
-    );
+  // Sin cambios de precio no hay nada que graficar: no se muestra.
+  if (prices.length < 2) return null;
   const max = Math.max(...prices, ...costs) * 1.05;
   const min = Math.min(...prices, ...costs.filter(Boolean)) * 0.9;
   const toPts = (v: number[]) =>
@@ -79,24 +75,42 @@ function PriceChart({ p }: { p: ProductDetail }) {
       .map((x, i) => `${(i / (v.length - 1)) * 300},${80 - ((x - min) / (max - min || 1)) * 76}`)
       .join(" ");
   return (
-    <svg
-      viewBox="0 0 300 80"
-      className="h-20 w-full"
-      preserveAspectRatio="none"
-      role="img"
-      aria-label="Costo y precio en el tiempo"
-    >
-      <polyline points={toPts(prices)} fill="none" stroke="var(--primario)" strokeWidth="2" />
-      {costs.some(Boolean) && (
-        <polyline
-          points={toPts(costs)}
-          fill="none"
-          stroke="var(--texto-apagado)"
-          strokeWidth="2"
-          strokeDasharray="4 3"
-        />
-      )}
-    </svg>
+    <>
+      <div className="flex justify-between text-xs text-texto-suave">
+        <span>Costo y precio</span>
+        {/* Qué línea es cada una. */}
+        <span className="flex items-center gap-3">
+          <span className="inline-flex items-center gap-1">
+            <span aria-hidden className="inline-block h-0.5 w-4 bg-primario" /> Precio
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <span
+              aria-hidden
+              className="inline-block w-4 border-t-2 border-dashed border-texto-apagado"
+            />{" "}
+            Costo
+          </span>
+        </span>
+      </div>
+      <svg
+        viewBox="0 0 300 80"
+        className="h-20 w-full"
+        preserveAspectRatio="none"
+        role="img"
+        aria-label="Costo y precio en el tiempo"
+      >
+        <polyline points={toPts(prices)} fill="none" stroke="var(--primario)" strokeWidth="2" />
+        {costs.some(Boolean) && (
+          <polyline
+            points={toPts(costs)}
+            fill="none"
+            stroke="var(--texto-apagado)"
+            strokeWidth="2"
+            strokeDasharray="4 3"
+          />
+        )}
+      </svg>
+    </>
   );
 }
 
@@ -209,9 +223,10 @@ export function ProductDetailView({
             <Row label="Códigos de barras">
               {p.barcodes.length ? p.barcodes.join(", ") : "Sin código"}
             </Row>
-            <Row label="Código interno">{p.internalCode ?? "—"}</Row>
-            <Row label="Ubicación">{p.location ?? "—"}</Row>
-            <Row label="Restricción">{p.ageRestricted ? "Mayores de 18" : "Ninguna"}</Row>
+            {/* Solo lo que tiene dato: las filas en "—" o "Ninguna" no suman. */}
+            {p.internalCode && <Row label="Código interno">{p.internalCode}</Row>}
+            {p.location && <Row label="Ubicación">{p.location}</Row>}
+            {p.ageRestricted && <Row label="Restricción">Mayores de 18</Row>}
             {p.purchaseUnitName && (
               <Row label="Unidad de compra">
                 {p.purchaseUnitName} × {formatQty(p.purchaseUnitQty ?? 1)}
@@ -263,34 +278,9 @@ export function ProductDetailView({
                 )}
               </div>
             </div>
-            {seeCosts && (
-              <>
-                <div className="flex justify-between text-xs text-texto-suave">
-                  <span>Costo y precio</span>
-                  {/* Qué línea es cada una. */}
-                  <span className="flex items-center gap-3">
-                    <span className="inline-flex items-center gap-1">
-                      <span aria-hidden className="inline-block h-0.5 w-4 bg-primario" /> Precio
-                    </span>
-                    <span className="inline-flex items-center gap-1">
-                      <span
-                        aria-hidden
-                        className="inline-block w-4 border-t-2 border-dashed border-texto-apagado"
-                      />{" "}
-                      Costo
-                    </span>
-                  </span>
-                </div>
-                <PriceChart p={p} />
-              </>
-            )}
+            {seeCosts && <PriceChart p={p} />}
             <div>
-              <Row label="IVA">{formatPercent(p.vatBp, { decimals: 1 })} · para fase 2</Row>
-              <Row label="Precio fijo">
-                {p.fixedPrice
-                  ? "Sí · queda afuera del cambio masivo"
-                  : "No · entra al cambio masivo"}
-              </Row>
+              {p.fixedPrice && <Row label="Precio fijo">Sí · queda afuera del cambio masivo</Row>}
               {primary && (
                 <Row label="Proveedor principal">
                   {primary.name}

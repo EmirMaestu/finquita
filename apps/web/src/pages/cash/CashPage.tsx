@@ -172,15 +172,20 @@ export function CashPage() {
         <span className="font-semibold">Movimientos</span>
         <span className="text-texto-suave">· {v?.moves.length ?? 0}</span>
         <span className="flex-1" />
-        <FilterChip active={filter === "all"} onClick={() => setFilter("all")}>
-          Todos
-        </FilterChip>
-        <FilterChip active={filter === "cash"} onClick={() => setFilter("cash")}>
-          Solo efectivo
-        </FilterChip>
-        <FilterChip active={filter === "manual"} onClick={() => setFilter("manual")}>
-          Manuales
-        </FilterChip>
+        {/* Los filtros aparecen cuando hay algo que filtrar. */}
+        {(v?.moves.length ?? 0) > 0 && (
+          <>
+            <FilterChip active={filter === "all"} onClick={() => setFilter("all")}>
+              Todos
+            </FilterChip>
+            <FilterChip active={filter === "cash"} onClick={() => setFilter("cash")}>
+              Solo efectivo
+            </FilterChip>
+            <FilterChip active={filter === "manual"} onClick={() => setFilter("manual")}>
+              Manuales
+            </FilterChip>
+          </>
+        )}
       </div>
       <ul className="m-0 min-h-0 flex-1 list-none overflow-y-auto p-0">
         {moves.map((m) => (
@@ -234,13 +239,11 @@ export function CashPage() {
           <Button variant="secondary" onClick={() => setSheet("income")}>
             Ingreso
           </Button>
-          <Button
-            variant="ghost"
-            className="col-span-3 lg:col-span-1"
-            onClick={() => navigate("/caja/historial")}
-          >
-            Cierres
-          </Button>
+          {desktop && (
+            <Button variant="ghost" onClick={() => navigate("/caja/historial")}>
+              Cierres
+            </Button>
+          )}
           {/* En la compu, F8 y Enter llevan del mostrador al cierre (ronda 3). */}
           <Button
             size={desktop ? "md" : "xl"}
@@ -277,6 +280,10 @@ export function CashPage() {
         <>
           {summary}
           {list}
+          {/* En el celular, los cierres anteriores al final: es lo que menos se usa. */}
+          <Button variant="ghost" onClick={() => navigate("/caja/historial")}>
+            Cierres anteriores
+          </Button>
         </>
       )}
       {sheet && (

@@ -986,7 +986,7 @@ export function SellPage() {
           </Button>
           <Menu
             label="Más"
-            className="flex-1"
+            className="flex-1 [&>button]:h-12 [&>button]:w-full [&>button]:justify-center [&>button]:text-base"
             items={[
               { label: "Asignar cliente o fiado", onSelect: () => setDialog({ kind: "customer" }) },
               {
