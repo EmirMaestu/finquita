@@ -2,11 +2,11 @@ import { Navigate, NavLink } from "react-router";
 import { useCan } from "../../app/session";
 import { cx } from "../../ui/cx";
 
-/** Pestañas del módulo Compras: solo las que el rol puede abrir. */
+/** Pestañas del módulo Compras: solo las que el rol puede abrir. La lista de precios del
+ *  proveedor se usa poco: se abre desde Proveedores, no tiene pestaña. */
 export function usePurchasesTabs(): [string, string][] {
   const orders = useCan("build_orders");
   const costs = useCan("view_costs");
-  const prices = useCan("change_prices");
   const receive = useCan("count_receive");
   return [
     ...(orders ? ([["/compras/sugerido", "Sugerido"]] as [string, string][]) : []),
@@ -14,7 +14,6 @@ export function usePurchasesTabs(): [string, string][] {
     ...(orders ? ([["/compras/proveedores", "Proveedores"]] as [string, string][]) : []),
     ...(receive ? ([["/compras/recepcion", "Recepción"]] as [string, string][]) : []),
     ...(costs ? ([["/compras/facturas", "Facturas y pagos"]] as [string, string][]) : []),
-    ...(prices ? ([["/compras/listas", "Listas de precios"]] as [string, string][]) : []),
   ];
 }
 

@@ -2,6 +2,7 @@ import { formatDate, formatMoney, formatQty, ORDER_STATUS } from "@mostrador/sha
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft, MessageCircle, Star } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router";
 import { NoPermissionFor } from "../../app/guards";
 import { useCan } from "../../app/session";
 import { ApiError, api } from "../../data/api";
@@ -359,6 +360,10 @@ function SupplierDetailView({ id, onEdit }: { id: string; onEdit: (s: Supplier) 
 export function SuppliersPage() {
   const canSee = useCan("count_receive");
   const canEdit = useCan("build_orders");
+  const canPrices = useCan("change_prices");
+  const canCosts = useCan("view_costs");
+  const canPriceList = canPrices && canCosts;
+  const navigate = useNavigate();
   const [open, setOpen] = useState<string | null>(null);
   const [form, setForm] = useState<{ s: Supplier | null } | null>(null);
   // En el celular la ficha va sola, a pantalla completa, con "volver" (antes quedaba abajo de todo).
@@ -380,6 +385,11 @@ export function SuppliersPage() {
           <span className="text-sm">
             A pagar <strong>{formatMoney(total)}</strong>
           </span>
+        )}
+        {canPriceList && (
+          <Button variant="secondary" onClick={() => navigate("/compras/listas")}>
+            Cargar lista de precios
+          </Button>
         )}
         {canEdit && <Button onClick={() => setForm({ s: null })}>Nuevo</Button>}
       </div>
@@ -431,13 +441,16 @@ export function SuppliersPage() {
                         : ""}
                     </span>
                   </span>
-                  {s.whatsapp ? (
-                    <Chip tone="ok" icon={MessageCircle}>
-                      WhatsApp
-                    </Chip>
-                  ) : (
-                    <Chip>Sin WhatsApp</Chip>
-                  )}
+                  {/* En el celular el canal ya está en la línea de abajo: el chip solo en la compu. */}
+                  <span className="hidden lg:inline-flex">
+                    {s.whatsapp ? (
+                      <Chip tone="ok" icon={MessageCircle}>
+                        WhatsApp
+                      </Chip>
+                    ) : (
+                      <Chip>Sin WhatsApp</Chip>
+                    )}
+                  </span>
                   {s.balanceCents !== undefined && (
                     <span
                       className={cx(

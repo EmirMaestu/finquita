@@ -1,6 +1,6 @@
 import { formatMoney, formatPercent } from "@mostrador/shared";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { FileSpreadsheet } from "lucide-react";
+import { ChevronLeft, FileSpreadsheet } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { NoPermissionFor } from "../../app/guards";
@@ -8,7 +8,7 @@ import { useGrant } from "../../app/session";
 import { ApiError, api } from "../../data/api";
 import { localDb } from "../../data/db";
 import { useLive } from "../../data/live";
-import { Button } from "../../ui/Button";
+import { Button, IconButton } from "../../ui/Button";
 import { Chip } from "../../ui/Chip";
 import { SelectField, TextField, Toggle } from "../../ui/Field";
 import { toast } from "../../ui/toast";
@@ -126,7 +126,12 @@ export function PriceListPage() {
         <h1 className="m-0 hidden text-[22px] font-semibold lg:block">Compras</h1>
         <PurchasesTabs />
       </div>
-      <h2 className="m-0 text-lg font-semibold">Lista de precios del proveedor</h2>
+      <div className="flex items-center gap-1">
+        <IconButton label="Volver a Proveedores" onClick={() => navigate("/compras/proveedores")}>
+          <ChevronLeft size={20} />
+        </IconButton>
+        <h2 className="m-0 text-lg font-semibold">Lista de precios del proveedor</h2>
+      </div>
       <div className="grid gap-3 rounded-card border border-borde bg-superficie p-4 lg:grid-cols-2">
         <SelectField
           label="Proveedor"
