@@ -135,12 +135,6 @@ export function SaleTable({
           );
         })}
       </ul>
-      <div className="flex gap-4 px-3.5 py-2 text-xs text-texto-suave">
-        <span>↑ ↓ elegir línea</span>
-        <span>+ − cantidad</span>
-        <span>Supr quitar</span>
-        <span>3 * y escanear: tres · * 3 Enter: deja la línea en 3</span>
-      </div>
     </div>
   );
 }

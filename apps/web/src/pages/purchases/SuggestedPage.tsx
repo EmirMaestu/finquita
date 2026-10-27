@@ -280,7 +280,7 @@ export function SuggestedPage({
                             </td>
                             <td className="px-2 text-right">{qtyInput(l, i)}</td>
                             {costs && (
-                              <td className="tnum px-2 text-right">
+                              <td className="tnum px-2 text-right whitespace-nowrap">
                                 {l.costCents != null ? formatMoney(l.costCents) : "—"}
                               </td>
                             )}
@@ -330,16 +330,12 @@ export function SuggestedPage({
                     ))}
                   </ul>
                 )}
-                <div className="flex items-center gap-3 border-t border-borde px-4 py-3 text-sm">
-                  <span className="flex-1 text-texto-suave">
-                    {wide ? "Tab y Enter para moverte" : ""}
-                  </span>
-                  {costs && (
-                    <span>
-                      Total <strong className="tnum text-base">{formatMoney(total)}</strong>
-                    </span>
-                  )}
-                </div>
+                {/* El total va una sola vez, en el resumen de al lado (o de abajo en el celular). */}
+                {wide && (
+                  <div className="border-t border-borde px-4 py-3 text-sm text-texto-suave">
+                    Tab y Enter para moverte
+                  </div>
+                )}
               </section>
               <aside className="flex flex-col gap-3">
                 {focused && wide && (
@@ -350,9 +346,6 @@ export function SuggestedPage({
                     <div className="mb-1 font-semibold">{focused.name} · la cuenta</div>
                     <p className="m-0" aria-live="polite">
                       {focused.explanation}
-                    </p>
-                    <p className="m-0 mt-2 text-xs text-texto-suave">
-                      pedido = venta diaria × días a cubrir − stock − ya pedido, redondeado al bulto
                     </p>
                   </section>
                 )}

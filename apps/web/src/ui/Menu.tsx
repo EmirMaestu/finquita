@@ -10,11 +10,14 @@ export function Menu({
   items,
   className,
   align = "right",
+  up = false,
 }: {
   label: string;
   items: MenuItem[];
   className?: string;
   align?: "left" | "right";
+  /** Abre hacia arriba (para un menú al pie de la pantalla). */
+  up?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -47,8 +50,9 @@ export function Menu({
         <div
           role="menu"
           className={cx(
-            "absolute top-11 z-30 flex w-60 flex-col rounded-card border border-borde bg-superficie p-1 shadow-lg",
+            "absolute z-30 flex w-60 flex-col rounded-card border border-borde bg-superficie p-1 shadow-lg",
             align === "right" ? "right-0" : "left-0",
+            up ? "bottom-12" : "top-11",
           )}
         >
           {items

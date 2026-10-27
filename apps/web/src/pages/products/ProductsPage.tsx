@@ -27,12 +27,15 @@ import { ProductDetailView } from "./ProductDetailView";
 import { ProductForm } from "./ProductForm";
 import { ProductChips, StockChip } from "./StockChip";
 
-const FILTERS: { id: ProductFilter | null; label: string; costs?: boolean }[] = [
+// A la vista, los tres filtros de todos los días; el resto, en "Más filtros".
+const FILTERS: { id: ProductFilter | null; label: string }[] = [
   { id: null, label: "Todos" },
   { id: "low", label: "Stock bajo" },
   { id: "out", label: "Sin stock" },
-  { id: "negative", label: "Negativo" },
-  { id: "expiring", label: "Por vencer" },
+];
+const MORE_FILTERS: { id: ProductFilter; label: string; costs?: boolean; lots?: boolean }[] = [
+  { id: "negative", label: "Stock negativo" },
+  { id: "expiring", label: "Por vencer", lots: true },
   { id: "stale", label: "Sin tocar 30 días" },
   { id: "no_cost", label: "Sin costo", costs: true },
   { id: "inactive", label: "Inactivos" },
@@ -306,11 +309,31 @@ export function ProductsPage() {
 
   const filters = (
     <div className={cx("flex gap-2", desktop ? "flex-wrap" : "overflow-x-auto px-4 pt-3")}>
-      {FILTERS.filter((f) => !f.costs || seeCosts).map((f) => (
+      {FILTERS.map((f) => (
         <FilterChip key={f.label} active={filter === f.id} onClick={() => setFilter(f.id)}>
           {f.label}
         </FilterChip>
       ))}
+      <select
+        aria-label="Más filtros"
+        value={MORE_FILTERS.some((f) => f.id === filter) ? (filter ?? "") : ""}
+        onChange={(e) => setFilter((e.target.value || null) as ProductFilter | null)}
+        className={cx(
+          "h-11 shrink-0 rounded-full border px-3 text-[13px] font-semibold lg:h-8",
+          MORE_FILTERS.some((f) => f.id === filter)
+            ? "border-texto bg-texto text-fondo"
+            : "border-borde bg-superficie",
+        )}
+      >
+        <option value="">Más filtros</option>
+        {MORE_FILTERS.filter((f) => (!f.costs || seeCosts) && (!f.lots || features.lots)).map(
+          (f) => (
+            <option key={f.id} value={f.id}>
+              {f.label}
+            </option>
+          ),
+        )}
+      </select>
     </div>
   );
 

@@ -10,18 +10,10 @@ import {
   type ReportCell,
   type ReportColumn,
   todayAR,
-  writeCsv,
   writeXlsx,
 } from "@mostrador/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  ArrowDownRight,
-  ArrowUpRight,
-  ChevronLeft,
-  Download,
-  FileSpreadsheet,
-  Share2,
-} from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, ChevronLeft, FileSpreadsheet, Share2 } from "lucide-react";
 import { useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import { NoPermissionFor } from "../../app/guards";
@@ -136,6 +128,20 @@ function save(data: BlobPart, type: string, name: string) {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 30_000);
 }
+
+const chartEmpty = (c: NonNullable<Report["chart"]>) =>
+  c.points.every((p) => !p.value && !p.previous);
+
+const canShareFiles = (() => {
+  try {
+    const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
+    return Boolean(
+      nav.canShare?.({ files: [new File(["x"], "x.xlsx", { type: "application/octet-stream" })] }),
+    );
+  } catch {
+    return false;
+  }
+})();
 
 function Bars({ chart }: { chart: NonNullable<Report["chart"]> }) {
   const max = Math.max(1, ...chart.points.map((p) => Math.max(p.value, p.previous ?? 0)));
@@ -446,40 +452,30 @@ function ReportView({ kind }: { kind: Kind }) {
               >
                 Descargar Excel
               </Button>
-              <Button
-                variant="ghost"
-                icon={<Download size={18} />}
-                onClick={() =>
-                  save(
-                    writeCsv(exportRows(r)),
-                    "text/csv;charset=utf-8",
-                    `${kind}-${r.range.from}.csv`,
-                  )
-                }
-              >
-                Descargar CSV
-              </Button>
-              <Button
-                variant="ghost"
-                icon={<Share2 size={18} />}
-                onClick={() => {
-                  // En el celular, el archivo va directo a WhatsApp o al mail.
-                  const file = new File(
-                    [writeXlsx(exportRows(r), meta?.title) as BlobPart],
-                    `${kind}-${r.range.from}.xlsx`,
-                    { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" },
-                  );
-                  const nav = navigator as Navigator & {
-                    canShare?: (d: ShareData) => boolean;
-                    share?: (d: ShareData) => Promise<void>;
-                  };
-                  if (nav.share && nav.canShare?.({ files: [file] }))
-                    void nav.share({ files: [file], title: meta?.title }).catch(() => {});
-                  else toast({ text: "Este equipo no comparte archivos: usá Descargar." });
-                }}
-              >
-                Compartir
-              </Button>
+              {/* Compartir solo donde el equipo comparte archivos (el celular); si no, sobra. */}
+              {canShareFiles && (
+                <Button
+                  variant="ghost"
+                  icon={<Share2 size={18} />}
+                  onClick={() => {
+                    // En el celular, el archivo va directo a WhatsApp o al mail.
+                    const file = new File(
+                      [writeXlsx(exportRows(r), meta?.title) as BlobPart],
+                      `${kind}-${r.range.from}.xlsx`,
+                      { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" },
+                    );
+                    const nav = navigator as Navigator & {
+                      canShare?: (d: ShareData) => boolean;
+                      share?: (d: ShareData) => Promise<void>;
+                    };
+                    if (nav.share && nav.canShare?.({ files: [file] }))
+                      void nav.share({ files: [file], title: meta?.title }).catch(() => {});
+                    else toast({ text: "Este equipo no comparte archivos: usá Descargar." });
+                  }}
+                >
+                  Compartir
+                </Button>
+              )}
             </div>
           </section>
           {params.get("categoryId") && (
@@ -492,8 +488,9 @@ function ReportView({ kind }: { kind: Kind }) {
               Todas las categorías
             </Button>
           )}
-          {r.chart && r.chart.points.length > 0 && <Bars chart={r.chart} />}
-          {r.chart?.grid && <Heatmap grid={r.chart.grid} />}
+          {/* Sin nada en el período, los gráficos vacíos no se muestran. */}
+          {r.chart && !chartEmpty(r.chart) && <Bars chart={r.chart} />}
+          {r.chart?.grid?.flat().some(Boolean) && <Heatmap grid={r.chart.grid} />}
           {kind === "result" && <FixedExpenses />}
           {r.tables.map((t) => (
             <section

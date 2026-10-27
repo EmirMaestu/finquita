@@ -19,7 +19,7 @@ import {
   todayAR,
   updateLine,
 } from "@mostrador/shared";
-import { Lock, Pause, ShieldAlert, User } from "lucide-react";
+import { Pause, ShieldAlert, User } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { NoPermissionFor } from "../../app/guards";
@@ -1080,24 +1080,27 @@ export function SellPage() {
           <span>Venta en curso</span>
           <span>{plural(totals.itemCount, "ítem", "ítems")}</span>
         </div>
-        <div className="flex flex-col gap-1.5 text-sm">
-          <div className="flex justify-between">
-            <span className="text-texto-suave">Subtotal</span>
-            <span className="tnum">{formatMoney(totals.subtotalCents)}</span>
+        {/* Subtotal, promociones y descuento solo cuando hay algo que restar. */}
+        {(promoTotal > 0 || totals.discountCents > 0) && (
+          <div className="flex flex-col gap-1.5 text-sm">
+            <div className="flex justify-between">
+              <span className="text-texto-suave">Subtotal</span>
+              <span className="tnum">{formatMoney(totals.subtotalCents)}</span>
+            </div>
+            {promoTotal > 0 && (
+              <div className="flex justify-between">
+                <span className="text-texto-suave">Promociones</span>
+                <span className="tnum text-exito">−{formatMoney(promoTotal)}</span>
+              </div>
+            )}
+            {totals.discountCents > 0 && (
+              <div className="flex justify-between">
+                <span className="text-texto-suave">Descuento</span>
+                <span className="tnum text-exito">−{formatMoney(totals.discountCents)}</span>
+              </div>
+            )}
           </div>
-          <div className="flex justify-between">
-            <span className="text-texto-suave">Promociones</span>
-            <span className={cx("tnum", promoTotal ? "text-exito" : "text-texto-suave")}>
-              {promoTotal ? `−${formatMoney(promoTotal)}` : "Ninguna"}
-            </span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-texto-suave">Descuento</span>
-            <span className={cx("tnum", totals.discountCents ? "text-exito" : "text-texto-suave")}>
-              {totals.discountCents ? `−${formatMoney(totals.discountCents)}` : "Ninguno"}
-            </span>
-          </div>
-        </div>
+        )}
         <div className="flex flex-col gap-0.5 border-t border-borde pt-3">
           <span className="text-[13px] text-texto-suave">Total</span>
           <output
@@ -1142,6 +1145,7 @@ export function SellPage() {
         <Button onClick={openPay} disabled={!cart.lines.length} className="h-[72px] text-[22px]">
           Cobrar <kbd className="rounded bg-white/20 px-1.5 py-0.5 text-xs">F12</kbd>
         </Button>
+        {/* Modo simple: Cobrar domina; espera a mano y lo demás en Más (las teclas F siguen). */}
         <div className="flex gap-2">
           <Button
             variant="secondary"
@@ -1150,38 +1154,27 @@ export function SellPage() {
           >
             Espera · F6{held.length ? ` (${held.length})` : ""}
           </Button>
-          <Button
-            variant="secondary"
-            className="h-11 flex-1 text-[13px]"
-            onClick={() => cart.lines.length && setDialog({ kind: "discount" })}
-          >
-            Descuento · F4
-          </Button>
-          <Button
-            variant="secondary"
-            className="h-11 flex-1 text-[13px]"
-            locked={drawerGrant === "pin"}
-            onClick={() => void openDrawer()}
-          >
-            Cajón · F10
-          </Button>
-        </div>
-        <div className="flex items-center justify-between gap-2 text-xs text-texto-suave">
-          <button
-            type="button"
-            className="font-semibold text-primario"
-            onClick={() => navigate("/vender/historial")}
-          >
-            Historial de ventas
-          </button>
-          <button
-            type="button"
-            className="-my-1 inline-flex items-center gap-1.5 rounded-lg px-2 py-2 text-sm font-medium text-texto-suave hover:bg-borde/40 hover:text-texto"
-            onClick={() => navigate(me?.member.role === "cashier" ? "/caja" : "/inicio")}
-          >
-            <Lock size={15} aria-hidden />
-            Salir del modo mostrador
-          </button>
+          <Menu
+            label="Más"
+            up
+            className="flex-1 [&>button]:h-11 [&>button]:w-full [&>button]:justify-center"
+            items={[
+              {
+                label: "Descuento · F4",
+                onSelect: () => cart.lines.length && setDialog({ kind: "discount" }),
+              },
+              {
+                label:
+                  drawerGrant === "pin" ? "Abrir el cajón (con PIN) · F10" : "Abrir el cajón · F10",
+                onSelect: () => void openDrawer(),
+              },
+              { label: "Historial de ventas", onSelect: () => navigate("/vender/historial") },
+              {
+                label: "Salir del modo mostrador",
+                onSelect: () => navigate(me?.member.role === "cashier" ? "/caja" : "/inicio"),
+              },
+            ]}
+          />
         </div>
       </aside>
       {dialogs}

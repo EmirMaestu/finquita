@@ -77,3 +77,14 @@ Formato: AAAA-MM-DD · Tarea · Decisión · Por qué
 2026-10-22 · T62 · Q139: el arqueo y cierre sigue en una sola página con sus tres partes numeradas (no un asistente de tres pantallas): con teclado se recorre entero con Enter (Q266) y Esc vuelve; en el celular la pantalla baja sola hasta el resultado · El apurado pidió menos pasos, no más; el spec numera los pasos pero no pide pantallas separadas.
 2026-10-22 · T62 · Tocar una línea de la venta (o Enter con el buscador vacío, o tocarla otra vez en la compu) abre cantidad, descuento a ese producto, precio y nota; el precio solo con permiso de cambiar precios y el descuento sobre el tope pide PIN como el de toda la venta. El Enter que llega pegado a los dígitos de un escaneo no la abre · § Vender, "Tocar una línea abre cantidad, descuento por ítem, precio y nota".
 2026-10-22 · T62 · El historial de ventas combina día (hoy, una fecha o todos), medio o estado y cajero; "Tarjeta" filtra débito o crédito (method=card en la API) · § Vender pide filtros combinables.
+
+## T68 · Simplificar UI y UX (27/10)
+
+- **Abrir caja con el cambio del turno anterior es un toque:** "Está todo: abrir con $ 20.000" y, si no coincide, "Hay otra cantidad" abre el total directo (por billete queda a un toque, "Contar por billete"). El spec permite contar por billete o tipear el total; lo común es que el cambio esté.
+- **Inicio sin ventas:** una sola tarjeta "Todavía no hay ventas hoy" con Abrir caja o Nueva venta reemplaza los números en cero y el gráfico vacío (§Inicio, Estados). "Lo más vendido" y "Entregas esperadas" solo aparecen si tienen algo. Con la caja cerrada no se muestra "Efectivo en caja": el estado ya está en el encabezado y en el chip.
+- **Vender en la Mac (modo simple):** Subtotal, promociones y descuento solo si hay algo que restar; abajo de Cobrar quedan Espera y un menú Más (descuento, cajón, historial, salir del modo mostrador). Las teclas F siguen iguales y la franja de atajos queda. Se sacó la fila de ayuda debajo de las líneas (está en F1).
+- **Cobro:** la ayuda dice "Enter cobra · Esc vuelve"; los Ctrl 1 a 4 de los billetes pasan a la lista de atajos (F1).
+- **Productos:** tres filtros a la vista (Todos, Stock bajo, Sin stock) y el resto en "Más filtros"; "Por vencer" solo con lotes prendidos.
+- **Pedidos:** los estados sin pedidos no se muestran como filtro.
+- **Reportes:** sin CSV (el spec pide Excel o PDF); Compartir solo donde el equipo comparte archivos; sin ventas en el período no se dibujan gráficos vacíos.
+- **Sugerido:** el total va una sola vez (en el resumen) y la cuenta sin la fórmula.

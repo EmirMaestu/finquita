@@ -84,9 +84,8 @@ test("el cajero vende, va a Caja desde Vender y cierra el turno con su nombre", 
   await expect(page.getByText(/Cajero: Tomás|Cerró: Tomás/)).toBeVisible();
 });
 
-test("abrir la caja con un fondo negativo no deja una caja fantasma", async ({ page }) => {
-  await loginWithPin(page, "Tomás", "4567");
-  await page.goto("/caja");
+/** Deja la caja cerrada: si quedó un turno abierto (de otro test), lo cierra. */
+async function closeIfOpen(page: Page) {
   const open = page.getByRole("region", { name: "Abrir turno" });
   const closeBtn = page.getByRole("button", { name: "Arqueo y cierre" });
   await expect(open.or(closeBtn).first()).toBeVisible({ timeout: 20_000 });
@@ -103,8 +102,16 @@ test("abrir la caja con un fondo negativo no deja una caja fantasma", async ({ p
     );
     await page.goto("/caja");
   }
+  return open;
+}
+
+test("abrir la caja con un fondo negativo no deja una caja fantasma", async ({ page }) => {
+  await loginWithPin(page, "Tomás", "4567");
+  await page.goto("/caja");
+  const open = await closeIfOpen(page);
   await expect(open).toBeVisible({ timeout: 20_000 });
-  await open.getByRole("button", { name: "Total directo" }).click();
+  const other = open.getByRole("button", { name: "Hay otra cantidad" });
+  if (await other.isVisible().catch(() => false)) await other.click();
   await open.getByLabel("Fondo inicial").fill("-500");
   const comment = open.getByLabel("Comentario");
   if (await comment.isVisible().catch(() => false)) await comment.fill("Prueba");
@@ -113,4 +120,15 @@ test("abrir la caja con un fondo negativo no deja una caja fantasma", async ({ p
   // Sigue cerrada: la pantalla no dio por hecho lo que el servidor iba a rechazar.
   await expect(open).toBeVisible();
   await expect(page.getByText("Caja cerrada").first()).toBeVisible();
+});
+
+test("con el cambio que dejó el turno anterior, abrir la caja es un toque", async ({ page }) => {
+  await loginWithPin(page, "Tomás", "4567");
+  await page.goto("/caja");
+  const open = await closeIfOpen(page);
+  await expect(open).toBeVisible({ timeout: 20_000 });
+  await open.getByRole("button", { name: /^Está todo: abrir con \$/ }).click();
+  await expect(page.getByRole("region", { name: "Efectivo esperado" })).toBeVisible({
+    timeout: 20_000,
+  });
 });

@@ -638,11 +638,16 @@ export function OrdersPage() {
       </div>
       {showList && (
         <nav className="flex gap-2 overflow-x-auto" aria-label="Estados">
-          {FILTERS.map(([label, st], i) => (
-            <FilterChip key={label} active={filter === i} onClick={() => setFilter(i)}>
-              {label} · {st ? st.reduce((a, s) => a + (counts[s] ?? 0), 0) : total}
-            </FilterChip>
-          ))}
+          {FILTERS.map(([label, st], i) => {
+            const n = st ? st.reduce((a, s) => a + (counts[s] ?? 0), 0) : total;
+            // Los estados sin pedidos no se muestran (salvo el elegido): menos para leer.
+            if (st && !n && filter !== i) return null;
+            return (
+              <FilterChip key={label} active={filter === i} onClick={() => setFilter(i)}>
+                {label} · {n}
+              </FilterChip>
+            );
+          })}
         </nav>
       )}
       <div

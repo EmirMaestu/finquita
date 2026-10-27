@@ -335,9 +335,7 @@ export function PaymentDialog({
           {/* Título arriba y la ayuda debajo: en la misma línea se encimaban (ronda 3). */}
           <div className="hidden flex-col gap-0.5 lg:flex">
             <span className="text-xl font-semibold">Cobrar</span>
-            <span className="text-[13px] text-texto-suave">
-              Enter agrega el pago (y cobra si ya cubre el total) · Ctrl ⏎ cobra · Esc vuelve
-            </span>
+            <span className="text-[13px] text-texto-suave">Enter cobra · Esc vuelve</span>
           </div>
           <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
             {TABS.map((t) => (
@@ -524,7 +522,8 @@ export function PaymentDialog({
                   <div className="text-xs font-semibold tracking-[.06em] text-texto-suave uppercase">
                     Efectivo rápido
                   </div>
-                  {BILLS.map((b, i) => (
+                  {/* Ctrl+1 a Ctrl+4 siguen andando; la lista de atajos (F1) los explica. */}
+                  {BILLS.map((b) => (
                     <button
                       key={b}
                       type="button"
@@ -532,12 +531,6 @@ export function PaymentDialog({
                       className="flex h-14 items-center justify-center gap-2 rounded-lg border border-borde bg-superficie text-[15px] font-semibold hover:bg-neutro-suave"
                     >
                       {formatMoney(b)}
-                      <kbd
-                        aria-hidden
-                        className="hidden rounded bg-neutro-suave px-1 py-0.5 text-[11px] font-medium text-texto-suave lg:inline"
-                      >
-                        Ctrl {i + 1}
-                      </kbd>
                     </button>
                   ))}
                   <button

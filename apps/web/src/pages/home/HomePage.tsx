@@ -22,8 +22,8 @@ import {
   Truck,
   Wallet,
 } from "lucide-react";
-import { Link, Navigate, useNavigate } from "react-router";
-import { useCan, useGrant, useMe } from "../../app/session";
+import { Navigate, useNavigate } from "react-router";
+import { useGrant, useMe } from "../../app/session";
 import { useShell } from "../../app/shell";
 import { api } from "../../data/api";
 import { scanRouter } from "../../scan/GlobalScan";
@@ -91,24 +91,15 @@ function longDate() {
 
 function Header() {
   const me = useMe();
-  const shell = useShell();
-  const reg = shell.register;
-  const canShift = useCan("shift");
+  const reg = useShell().register;
   return (
     <div>
       <h1 className="m-0 text-[26px] font-semibold">Hola, {me?.member.name.split(" ")[0]}</h1>
       <div className="text-sm text-texto-suave">
         {longDate()} ·{" "}
-        {reg?.open ? (
-          `Caja abierta por ${reg.cashier ?? "—"} desde ${reg.since ?? ""}`
-        ) : canShift ? (
-          // Con la caja cerrada, el texto lleva a abrirla.
-          <Link to="/caja" className="font-semibold text-primario underline">
-            Caja cerrada · Abrir caja
-          </Link>
-        ) : (
-          "Caja cerrada"
-        )}
+        {reg?.open
+          ? `Caja abierta por ${reg.cashier ?? "—"} desde ${reg.since ?? ""}`
+          : "Caja cerrada"}
       </div>
     </div>
   );
@@ -143,8 +134,9 @@ function Numbers({ n }: { n: Dashboard["numbers"] }) {
     ],
     ["Tickets", String(n.tickets)],
     ["Ticket promedio", formatMoney(n.averageTicketCents)],
-    ["Efectivo en caja", n.shiftOpen === false ? "Caja cerrada" : formatMoney(n.cashCents)],
   ];
+  // Con la caja cerrada no hay efectivo que mostrar: el estado ya está en el encabezado.
+  if (n.shiftOpen !== false) cards.push(["Efectivo en caja", formatMoney(n.cashCents)]);
   if (n.marginCents !== undefined)
     cards.push([
       "Margen estimado",
@@ -156,7 +148,12 @@ function Numbers({ n }: { n: Dashboard["numbers"] }) {
       ) : undefined,
     ]);
   return (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+    <div
+      className={cx(
+        "grid grid-cols-2 gap-3",
+        cards.length === 5 ? "lg:grid-cols-5" : "lg:grid-cols-4",
+      )}
+    >
       {cards.map(([label, value, extra], i) => (
         <section
           key={label}
@@ -322,16 +319,16 @@ function Methods({ methods }: { methods: Dashboard["methods"] }) {
 }
 
 function TopAndDeliveries({ d }: { d: Dashboard }) {
+  // Lo vacío no ocupa lugar: sin ventas ni entregas, no se muestra nada.
+  if (!d.top.length && !d.deliveries.length) return null;
   return (
     <div className="grid gap-4 lg:grid-cols-2">
-      <section
-        aria-label="Lo más vendido hoy"
-        className="rounded-card border border-borde bg-superficie p-4"
-      >
-        <h2 className="m-0 mb-2 text-base font-semibold">Lo más vendido hoy</h2>
-        {!d.top.length ? (
-          <div className="text-sm text-texto-suave">Todavía no hay ventas hoy.</div>
-        ) : (
+      {d.top.length > 0 && (
+        <section
+          aria-label="Lo más vendido hoy"
+          className="rounded-card border border-borde bg-superficie p-4"
+        >
+          <h2 className="m-0 mb-2 text-base font-semibold">Lo más vendido hoy</h2>
           <ol className="m-0 list-none p-0 text-sm">
             {d.top.map((t, i) => (
               <li key={t.name} className="flex gap-2 border-t border-borde py-1.5 first:border-t-0">
@@ -341,16 +338,14 @@ function TopAndDeliveries({ d }: { d: Dashboard }) {
               </li>
             ))}
           </ol>
-        )}
-      </section>
-      <section
-        aria-label="Entregas esperadas"
-        className="rounded-card border border-borde bg-superficie p-4"
-      >
-        <h2 className="m-0 mb-2 text-base font-semibold">Entregas esperadas</h2>
-        {!d.deliveries.length ? (
-          <div className="text-sm text-texto-suave">Nada para hoy ni mañana.</div>
-        ) : (
+        </section>
+      )}
+      {d.deliveries.length > 0 && (
+        <section
+          aria-label="Entregas esperadas"
+          className="rounded-card border border-borde bg-superficie p-4"
+        >
+          <h2 className="m-0 mb-2 text-base font-semibold">Entregas esperadas</h2>
           <ul className="m-0 list-none p-0 text-sm">
             {d.deliveries.map((x) => (
               <li key={x.id} className="flex gap-2 border-t border-borde py-1.5 first:border-t-0">
@@ -364,8 +359,8 @@ function TopAndDeliveries({ d }: { d: Dashboard }) {
               </li>
             ))}
           </ul>
-        )}
-      </section>
+        </section>
+      )}
     </div>
   );
 }
@@ -424,6 +419,7 @@ export function HomePage() {
     refetchInterval: 60_000,
   });
   const setup = useSetupStatus(useGrant("settings") === "allow");
+  const noSales = !q.data?.numbers.tickets;
   // El cajero no ve el panel: entra directo a Vender.
   if (role === "cashier") return <Navigate to="/vender" replace />;
   if (role === "stocker" || reports === "deny") return <StockerHome />;
@@ -472,8 +468,8 @@ export function HomePage() {
               </button>
             </div>
           )}
-          {/* Sin ventas hoy, lo primero que se ve es qué hacer (no un panel en cero). */}
-          {!q.data.numbers.tickets && !q.data.attention.length && (
+          {/* Sin ventas hoy, en vez de un panel en cero, una sola tarjeta con qué hacer. */}
+          {noSales ? (
             <EmptyState
               title="Todavía no hay ventas hoy"
               body="Cuando vendas, acá ves cómo viene el día."
@@ -484,16 +480,23 @@ export function HomePage() {
                 </Button>
               }
             />
+          ) : (
+            <Numbers n={q.data.numbers} />
           )}
-          <Numbers n={q.data.numbers} />
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
-            <AttentionList items={q.data.attention} />
+            {q.data.attention.length > 0 ? (
+              <AttentionList items={q.data.attention} />
+            ) : (
+              <div className="rounded-card border border-borde bg-superficie px-4 py-3 text-sm text-texto-suave">
+                Todo en orden: nada requiere atención.
+              </div>
+            )}
             <div className="flex flex-col gap-4">
               <Shortcuts />
-              {q.data.numbers.tickets > 0 && <Methods methods={q.data.methods} />}
+              {!noSales && <Methods methods={q.data.methods} />}
             </div>
           </div>
-          <HourChart data={q.data.byHour} />
+          {!noSales && <HourChart data={q.data.byHour} />}
           <TopAndDeliveries d={q.data} />
         </>
       )}

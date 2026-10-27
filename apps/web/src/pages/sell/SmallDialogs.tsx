@@ -183,6 +183,7 @@ export const SHORTCUTS: [string, string][] = [
   ["Supr", "Quitar el ítem elegido"],
   ["↑ ↓", "Elegir una línea de la venta"],
   ["Enter", "Agregar lo buscado o cerrar un aviso"],
+  ["Ctrl 1 a 4", "En el cobro: $ 1.000, $ 2.000, $ 10.000 o $ 20.000 en efectivo"],
   ["Esc", "Cancelar o cerrar"],
 ];
 

@@ -66,7 +66,8 @@ export async function ensureShiftOpen(page: Page, floatPesos = "20000") {
   const shiftView = page.getByRole("region", { name: "Efectivo esperado" });
   await expect(open.or(search).or(shiftView).first()).toBeVisible({ timeout: 20_000 });
   if (await open.isVisible().catch(() => false)) {
-    await open.getByRole("button", { name: "Total directo" }).click();
+    const other = open.getByRole("button", { name: "Hay otra cantidad" });
+    if (await other.isVisible().catch(() => false)) await other.click();
     await open.getByLabel("Fondo inicial").fill(floatPesos);
     const comment = open.getByLabel("Comentario");
     if (await comment.isVisible().catch(() => false)) await comment.fill("Prueba");
