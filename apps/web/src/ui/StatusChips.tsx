@@ -9,13 +9,9 @@ export function connectionLabel(c: ShellState["connection"]): string {
   return c.justSynced ? "Todo sincronizado" : "En línea";
 }
 
-export function ConnectionChip({
-  connection,
-  compact = false,
-}: {
-  connection: ShellState["connection"];
-  compact?: boolean;
-}) {
+export function ConnectionChip({ connection }: { connection: ShellState["connection"] }) {
+  // Con internet y todo subido no hay nada que avisar: el chip solo aparece cuando importa.
+  if (connection.online && connection.pending === 0 && !connection.justSynced) return null;
   const Icon = !connection.online ? WifiOff : connection.pending > 0 ? CloudUpload : Wifi;
   const tone = !connection.online
     ? "bg-alerta-suave text-alerta"
@@ -32,9 +28,7 @@ export function ConnectionChip({
       )}
     >
       <Icon size={14} aria-hidden />
-      {compact && connection.online && connection.pending === 0 && !connection.justSynced
-        ? null
-        : label}
+      {label}
     </output>
   );
 }

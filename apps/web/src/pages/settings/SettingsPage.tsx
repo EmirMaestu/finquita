@@ -53,9 +53,7 @@ const SECTIONS = [
     "Tickets",
     "Impresora, ancho del papel, encabezado, pie, impresión automática y copias",
   ],
-  ["whatsapp", "WhatsApp", "Hoy, pedidos a proveedores por WhatsApp. El bot llega más adelante"],
   ["avisos", "Avisos", "Qué aviso le llega a cada rol, en la app y como notificación del celular"],
-  ["facturacion", "Facturación electrónica", "Próximamente"],
   ["datos", "Datos", "Importar, exportar y copias de seguridad"],
   ["actividad", "Actividad", "Quién cambió qué y cuándo"],
   [
@@ -63,6 +61,9 @@ const SECTIONS = [
     "Funciones",
     "Prendé promociones, lotes y vencimientos, conteos de inventario y varias cajas",
   ],
+  // Lo que llega en la fase 2, al final: hoy casi no tiene nada para tocar.
+  ["whatsapp", "WhatsApp", "Próximamente el bot; hoy, pedidos por WhatsApp desde Compras"],
+  ["facturacion", "Facturación electrónica", "Próximamente"],
 ] as const;
 type SectionId = (typeof SECTIONS)[number][0];
 

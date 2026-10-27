@@ -23,7 +23,7 @@ export function MobileTopBar({ title }: { title: string }) {
       {/* El aviso se recorta antes que empujar la barra fuera de la pantalla (ronda 3). */}
       <span className="flex min-w-0 shrink overflow-hidden">
         {showConnection ? (
-          <ConnectionChip connection={shell.connection} compact />
+          <ConnectionChip connection={shell.connection} />
         ) : hasShift ? (
           <RegisterChip register={shell.register} short />
         ) : null}
