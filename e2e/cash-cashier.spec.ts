@@ -44,6 +44,7 @@ test("el cajero vende, va a Caja desde Vender y cierra el turno con su nombre", 
   await expect(page.getByRole("textbox", { name: /^billetes de/ }).first()).toBeFocused();
 
   // Un monto que no se entiende se marca en su campo y no deja ver el resultado.
+  await page.getByText("2 · Controlar tarjeta, QR y transferencias (opcional)").click();
   const debit = page.getByLabel("Débito (posnet)");
   await debit.fill("abc");
   await expect(page.getByText("Poné un monto, por ejemplo 12500")).toBeVisible();

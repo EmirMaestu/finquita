@@ -40,7 +40,7 @@ test("doble clic en Confirmar recepción: el stock entra una sola vez", async ({
   await expect(page.getByRole("heading", { name: "Recibir pedido 0041" })).toBeVisible();
   // El pedido 0041 del escenario pide 12 aceites.
   const ordered = 12;
-  await page.getByRole("button", { name: "Todo lo demás como pedido" }).click();
+  await page.getByRole("button", { name: "Llegó todo como el pedido" }).click();
   await page.getByRole("button", { name: "Confirmar recepción" }).dblclick();
   const confirmAnyway = page.getByRole("button", { name: "Confirmar igual" });
   if (await confirmAnyway.isVisible({ timeout: 1500 }).catch(() => false))

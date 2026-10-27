@@ -1,5 +1,5 @@
 import { formatMoney } from "@mostrador/shared";
-import { ScanBarcode } from "lucide-react";
+import { ScanBarcode, Search } from "lucide-react";
 import { forwardRef } from "react";
 import type { LocalProduct } from "../../data/types";
 import { cx } from "../../ui/cx";
@@ -28,7 +28,12 @@ export const SearchBox = forwardRef<HTMLInputElement, Props>(function SearchBox(
           big ? "h-12" : "h-12",
         )}
       >
-        <ScanBarcode size={24} className="shrink-0 text-primario" aria-hidden />
+        {/* Con la cámara al lado, la lupa: dos íconos de escanear juntos confundían. */}
+        {onCamera ? (
+          <Search size={22} className="shrink-0 text-texto-suave" aria-hidden />
+        ) : (
+          <ScanBarcode size={24} className="shrink-0 text-primario" aria-hidden />
+        )}
         {multiplier && (
           <span className="rounded bg-acento-suave px-2 py-0.5 text-sm font-semibold">
             × {multiplier}

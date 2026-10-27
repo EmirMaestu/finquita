@@ -25,6 +25,7 @@ import { useSettings } from "../../data/settings";
 import { Button } from "../../ui/Button";
 import { cx } from "../../ui/cx";
 import { TextField } from "../../ui/Field";
+import { MoreFields } from "../../ui/MoreFields";
 import { Skeleton } from "../../ui/States";
 import { Stepper } from "../../ui/Stepper";
 import { toast } from "../../ui/toast";
@@ -333,24 +334,29 @@ export function CloseShiftPage() {
             aria-label="Otros medios"
             className="flex flex-col gap-2.5 rounded-card border border-borde bg-superficie px-5 py-4"
           >
-            <div className="font-semibold">2 · Otros medios, según cupones y app del banco</div>
-            <div className="text-[13px] text-texto-suave">
-              Cargá el total de los cupones del posnet y de la app del banco. Lo que dejes vacío no
-              se controla (queda como lo registró el sistema).
-            </div>
-            <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
-              {OTHER.map((o) => (
-                <TextField
-                  key={o.method}
-                  label={o.label}
-                  inputMode="decimal"
-                  value={other[o.method] ?? ""}
-                  onChange={(e) => setOther((x) => ({ ...x, [o.method]: e.target.value }))}
-                  placeholder="0"
-                  error={otherErrors[o.method]}
-                />
-              ))}
-            </div>
+            {/* Controlar los otros medios es opcional: plegado, el cierre se ve más corto. */}
+            <MoreFields
+              label="2 · Controlar tarjeta, QR y transferencias (opcional)"
+              open={Object.values(other).some((x) => x?.trim()) || otherInvalid}
+            >
+              <div className="text-[13px] text-texto-suave">
+                Cargá el total de los cupones del posnet y de la app del banco. Lo que dejes vacío
+                no se controla (queda como lo registró el sistema).
+              </div>
+              <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
+                {OTHER.map((o) => (
+                  <TextField
+                    key={o.method}
+                    label={o.label}
+                    inputMode="decimal"
+                    value={other[o.method] ?? ""}
+                    onChange={(e) => setOther((x) => ({ ...x, [o.method]: e.target.value }))}
+                    placeholder="0"
+                    error={otherErrors[o.method]}
+                  />
+                ))}
+              </div>
+            </MoreFields>
             {step === "count" && (
               <div className="flex flex-wrap items-center gap-3">
                 <Button onClick={() => setStep("result")} disabled={!v || otherInvalid}>

@@ -149,44 +149,44 @@ export function AlertsPage() {
         )}
       </div>
       <PushCard />
-      <div className="flex flex-wrap items-center gap-2">
-        <FilterChip active={filter === "open"} onClick={() => setFilter("open")}>
-          Todos
-        </FilterChip>
-        <FilterChip active={filter === "unread"} onClick={() => setFilter("unread")}>
-          Sin leer{q.data ? ` · ${q.data.unread}` : ""}
-        </FilterChip>
-        <SelectField
-          label="Tipo"
-          className="ml-auto w-56"
-          value={kind}
-          onChange={(e) => setKind(e.target.value)}
-        >
-          <option value="">Todos los tipos</option>
-          {(kind && !kinds.includes(kind as AlertKindCode)
-            ? [...kinds, kind as AlertKindCode]
-            : kinds
-          ).map((k) => (
-            <option key={k} value={k}>
-              {ALERT_LABEL[k] ?? k}
-            </option>
-          ))}
-        </SelectField>
-      </div>
       {!!attention.data?.attention.length && <AttentionList items={attention.data.attention} />}
+      {/* Los filtros, solo si hay avisos (o si ya se filtró): sin avisos no hay nada que filtrar. */}
+      {(!!q.data?.items.length || filter !== "open" || !!kind) && (
+        <div className="flex flex-wrap items-center gap-2">
+          <FilterChip active={filter === "open"} onClick={() => setFilter("open")}>
+            Todos
+          </FilterChip>
+          <FilterChip active={filter === "unread"} onClick={() => setFilter("unread")}>
+            Sin leer{q.data ? ` · ${q.data.unread}` : ""}
+          </FilterChip>
+          <SelectField
+            label="Tipo"
+            className="ml-auto w-56"
+            value={kind}
+            onChange={(e) => setKind(e.target.value)}
+          >
+            <option value="">Todos los tipos</option>
+            {(kind && !kinds.includes(kind as AlertKindCode)
+              ? [...kinds, kind as AlertKindCode]
+              : kinds
+            ).map((k) => (
+              <option key={k} value={k}>
+                {ALERT_LABEL[k] ?? k}
+              </option>
+            ))}
+          </SelectField>
+        </div>
+      )}
       {q.isPending ? (
         <SkeletonList />
       ) : q.isError ? (
         <ErrorState message="Los avisos se ven con conexión." onRetry={() => q.refetch()} />
       ) : !q.data.items.length ? (
-        <EmptyState
-          title={attention.data?.attention.length ? "No hay avisos nuevos" : "No hay avisos"}
-          body={
-            attention.data?.attention.length
-              ? "Lo que requiere atención está arriba; los avisos (stock bajo, cierres, fiado vencido) llegan acá."
-              : "Cuando algo necesite tu atención, aparece acá."
-          }
-        />
+        attention.data?.attention.length ? (
+          <p className="m-0 text-sm text-texto-suave">No hay otros avisos.</p>
+        ) : (
+          <EmptyState title="No hay avisos" body="Cuando algo necesite tu atención, aparece acá." />
+        )
       ) : (
         <ul
           className="m-0 list-none overflow-hidden rounded-card border border-borde bg-superficie p-0"

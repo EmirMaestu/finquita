@@ -744,7 +744,10 @@ function Receiving({
             )
           }
         >
-          Todo lo demás como pedido
+          {/* Sin nada contado todavía, dice lo que pasa casi siempre: llegó todo. */}
+          {lines.every((l) => l.received === "")
+            ? "Llegó todo como el pedido"
+            : "Todo lo demás como pedido"}
         </Button>
       )}
       {lines.length > 0 && (
@@ -811,7 +814,10 @@ function Receiving({
         >
           {photoId ? "Foto del remito ✓" : "Foto del remito"}
         </Button>
-        <span className="flex-1" />
+        {/* Con el botón apagado, se dice por qué. */}
+        <span className="flex-1 text-right text-[13px] text-texto-suave">
+          {touched.some((l) => num(l.received) > 0) ? "" : "Escaneá o contá algo para confirmar"}
+        </span>
         <Button
           size="lg"
           disabled={!touched.some((l) => num(l.received) > 0)}
