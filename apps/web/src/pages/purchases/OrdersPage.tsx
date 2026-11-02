@@ -87,7 +87,7 @@ const STEP_LABEL: Partial<Record<OrderStatus, string>> = {
   sent: "Marcar enviado",
   confirmed: "Marcar confirmado",
   changed: "Confirmado con cambios",
-  closed: "Cerrar",
+  closed: "Cerrar pedido",
   cancelled: "Cancelar pedido",
 };
 
@@ -97,6 +97,10 @@ const q = (n: number | null, unit: "unit" | "kg") => (n == null ? "—" : format
 /** Vista previa del mensaje y del PDF antes de abrir el chat (wa.me). */
 export function SendSheet({ order, onClose }: { order: OrderDetail; onClose: () => void }) {
   const qc = useQueryClient();
+  // WhatsApp es el camino solo con permiso (matriz) y con el teléfono del proveedor cargado;
+  // si no, se copia el texto o se baja el PDF y se marca enviado a mano.
+  const canWhatsapp = useCan("send_orders");
+  const viaWhatsapp = canWhatsapp && Boolean(order.message.phone);
   const mark = useMutation({
     mutationFn: (via: "whatsapp" | "pdf") =>
       api(`/api/orders/${order.id}/status`, { body: { status: "sent", via } }),
@@ -127,15 +131,34 @@ export function SendSheet({ order, onClose }: { order: OrderDetail; onClose: () 
           >
             PDF para adjuntar
           </Button>
-          <a
-            href={order.message.url}
-            target="_blank"
-            rel="noreferrer"
-            onClick={() => mark.mutate("whatsapp")}
-            className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-primario px-4 font-semibold text-white no-underline"
-          >
-            <MessageCircle size={18} aria-hidden /> Abrir WhatsApp
-          </a>
+          {!viaWhatsapp && (
+            <Button
+              variant="secondary"
+              onClick={() =>
+                navigator.clipboard
+                  ?.writeText(order.message.text)
+                  .then(() => toast({ text: "Texto copiado" }))
+                  .catch(() => toast({ text: "No se pudo copiar", tone: "error" }))
+              }
+            >
+              Copiar texto
+            </Button>
+          )}
+          {viaWhatsapp ? (
+            <a
+              href={order.message.url}
+              target="_blank"
+              rel="noreferrer"
+              onClick={() => mark.mutate("whatsapp")}
+              className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-primario px-4 font-semibold text-white no-underline"
+            >
+              <MessageCircle size={18} aria-hidden /> Abrir WhatsApp
+            </a>
+          ) : (
+            <Button className="flex-1" busy={mark.isPending} onClick={() => mark.mutate("pdf")}>
+              Marcar enviado
+            </Button>
+          )}
         </div>
       }
     >
@@ -144,7 +167,8 @@ export function SendSheet({ order, onClose }: { order: OrderDetail; onClose: () 
           Para {order.supplier.name}
           {order.message.phone
             ? ` · +${order.message.phone}`
-            : " · sin WhatsApp cargado: elegís el contacto en el chat"}
+            : " · sin WhatsApp cargado: copiá el texto o mandá el PDF"}
+          {!canWhatsapp && " · mandarlo por WhatsApp lo hace el dueño"}
         </div>
         <section aria-label="Mensaje">
           <pre className="m-0 max-h-[50vh] overflow-auto rounded-xl bg-[#E7F6E7] p-4 font-sans text-[14px] leading-snug whitespace-pre-wrap text-texto">
@@ -152,8 +176,9 @@ export function SendSheet({ order, onClose }: { order: OrderDetail; onClose: () 
           </pre>
         </section>
         <p className="m-0 text-xs text-texto-suave">
-          Al abrir WhatsApp el pedido queda como enviado. El PDF lo adjuntás en el chat si el
-          proveedor lo pide.
+          {viaWhatsapp
+            ? "Al abrir WhatsApp el pedido queda como enviado. El PDF lo adjuntás en el chat si el proveedor lo pide."
+            : 'Cuando lo mandes, tocá "Marcar enviado".'}
         </p>
       </div>
     </Sheet>
@@ -191,7 +216,7 @@ function ConfirmSheet({ order, onClose }: { order: OrderDetail; onClose: () => v
       title="Lo que confirmó el proveedor"
       footer={
         <Button className="flex-1" onClick={() => save.mutate()}>
-          Guardar
+          Guardar lo que confirmó
         </Button>
       }
     >
@@ -211,7 +236,7 @@ function ConfirmSheet({ order, onClose }: { order: OrderDetail; onClose: () => v
               onChange={(e) =>
                 setGot((g) => ({ ...g, [l.id]: e.target.value.replace(/[^\d,]/g, "") }))
               }
-              className="tnum h-10 w-20 rounded-md border border-borde-fuerte px-2 text-right font-semibold"
+              className="tnum h-12 w-20 rounded-md border border-borde-fuerte px-2 text-right font-semibold lg:h-10"
             />
           </li>
         ))}
@@ -225,6 +250,7 @@ function OrderView({ id }: { id: string }) {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const [confirming, setConfirming] = useState(false);
+  const canWhatsapp = useCan("send_orders");
   const d = useQuery({
     queryKey: ["order", id],
     queryFn: () => api<OrderDetail>(`/api/orders/${id}`),
@@ -266,19 +292,19 @@ function OrderView({ id }: { id: string }) {
           <thead>
             <tr className="text-left text-xs text-texto-suave">
               <th className="py-1.5 font-semibold">Producto</th>
-              <th className="py-1.5 text-right font-semibold">Pedido</th>
-              <th className="py-1.5 text-right font-semibold">Confirm.</th>
-              <th className="py-1.5 text-right font-semibold">Recibido</th>
+              <th className="py-1.5 pl-3 text-right font-semibold">Pedido</th>
+              <th className="py-1.5 pl-3 text-right font-semibold">Confirmado</th>
+              <th className="py-1.5 pl-3 text-right font-semibold">Recibido</th>
             </tr>
           </thead>
           <tbody>
             {o.lines.map((l) => (
               <tr key={l.id} className="border-t border-borde">
                 <td className="py-1.5 pr-2">{l.description}</td>
-                <td className="tnum py-1.5 text-right">{q(l.qtyOrdered, l.unit)}</td>
+                <td className="tnum py-1.5 pl-3 text-right">{q(l.qtyOrdered, l.unit)}</td>
                 <td
                   className={cx(
-                    "tnum py-1.5 text-right",
+                    "tnum py-1.5 pl-3 text-right",
                     l.qtyConfirmed != null &&
                       l.qtyConfirmed !== l.qtyOrdered &&
                       "font-semibold text-alerta",
@@ -286,7 +312,7 @@ function OrderView({ id }: { id: string }) {
                 >
                   {q(l.qtyConfirmed, l.unit)}
                 </td>
-                <td className="tnum py-1.5 text-right">{q(l.qtyReceived, l.unit)}</td>
+                <td className="tnum py-1.5 pl-3 text-right">{q(l.qtyReceived, l.unit)}</td>
               </tr>
             ))}
           </tbody>
@@ -316,19 +342,34 @@ function OrderView({ id }: { id: string }) {
             icon={<MessageCircle size={18} />}
             onClick={() => setParams((p) => ({ ...Object.fromEntries(p), enviar: "1" }))}
           >
-            Enviar por WhatsApp
+            {canWhatsapp ? "Enviar por WhatsApp" : "Enviar pedido"}
+          </Button>
+        )}
+        {o.status === "draft" && (
+          <Button
+            variant="secondary"
+            busy={step.isPending}
+            onClick={() =>
+              // El camión llegó sin que el pedido saliera por acá: queda enviado y se recibe.
+              step.mutateAsync("sent").then(() => navigate(`/compras/recepcion?pedido=${o.id}`))
+            }
+          >
+            Ya llegó: recibir
           </Button>
         )}
         {o.nextSteps.includes("confirmed") && (
-          <Button onClick={() => step.mutate("confirmed")}>Marcar confirmado</Button>
+          <Button variant="secondary" onClick={() => step.mutate("confirmed")}>
+            Marcar confirmado
+          </Button>
         )}
         {o.nextSteps.includes("changed") && (
           <Button variant="secondary" onClick={() => setConfirming(true)}>
-            Confirmado con cambios
+            Cargar cambios del proveedor
           </Button>
         )}
         {["sent", "confirmed", "changed", "partial"].includes(o.status) && (
-          <Button variant="secondary" onClick={() => navigate(`/compras/recepcion?pedido=${o.id}`)}>
+          // Lo que sigue con un pedido en camino es recibirlo: va como primaria (diseño 05).
+          <Button onClick={() => navigate(`/compras/recepcion?pedido=${o.id}`)}>
             Recibir mercadería
           </Button>
         )}
@@ -349,7 +390,14 @@ function OrderView({ id }: { id: string }) {
           PDF
         </Button>
         {o.nextSteps.includes("cancelled") && (
-          <Button variant="ghost" className="text-peligro" onClick={() => step.mutate("cancelled")}>
+          <Button
+            variant="ghost"
+            className="text-peligro"
+            onClick={() =>
+              window.confirm("¿Cancelar este pedido? No se puede deshacer.") &&
+              step.mutate("cancelled")
+            }
+          >
             Cancelar pedido
           </Button>
         )}
@@ -424,7 +472,7 @@ function StandingForm({ onClose }: { onClose: () => void }) {
           disabled={!supplierId || !lines.length || save.isPending}
           onClick={() => save.mutate()}
         >
-          Guardar
+          Guardar pedido fijo
         </Button>
       }
     >
@@ -442,19 +490,22 @@ function StandingForm({ onClose }: { onClose: () => void }) {
           ))}
         </SelectField>
         <TextField label="Nombre" value={name} onChange={(e) => setName(e.target.value)} />
-        <div className="flex flex-wrap gap-1.5">
-          {WEEK.map((d, i) => (
-            <FilterChip
-              key={d}
-              active={days.includes(i)}
-              onClick={() =>
-                setDays((x) => (x.includes(i) ? x.filter((y) => y !== i) : [...x, i].sort()))
-              }
-            >
-              {d}
-            </FilterChip>
-          ))}
-        </div>
+        <fieldset className="m-0 flex flex-col gap-1.5 border-0 p-0">
+          <legend className="mb-1.5 text-[13px] font-semibold">Días en que se manda</legend>
+          <div className="flex flex-wrap gap-1.5">
+            {WEEK.map((d, i) => (
+              <FilterChip
+                key={d}
+                active={days.includes(i)}
+                onClick={() =>
+                  setDays((x) => (x.includes(i) ? x.filter((y) => y !== i) : [...x, i].sort()))
+                }
+              >
+                {d}
+              </FilterChip>
+            ))}
+          </div>
+        </fieldset>
         <TextField
           label="Agregar producto"
           value={search}
@@ -466,7 +517,7 @@ function StandingForm({ onClose }: { onClose: () => void }) {
             <button
               key={p.id}
               type="button"
-              className="rounded-md px-2 py-1.5 text-left text-sm hover:bg-neutro-suave"
+              className="min-h-12 rounded-md px-2 py-1.5 text-left text-sm hover:bg-neutro-suave lg:min-h-10"
               onClick={() => {
                 setLines((l) => [
                   ...l.filter((x) => x.productId !== p.id),
@@ -490,7 +541,7 @@ function StandingForm({ onClose }: { onClose: () => void }) {
                   x.map((y) => (y.productId === l.productId ? { ...y, qty: e.target.value } : y)),
                 )
               }
-              className="tnum h-10 w-20 rounded-md border border-borde-fuerte px-2 text-right"
+              className="tnum h-12 w-20 rounded-md border border-borde-fuerte px-2 text-right lg:h-10"
             />
             <Button
               variant="ghost"
@@ -578,20 +629,32 @@ export function OrdersPage() {
   return (
     <div className="flex flex-col gap-4 p-4 lg:p-6">
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="m-0 text-[22px] font-semibold">Compras</h1>
+        <h1 className="m-0 hidden text-[22px] font-semibold lg:block">Compras</h1>
         <PurchasesTabs />
+        {/* Un pedido nuevo se arma desde el sugerido de cada proveedor. */}
+        <Button className="ml-auto" onClick={() => navigate("/compras/sugerido")}>
+          Nuevo pedido
+        </Button>
       </div>
       {showList && (
         <nav className="flex gap-2 overflow-x-auto" aria-label="Estados">
-          {FILTERS.map(([label, st], i) => (
-            <FilterChip key={label} active={filter === i} onClick={() => setFilter(i)}>
-              {label} · {st ? st.reduce((a, s) => a + (counts[s] ?? 0), 0) : total}
-            </FilterChip>
-          ))}
+          {FILTERS.map(([label, st], i) => {
+            const n = st ? st.reduce((a, s) => a + (counts[s] ?? 0), 0) : total;
+            // Los estados sin pedidos no se muestran (salvo el elegido): menos para leer.
+            if (st && !n && filter !== i) return null;
+            return (
+              <FilterChip key={label} active={filter === i} onClick={() => setFilter(i)}>
+                {label} · {n}
+              </FilterChip>
+            );
+          })}
         </nav>
       )}
       <div
-        className={cx("grid gap-4", wide && id ? "grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]" : "")}
+        className={cx(
+          "grid gap-4",
+          wide && id ? "grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]" : "grid-cols-[minmax(0,1fr)]",
+        )}
       >
         {showList && (
           <div className="flex flex-col gap-4">
@@ -600,7 +663,15 @@ export function OrdersPage() {
             ) : list.isError ? (
               <ErrorState onRetry={() => list.refetch()} />
             ) : !list.data.items.length ? (
-              <EmptyState title="No hay pedidos acá" body="Armalos desde el pedido sugerido." />
+              <EmptyState
+                title="No hay pedidos acá"
+                body="Armalos desde el pedido sugerido."
+                action={
+                  <Button onClick={() => navigate("/compras/sugerido")}>
+                    Ver el pedido sugerido
+                  </Button>
+                }
+              />
             ) : (
               <ul
                 className="m-0 list-none overflow-hidden rounded-card border border-borde bg-superficie p-0"
@@ -629,9 +700,11 @@ export function OrdersPage() {
                           {o.lineCount} productos
                         </span>
                       </span>
-                      <Chip tone={ORDER_STATUS[o.status].tone}>{ORDER_STATUS[o.status].label}</Chip>
+                      <Chip className="shrink-0" tone={ORDER_STATUS[o.status].tone}>
+                        {ORDER_STATUS[o.status].label}
+                      </Chip>
                       {o.totalCents !== undefined && (
-                        <span className="tnum min-w-20 text-right font-semibold">
+                        <span className="tnum shrink-0 text-right font-semibold whitespace-nowrap">
                           {formatMoney(o.totalCents)}
                         </span>
                       )}

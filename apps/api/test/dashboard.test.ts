@@ -60,6 +60,7 @@ describe("panel del día", () => {
       averageTicketCents: 726_667,
       // Fondo de $ 20.000 + $ 9.200 en efectivo (pagó con $ 10.000, $ 800 de vuelto).
       cashCents: 2_920_000,
+      shiftOpen: true,
       marginCents: 2 * 130_000 + 205_000 + 3 * 60_000,
       marginBp: 2959,
     });
@@ -125,17 +126,22 @@ describe("panel del día", () => {
     });
     await julian.post(`/api/orders/${seedId("order:0042")}/status`, { status: "sent" });
     await julian.patch(`/api/orders/${seedId("order:0042")}`, { expectedOn: todayAR() });
+    // Los lotes solo aparecen con la función prendida (modo simple: apagada).
+    const carlos = await as(app(), ref.t.db, "carlos");
+    await carlos.put("/api/settings/features", { lots: true });
     const nico = await as(app(), ref.t.db, "nico");
     const t = (await nico.get("/api/dashboard/tasks")).body.tasks;
     expect(t.map((x: { text: string }) => x.text)).toEqual([
       "Contar Góndola 3, Infusiones",
       "Recibir el pedido 0042 de Lácteos del Sur",
+      // Aunque llegue después de mañana, es una recepción esperada (ronda 3).
+      "Recibir el pedido 0041 de Distribuidora Andina",
       "Revisar vencimientos",
     ]);
     expect(t[0].path).toBe(`/productos/conteos/${count.body.id}`);
     expect(t[1].detail).toBe("llega hoy");
     // El jamón cocido del escenario vence en estos días.
-    expect(t[2]).toMatchObject({
+    expect(t[3]).toMatchObject({
       detail: "1 lote vence en 7 días",
       path: "/productos/vencimientos",
     });

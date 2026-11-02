@@ -1,4 +1,4 @@
-import { newId } from "@mostrador/shared";
+import { newId, plainText } from "@mostrador/shared";
 import { and, eq, isNotNull, isNull, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
@@ -35,7 +35,7 @@ setupRoutes.get("/setup/status", requireActor(), requireFull("settings"), async 
       key: "business",
       done: !!business,
       title: "Cargá los datos del negocio",
-      action: "Negocio",
+      action: "Cargar los datos del negocio",
       path: "/ajustes/negocio",
     },
     {
@@ -43,15 +43,16 @@ setupRoutes.get("/setup/status", requireActor(), requireFull("settings"), async 
       done: (await count(db.select({ n }).from(products).where(isNull(products.deletedAt)))) > 0,
       title: "Cargá tus productos",
       detail: "Con Excel, escaneando en Modo carga o directamente vendiendo",
-      action: "Modo carga",
-      path: "/productos/carga",
+      action: "Cargar productos",
+      path: "/productos",
     },
     {
       key: "payments",
       done: !!pay,
       title: "Configurá medios de pago",
-      detail: "Recargos, alias y CVU para transferencias",
-      action: "Medios de pago",
+      detail:
+        "Crédito viene con 10 % de recargo: revisalo. Recargos, alias y CVU para transferencias",
+      action: "Configurar medios de pago",
       path: "/ajustes/medios",
     },
     {
@@ -59,14 +60,14 @@ setupRoutes.get("/setup/status", requireActor(), requireFull("settings"), async 
       done: (await count(db.select({ n }).from(members).where(eq(members.active, true)))) > 1,
       title: "Sumá a tu equipo",
       detail: "Invitá a cada persona y asignale su PIN",
-      action: "Usuarios",
+      action: "Invitar al equipo",
       path: "/ajustes/usuarios",
     },
     {
       key: "suppliers",
       done: (await count(db.select({ n }).from(suppliers).where(isNull(suppliers.deletedAt)))) > 0,
       title: "Agregá a tus proveedores",
-      action: "Proveedores",
+      action: "Cargar proveedores",
       path: "/compras/proveedores",
     },
     {
@@ -80,7 +81,7 @@ setupRoutes.get("/setup/status", requireActor(), requireFull("settings"), async 
         )) > 0,
       title: "Cargá el WhatsApp de tus proveedores",
       detail: "Los pedidos salen con un botón que abre el chat",
-      action: "Proveedores",
+      action: "Cargar sus WhatsApp",
       path: "/compras/proveedores",
     },
     {
@@ -102,9 +103,9 @@ setupRoutes.get("/setup/status", requireActor(), requireFull("settings"), async 
 });
 
 const businessBody = z.object({
-  name: z.string().min(1, "Poné el nombre del negocio").max(80),
-  address: z.string().max(120).nullable().optional(),
-  city: z.string().max(80).nullable().optional(),
+  name: plainText(80),
+  address: plainText(120, 0).nullable().optional(),
+  city: plainText(80, 0).nullable().optional(),
 });
 
 /** Primer uso: datos del negocio y la Caja 1. Solo si todavía no hay negocio. */

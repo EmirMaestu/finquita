@@ -1,4 +1,4 @@
-import { newId, type OpPayload, roundQty } from "@mostrador/shared";
+import { assertOp, newId, type OpPayload, roundQty } from "@mostrador/shared";
 import { localDb } from "../data/db";
 import type { Delta } from "../data/types";
 import { syncClient, syncEngine } from "../sync";
@@ -48,6 +48,16 @@ export async function returnSaleLocal(a: {
   }
   if (a.refundMethod === "credit" && a.sale.customerId)
     deltas.push({ kind: "balance", key: a.sale.customerId, amount: -total });
+  const returnPayload = {
+    id: newId(),
+    saleId: a.sale.id,
+    reason: a.reason,
+    refundMethod: a.refundMethod,
+    shiftId: a.shiftId,
+    lines: a.lines.map((l) => ({ id: newId(), ...l })),
+    totalCents: total,
+  };
+  assertOp("sale.return", returnPayload);
   if (a.refundMethod === "cash" && a.shiftId) {
     await localDb().cashMoves.put({
       id: newId(),
@@ -69,15 +79,7 @@ export async function returnSaleLocal(a: {
       memberId: a.memberId,
       authorizedBy: a.authorizedBy,
       deviceAt: at,
-      payload: {
-        id: newId(),
-        saleId: a.sale.id,
-        reason: a.reason,
-        refundMethod: a.refundMethod,
-        shiftId: a.shiftId,
-        lines: a.lines.map((l) => ({ id: newId(), ...l })),
-        totalCents: total,
-      },
+      payload: returnPayload,
     },
     deltas,
   );
@@ -123,6 +125,7 @@ export async function voidSaleLocal(a: {
       source: "local",
     });
   }
+  assertOp("sale.void", { saleId: a.sale.id, reason: a.reason, shiftId: a.shiftId });
   const local = await localDb().sales.get(a.sale.id);
   if (local) await localDb().sales.put({ ...local, status: "voided" });
   await syncClient().enqueue(

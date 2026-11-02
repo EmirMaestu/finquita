@@ -17,14 +17,16 @@ export function SaleDone({
   changeCents: number;
   method: string;
   ticket?: string | null;
-  onDone: () => void;
+  /** La tecla que cerró la pantalla (si fue una sola letra o número) sigue hacia la venta nueva. */
+  onDone: (key?: string) => void;
   ms?: number;
 }) {
   useEffect(() => {
-    const t = setTimeout(onDone, ms);
+    const t = setTimeout(() => onDone(), ms);
     const k = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
       e.preventDefault();
-      onDone();
+      onDone(e.key.length === 1 && e.key !== " " ? e.key : undefined);
     };
     const timer = setTimeout(() => window.addEventListener("keydown", k, { once: true }), 150);
     return () => {
@@ -36,7 +38,7 @@ export function SaleDone({
   return (
     <button
       type="button"
-      onClick={onDone}
+      onClick={() => onDone()}
       aria-label="Venta lista"
       className="fixed inset-0 z-[55] flex flex-col items-center justify-center gap-4 bg-primario px-6 text-center text-sobre-primario"
     >
@@ -50,7 +52,10 @@ export function SaleDone({
         {changeCents > 0 ? `Vuelto ${formatMoney(changeCents)}` : "Listo"}
       </span>
       {ticket && <span className="text-[15px] opacity-85">{ticket}</span>}
-      <span className="mt-10 text-sm opacity-75">Cualquier tecla para la próxima venta</span>
+      <span className="mt-10 text-sm opacity-75">
+        <span className="lg:hidden">Tocá para la próxima venta</span>
+        <span className="hidden lg:inline">Cualquier tecla para la próxima venta</span>
+      </span>
     </button>
   );
 }

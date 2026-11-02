@@ -1,16 +1,13 @@
+import { describeIssues, issuesText } from "@mostrador/shared";
 import type { Context, MiddlewareHandler } from "hono";
 import type { z } from "zod";
 import { ApiError } from "./errors";
 
 type Target = "json" | "query" | "param";
 
+/** 400 con el primer problema en palabras ("Rubro: como mucho 60 caracteres") y todos en details. */
 export function validationError(error: z.ZodError): ApiError {
-  return new ApiError(
-    400,
-    "validation",
-    "Revisá los datos: hay campos con errores.",
-    error.issues.map((i) => ({ path: i.path.join("."), message: i.message })),
-  );
+  return new ApiError(400, "validation", issuesText(error.issues), describeIssues(error.issues));
 }
 
 async function read(c: Context, target: Target): Promise<unknown> {

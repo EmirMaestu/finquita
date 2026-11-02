@@ -175,6 +175,13 @@ export async function salesReport(db: Db, o: ReportOpts): Promise<Report> {
     o.categoryId ? (l.categoryId ?? "none") : (tree.top(l.categoryId) ?? "none"),
   );
   const byProduct = agg((l) => l.description);
+  // Los recargos por medio de pago (crédito +10 %) no son de ningún producto: van como renglón,
+  // así "Por categoría" y "Por producto" suman lo mismo que el total.
+  const surcharge = total - lines.reduce((s, l) => s + l.effTotal, 0);
+  if (surcharge > 0) {
+    byCat.push(["surcharge" as never, { qty: 0, total: surcharge }]);
+    byProduct.push(["Recargos por medio de pago", { qty: 0, total: surcharge }]);
+  }
 
   const team = await db.select({ id: members.id, name: members.name }).from(members);
   const byCashier = new Map<string, { tickets: number; total: number }>();
@@ -247,7 +254,12 @@ export async function salesReport(db: Db, o: ReportOpts): Promise<Report> {
         ],
         rows: byCat.map(([id, v]) => ({
           id,
-          name: id === "none" ? "Sin categoría" : tree.name(id),
+          name:
+            id === "none"
+              ? "Sin categoría"
+              : id === "surcharge"
+                ? "Recargos por medio de pago"
+                : tree.name(id),
           total: v.total,
           share: pct(v.total, total),
         })),
@@ -713,7 +725,13 @@ export async function cashReport(db: Db, o: ReportOpts): Promise<Report> {
         value: [...exp.values()].reduce((a, z) => a + z, 0),
         kind: "money",
       },
-      { label: "Retiros", value: withdrawals, kind: "money" },
+      { label: "Retiros durante el turno", value: withdrawals, kind: "money" },
+      {
+        // Lo que sale del cajón al cerrar (lo contado menos el fondo que queda): ronda 3.
+        label: "A la caja fuerte al cerrar",
+        value: closes.reduce((a, c) => a + (c.s.withdrawnCents ?? 0), 0),
+        kind: "money",
+      },
     ],
     tables: [
       {

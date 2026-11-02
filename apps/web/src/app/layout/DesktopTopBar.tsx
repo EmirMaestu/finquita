@@ -1,6 +1,7 @@
 import { Bell, PanelLeft, Search } from "lucide-react";
 import { useNavigate } from "react-router";
 import { ConnectionChip, RegisterChip } from "../../ui/StatusChips";
+import { globalSearch } from "../GlobalSearch";
 import { useShell } from "../shell";
 import { UserMenu } from "../UserMenu";
 
@@ -30,6 +31,7 @@ export function DesktopTopBar({ onToggleSidebar }: { onToggleSidebar?: () => voi
       </div>
       <button
         type="button"
+        onClick={() => globalSearch.open()}
         className="flex h-9 max-w-[420px] flex-1 items-center gap-2 rounded-lg border border-borde bg-fondo px-2.5 text-[13px] text-texto-suave"
       >
         <Search size={16} aria-hidden />

@@ -10,21 +10,21 @@ import {
   type ReportCell,
   type ReportColumn,
   todayAR,
-  writeCsv,
   writeXlsx,
 } from "@mostrador/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowDownRight, ArrowUpRight, ChevronLeft, Download, FileSpreadsheet } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, ChevronLeft, FileSpreadsheet, Share2 } from "lucide-react";
 import { useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import { NoPermissionFor } from "../../app/guards";
-import { useGrant } from "../../app/session";
+import { useGrant, useMe } from "../../app/session";
 import { api } from "../../data/api";
 import { Button } from "../../ui/Button";
 import { FilterChip } from "../../ui/Chip";
 import { cx } from "../../ui/cx";
 import { TextField } from "../../ui/Field";
 import { EmptyState, ErrorState, SkeletonList } from "../../ui/States";
+import { toast } from "../../ui/toast";
 import { useWide } from "../../ui/useMedia";
 
 type Kind = "sales" | "profitability" | "stock" | "cash" | "purchases" | "credit" | "result";
@@ -129,23 +129,51 @@ function save(data: BlobPart, type: string, name: string) {
   setTimeout(() => URL.revokeObjectURL(url), 30_000);
 }
 
+const chartEmpty = (c: NonNullable<Report["chart"]>) =>
+  c.points.every((p) => !p.value && !p.previous);
+
+const canShareFiles = (() => {
+  try {
+    const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
+    return Boolean(
+      nav.canShare?.({ files: [new File(["x"], "x.xlsx", { type: "application/octet-stream" })] }),
+    );
+  } catch {
+    return false;
+  }
+})();
+
 function Bars({ chart }: { chart: NonNullable<Report["chart"]> }) {
   const max = Math.max(1, ...chart.points.map((p) => Math.max(p.value, p.previous ?? 0)));
   const many = chart.points.length > 12;
+  const total = chart.points.reduce((a, p) => a + p.value, 0);
+  const top = chart.points.reduce<(typeof chart.points)[number] | null>(
+    (best, p) => (p.value > 0 && (!best || p.value > best.value) ? p : best),
+    null,
+  );
   return (
     <section
       aria-label={chart.label}
       className="rounded-card border border-borde bg-superficie p-4"
     >
       <div className="mb-2 text-sm font-semibold">{chart.label}</div>
-      <div className="flex h-40 items-end gap-1 overflow-x-auto">
+      {top && (
+        <div className="mb-1 text-xs text-texto-suave">
+          Mejor día: {top.label}, {formatMoney(top.value)}
+          {total > 0 ? ` · total ${formatMoney(total)}` : ""}
+        </div>
+      )}
+      {total === 0 && chart.points.every((p) => !p.previous) && (
+        <div className="mb-1 text-xs text-texto-suave">Sin ventas en este período.</div>
+      )}
+      <div className={cx("flex h-40 items-end", many ? "gap-px" : "gap-1")}>
         {chart.points.map((p) => (
           <div
             key={p.label}
-            className="flex h-full min-w-3 flex-1 flex-col items-center justify-end gap-1"
+            className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1"
             title={`${p.label}: ${formatMoney(p.value)}${p.previous != null ? ` · antes ${formatMoney(p.previous)}` : ""}`}
           >
-            <div className="flex h-full w-full items-end gap-0.5">
+            <div className={cx("flex h-full w-full items-end", many ? "gap-px" : "gap-0.5")}>
               {p.previous != null && (
                 <div
                   className="flex-1 rounded-t bg-neutro-suave"
@@ -157,9 +185,7 @@ function Bars({ chart }: { chart: NonNullable<Report["chart"]> }) {
                 style={{ height: `${(p.value / max) * 100}%` }}
               />
             </div>
-            {!many && (
-              <span className="text-[11px] whitespace-nowrap text-texto-suave">{p.label}</span>
-            )}
+            {!many && <span className="text-xs whitespace-nowrap text-texto-suave">{p.label}</span>}
           </div>
         ))}
       </div>
@@ -187,7 +213,7 @@ function Heatmap({ grid }: { grid: number[][] }) {
       className="overflow-x-auto rounded-card border border-borde bg-superficie p-4"
     >
       <div className="mb-2 text-sm font-semibold">Día × hora</div>
-      <table className="border-separate border-spacing-0.5 text-[11px]">
+      <table className="border-separate border-spacing-0.5 text-xs">
         <thead>
           <tr>
             <th />
@@ -251,6 +277,8 @@ function FixedExpenses() {
   const del = useMutation({
     mutationFn: (id: string) => api(`/api/fixed-expenses/${id}`, { method: "DELETE" }),
     onSuccess: done,
+    onError: (e) =>
+      toast({ text: e instanceof Error ? e.message : "No se pudo borrar.", tone: "error" }),
   });
   return (
     <section
@@ -265,7 +293,15 @@ function FixedExpenses() {
         <div key={f.id} className="flex items-center gap-2 border-t border-borde py-1.5">
           <span className="flex-1">{f.name}</span>
           <span className="tnum">{formatMoney(f.monthlyCents)} por mes</span>
-          <Button variant="ghost" onClick={() => del.mutate(f.id)} aria-label={`Borrar ${f.name}`}>
+          <Button
+            variant="ghost"
+            onClick={() =>
+              window.confirm(
+                `¿Borrar "${f.name}" de los gastos fijos? Deja de restarse en el resultado.`,
+              ) && del.mutate(f.id)
+            }
+            aria-label={`Borrar ${f.name}`}
+          >
             Borrar
           </Button>
         </div>
@@ -299,6 +335,8 @@ function FixedExpenses() {
 
 function ReportView({ kind }: { kind: Kind }) {
   const [params, setParams] = useSearchParams();
+  // En el celular, cada fila es una tarjeta (la tabla obligaba a desplazar de costado).
+  const wide = useWide();
   const meta = KINDS.find((k) => k.kind === kind);
   const q = useReport(kind, params);
   const preset = (params.get("preset") as PeriodPreset | null) ?? "month";
@@ -400,7 +438,7 @@ function ReportView({ kind }: { kind: Kind }) {
               </div>
             ))}
             <span className="flex-1" />
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button
                 variant="secondary"
                 icon={<FileSpreadsheet size={18} />}
@@ -412,21 +450,32 @@ function ReportView({ kind }: { kind: Kind }) {
                   )
                 }
               >
-                Excel
+                Descargar Excel
               </Button>
-              <Button
-                variant="ghost"
-                icon={<Download size={18} />}
-                onClick={() =>
-                  save(
-                    writeCsv(exportRows(r)),
-                    "text/csv;charset=utf-8",
-                    `${kind}-${r.range.from}.csv`,
-                  )
-                }
-              >
-                CSV
-              </Button>
+              {/* Compartir solo donde el equipo comparte archivos (el celular); si no, sobra. */}
+              {canShareFiles && (
+                <Button
+                  variant="ghost"
+                  icon={<Share2 size={18} />}
+                  onClick={() => {
+                    // En el celular, el archivo va directo a WhatsApp o al mail.
+                    const file = new File(
+                      [writeXlsx(exportRows(r), meta?.title) as BlobPart],
+                      `${kind}-${r.range.from}.xlsx`,
+                      { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" },
+                    );
+                    const nav = navigator as Navigator & {
+                      canShare?: (d: ShareData) => boolean;
+                      share?: (d: ShareData) => Promise<void>;
+                    };
+                    if (nav.share && nav.canShare?.({ files: [file] }))
+                      void nav.share({ files: [file], title: meta?.title }).catch(() => {});
+                    else toast({ text: "Este equipo no comparte archivos: usá Descargar." });
+                  }}
+                >
+                  Compartir
+                </Button>
+              )}
             </div>
           </section>
           {params.get("categoryId") && (
@@ -439,8 +488,9 @@ function ReportView({ kind }: { kind: Kind }) {
               Todas las categorías
             </Button>
           )}
-          {r.chart && r.chart.points.length > 0 && <Bars chart={r.chart} />}
-          {r.chart?.grid && <Heatmap grid={r.chart.grid} />}
+          {/* Sin nada en el período, los gráficos vacíos no se muestran. */}
+          {r.chart && !chartEmpty(r.chart) && <Bars chart={r.chart} />}
+          {r.chart?.grid?.flat().some(Boolean) && <Heatmap grid={r.chart.grid} />}
           {kind === "result" && <FixedExpenses />}
           {r.tables.map((t) => (
             <section
@@ -453,6 +503,52 @@ function ReportView({ kind }: { kind: Kind }) {
               </div>
               {!t.rows.length ? (
                 <div className="px-4 py-4 text-sm text-texto-suave">Nada en este período.</div>
+              ) : !wide ? (
+                <ul className="m-0 list-none p-0" aria-label={t.title}>
+                  {t.rows
+                    .slice(0, 200)
+                    .map((row, i) => ({ row, rowKey: `${t.key}:${i}` }))
+                    .map(({ row, rowKey }) => {
+                      const [first, ...rest] = t.columns;
+                      const drill = t.drill ? (row[t.drill.column] as string | null) : null;
+                      const go =
+                        drill && drill !== "none" && t.drill
+                          ? () => set({ [t.drill?.param ?? "categoryId"]: drill })
+                          : undefined;
+                      const body = (
+                        <>
+                          <span className="block font-semibold">
+                            {first ? fmt(row[first.key] ?? null, first.kind) : ""}
+                          </span>
+                          <span className="mt-1 grid grid-cols-2 gap-x-3 gap-y-0.5 text-[13px]">
+                            {rest.map((c) => (
+                              <span key={c.key} className="contents">
+                                <span className="text-texto-suave">{c.label}</span>
+                                <span className="tnum text-right">
+                                  {fmt(row[c.key] ?? null, c.kind)}
+                                </span>
+                              </span>
+                            ))}
+                          </span>
+                        </>
+                      );
+                      return (
+                        <li key={rowKey} className="border-t border-borde first:border-t-0">
+                          {go ? (
+                            <button
+                              type="button"
+                              onClick={go}
+                              className="w-full px-4 py-3 text-left"
+                            >
+                              {body}
+                            </button>
+                          ) : (
+                            <div className="px-4 py-3">{body}</div>
+                          )}
+                        </li>
+                      );
+                    })}
+                </ul>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse text-sm">
@@ -488,6 +584,16 @@ function ReportView({ kind }: { kind: Kind }) {
                                 "border-t border-borde",
                                 drill && drill !== "none" && "cursor-pointer hover:bg-neutro-suave",
                               )}
+                              // Las filas que bajan de nivel también andan con teclado (Enter).
+                              tabIndex={drill && drill !== "none" ? 0 : undefined}
+                              onKeyDown={
+                                drill && drill !== "none" && t.drill
+                                  ? (e) => {
+                                      if (e.key === "Enter")
+                                        set({ [t.drill?.param ?? "categoryId"]: drill });
+                                    }
+                                  : undefined
+                              }
                               onClick={
                                 drill && drill !== "none" && t.drill
                                   ? () => set({ [t.drill?.param ?? "categoryId"]: drill })
@@ -538,7 +644,11 @@ function Card({ k }: { k: (typeof KINDS)[number] }) {
       <span className="text-sm text-texto-suave">{k.question}</span>
       <span className="font-semibold">{k.title}</span>
       <span className="tnum text-2xl font-semibold">
-        {q.data ? fmt(q.data.headline.value, q.data.headline.kind) : "…"}
+        {q.data
+          ? fmt(q.data.headline.value, q.data.headline.kind)
+          : q.isError
+            ? "No se pudo cargar"
+            : "…"}
       </span>
       {q.data?.headline.deltaBp != null && (
         <span
@@ -547,7 +657,7 @@ function Card({ k }: { k: (typeof KINDS)[number] }) {
             q.data.headline.deltaBp >= 0 ? "text-exito" : "text-peligro",
           )}
         >
-          {fmt(q.data.headline.deltaBp, "percent")} vs. el período anterior
+          {fmt(q.data.headline.deltaBp, "percent")} contra el período anterior
         </span>
       )}
     </button>
@@ -556,6 +666,7 @@ function Card({ k }: { k: (typeof KINDS)[number] }) {
 
 /** Reportes: cada uno responde una pregunta del dueño. */
 export function ReportsPage() {
+  const me = useMe();
   const grant = useGrant("reports");
   const profit = useGrant("reports_profitability") === "allow";
   const wide = useWide();
@@ -563,11 +674,22 @@ export function ReportsPage() {
   const { kind } = useParams();
   if (grant === "deny") return <NoPermissionFor perm="reports" />;
   const list = KINDS.filter((k) => (grant === "own" ? k.kind === "sales" : !k.profit || profit));
-  if (!list.length) return <EmptyState title="No hay reportes para tu rol" />;
+  if (!list.length)
+    return (
+      <EmptyState
+        title="No hay reportes para tu usuario"
+        body="Los reportes los ven el dueño y el encargado; el cajero ve solo sus ventas."
+      />
+    );
   const current = (list.find((k) => k.kind === kind) ?? (wide ? list[0] : null))?.kind ?? null;
   return (
     <div className="flex flex-col gap-4 p-4 lg:p-6">
       <h1 className="m-0 text-[22px] font-semibold">Reportes</h1>
+      {me?.member.role === "cashier" && (
+        <span className="rounded-full bg-info-suave px-3 py-1 text-[13px] font-semibold text-info">
+          Solo tus ventas: lo que cobraste vos
+        </span>
+      )}
       {wide ? (
         <div className="grid grid-cols-[220px_minmax(0,1fr)] gap-6">
           <nav aria-label="Reportes" className="flex flex-col gap-1">

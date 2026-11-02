@@ -1,4 +1,4 @@
-import { newId } from "@mostrador/shared";
+import { assertOp, newId } from "@mostrador/shared";
 import { normalize } from "../sell/searchIndex";
 import { syncClient, syncEngine } from "../sync";
 import { bumpLocalVersion } from "../sync/status";
@@ -38,13 +38,15 @@ export async function createCustomerLocal(
     overdueCents: 0,
     oldestDebtAt: null,
   };
+  const payload = { id: c.id, changes: { name: c.name, phone: c.phone } };
+  assertOp("customer.upsert", payload);
   await localDb().customers.put(c);
   await syncClient().enqueue({
     opId: newId(),
     type: "customer.upsert",
     memberId,
     deviceAt: new Date().toISOString(),
-    payload: { id: c.id, changes: { name: c.name, phone: c.phone } },
+    payload,
   });
   bumpLocalVersion();
   void syncEngine().kick();
@@ -69,6 +71,7 @@ export async function saveCustomerLocal(
 ): Promise<string> {
   const db = localDb();
   const cid = id ?? newId();
+  assertOp("customer.upsert", { id: cid, changes });
   const cur = await db.customers.get(cid);
   await db.customers.put({
     ...(cur ?? {
@@ -114,6 +117,15 @@ export async function collectCreditLocal(
   const id = newId();
   const opId = newId();
   const at = new Date().toISOString();
+  assertOp("credit.payment", {
+    id,
+    customerId: p.customerId,
+    amountCents: p.amountCents,
+    method: p.method,
+    shiftId: p.shiftId,
+    applyTo: p.applyTo,
+    note: p.note ?? null,
+  });
   if (p.shiftId) {
     await localDb().cashMoves.put({
       id: newId(),

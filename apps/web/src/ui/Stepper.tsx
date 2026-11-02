@@ -1,5 +1,6 @@
 import { Minus, Plus } from "lucide-react";
 import { cx } from "./cx";
+import { toast } from "./toast";
 
 /** Stepper − / + (conteo por billete, cantidad en Vender). */
 export function Stepper({
@@ -8,12 +9,14 @@ export function Stepper({
   min = 0,
   label,
   big,
+  autoFocus,
 }: {
   value: number;
   onChange: (v: number) => void;
   min?: number;
   label: string;
   big?: boolean;
+  autoFocus?: boolean;
 }) {
   const size = big ? "size-12" : "size-9";
   return (
@@ -33,10 +36,30 @@ export function Stepper({
       <input
         aria-label={label}
         inputMode="numeric"
+        ref={(el) => {
+          // Foco al aparecer (el primer billete del arqueo, con teclado).
+          if (el && autoFocus && document.activeElement !== el && !el.dataset.focused) {
+            el.dataset.focused = "1";
+            el.focus();
+          }
+        }}
+        onFocus={(e) => e.currentTarget.select()}
         value={value}
+        onKeyDown={(e) => {
+          if (e.key.length === 1 && /[^\d]/.test(e.key) && !e.ctrlKey && !e.metaKey) {
+            e.preventDefault();
+            toast({
+              text: "Solo números enteros: cuántos hay de ese billete.",
+              tone: "error",
+              ms: 2500,
+            });
+          }
+        }}
         onChange={(e) => {
-          const n = Number(e.target.value.replace(/\D/g, ""));
-          onChange(Number.isFinite(n) ? Math.max(min, n) : min);
+          // "1,5", "-5" o "1e2" no son cantidades de billetes: se ignoran, no se adivinan.
+          if (/\D/.test(e.target.value)) return;
+          const n = Number(e.target.value || "0");
+          onChange(Number.isFinite(n) ? Math.min(9999, Math.max(min, n)) : min);
         }}
         className="tnum w-12 bg-transparent text-center font-semibold outline-none"
       />

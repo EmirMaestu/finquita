@@ -14,7 +14,7 @@ import { validate } from "../lib/validate";
 
 const body = z.object({
   rows: z
-    .array(z.array(z.string().max(300)))
+    .array(z.array(z.string().max(10_000)))
     .min(2)
     .max(20_001),
   mapping: z.record(z.string(), z.number().int().min(0).max(100)),
@@ -32,6 +32,10 @@ export type ImportItem = {
   errors: string[];
   changes?: Record<string, [unknown, unknown]>;
   warnings?: string[];
+  priceCents?: number | null;
+  costCents?: number | null;
+  stock?: number | null;
+  unit?: "unit" | "kg";
 };
 
 async function plan(
@@ -75,7 +79,17 @@ async function plan(
       byName.get(r.name.toLowerCase());
     byLine.set(r.line, match ?? null);
     if (!match) {
-      items.push({ line: r.line, action: "new", name: r.name, errors: [] });
+      items.push({
+        line: r.line,
+        action: "new",
+        name: r.name,
+        errors: [],
+        priceCents: r.priceCents,
+        costCents: r.costCents,
+        stock: r.stock,
+        unit: r.unit,
+        warnings: r.unitGuessed ? ["Se carga por kilo (lo dice el nombre)"] : [],
+      });
       continue;
     }
     const changes: Record<string, [unknown, unknown]> = {};
@@ -88,6 +102,10 @@ async function plan(
     if (r.name !== match.name && r.barcode && byCode.has(r.barcode))
       changes.name = [match.name, r.name];
     const warnings: string[] = [];
+    if (changes.name)
+      warnings.push(
+        `Cambia el nombre: "${match.name}" pasa a llamarse "${r.name}". Si no es lo que querés, revisá el código.`,
+      );
     if (r.stock !== null && r.stock !== match.stockQty)
       warnings.push("El stock de los productos que ya existen no se toca: hacé un conteo.");
     if (match.fixedPrice && changes.priceCents)

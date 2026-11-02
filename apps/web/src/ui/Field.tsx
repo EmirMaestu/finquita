@@ -16,7 +16,7 @@ type FieldProps = {
 };
 
 const control =
-  "h-12 w-full rounded-lg border bg-superficie px-3 text-base text-texto outline-none lg:h-11 lg:text-[15px] placeholder:text-texto-apagado focus:border-2 focus:border-primario focus:px-[11px] focus:shadow-[0_0_0_3px_var(--primario-suave)] disabled:bg-fondo disabled:text-texto-apagado";
+  "h-12 w-full rounded-lg border bg-superficie px-3 text-base text-texto outline-none lg:h-11 lg:text-[15px] placeholder:text-texto-apagado placeholder:italic focus:border-2 focus:border-primario focus:px-[11px] focus:shadow-[0_0_0_3px_var(--primario-suave)] disabled:bg-fondo disabled:text-texto-apagado";
 
 export const TextField = forwardRef<
   HTMLInputElement,

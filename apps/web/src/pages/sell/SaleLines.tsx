@@ -74,11 +74,16 @@ export function SaleTable({
                       type="button"
                       aria-label={`Restar ${l.description}`}
                       onClick={() => onQty(l.id, -1)}
-                      className={STEP}
+                      // Con una sola unidad, "−" no borra la línea: para eso está Quitar (ronda 3).
+                      disabled={l.qty <= 1}
+                      title={l.qty <= 1 ? "Para sacarlo, Quitar o Supr" : undefined}
+                      className={cx(STEP, "disabled:opacity-30")}
                     >
                       <Minus size={16} />
                     </button>
-                    <span className="tnum min-w-12 text-center">{formatQty(l.qty, l.unit)}</span>
+                    <span className="tnum min-w-12 whitespace-nowrap text-center">
+                      {formatQty(l.qty, l.unit)}
+                    </span>
                     <button
                       type="button"
                       aria-label={`Sumar ${l.description}`}
@@ -115,14 +120,14 @@ export function SaleTable({
                     onClick={() => onDismissWarning(l.id)}
                     className="h-7 rounded-md border border-current px-2.5 font-semibold"
                   >
-                    Vender igual
+                    Vender igual{selected === l.id ? " · Enter" : ""}
                   </button>
                   <button
                     type="button"
                     onClick={() => onRemove(l.id)}
                     className="h-7 px-2.5 font-semibold"
                   >
-                    Quitar
+                    Quitar{selected === l.id ? " · Supr" : ""}
                   </button>
                 </div>
               )}
@@ -130,12 +135,6 @@ export function SaleTable({
           );
         })}
       </ul>
-      <div className="flex gap-4 px-3.5 py-2 text-xs text-texto-suave">
-        <span>↑ ↓ elegir línea</span>
-        <span>+ − cantidad</span>
-        <span>Supr quitar</span>
-        <span>* multiplicar</span>
-      </div>
     </div>
   );
 }
@@ -144,13 +143,18 @@ export function SaleTable({
 export function SaleList({
   lines,
   onQty,
+  onEditQty,
   onRemove,
   warnings,
+  onDismissWarning,
 }: {
   lines: CartLine[];
   onQty: (id: string, dir: 1 | -1) => void;
+  /** Tocar el número: teclado para poner la cantidad de una. */
+  onEditQty?: (id: string) => void;
   onRemove: (id: string) => void;
   warnings: LineWarning[];
+  onDismissWarning: (lineId: string) => void;
 }) {
   return (
     <ul className="m-0 list-none bg-superficie p-0" aria-label="Líneas de la venta">
@@ -170,12 +174,20 @@ export function SaleList({
                   <button
                     type="button"
                     aria-label={`Restar ${l.description}`}
+                    disabled={l.qty <= 1}
                     onClick={() => onQty(l.id, -1)}
                     className="inline-flex size-11 items-center justify-center"
                   >
                     <Minus size={20} />
                   </button>
-                  <span className="tnum w-7 text-center font-semibold">{l.qty}</span>
+                  <button
+                    type="button"
+                    aria-label={`Cantidad de ${l.description}: ${l.qty}. Tocá para cambiarla`}
+                    onClick={() => onEditQty?.(l.id)}
+                    className="tnum h-11 min-w-9 px-1 text-center font-semibold"
+                  >
+                    {l.qty}
+                  </button>
                   <button
                     type="button"
                     aria-label={`Sumar ${l.description}`}
@@ -199,8 +211,24 @@ export function SaleList({
               </span>
             </div>
             {w && (
-              <div className="bg-peligro-suave px-4 py-2 text-[13px] font-medium text-peligro">
-                {w.text}
+              <div className="flex flex-col gap-2 bg-peligro-suave px-4 py-2.5 text-[13px] font-medium text-peligro">
+                <span>{w.text}</span>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => onDismissWarning(l.id)}
+                    className="h-11 flex-1 rounded-lg border border-current font-semibold"
+                  >
+                    Vender igual
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onRemove(l.id)}
+                    className="h-11 flex-1 rounded-lg font-semibold"
+                  >
+                    Quitar
+                  </button>
+                </div>
               </div>
             )}
           </li>

@@ -1,7 +1,7 @@
 import { formatDate, formatMoney, formatPercent } from "@mostrador/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FileSpreadsheet, Plus, ScanBarcode, Search, ShoppingCart } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import { useCan } from "../../app/session";
 import { useViewport } from "../../app/useViewport";
@@ -14,7 +14,7 @@ import {
   type ProductItem,
 } from "../../data/products";
 import { useSettings } from "../../data/settings";
-import { Button, IconButton } from "../../ui/Button";
+import { Button } from "../../ui/Button";
 import { Checkbox } from "../../ui/Checkbox";
 import { FilterChip } from "../../ui/Chip";
 import { cx } from "../../ui/cx";
@@ -22,16 +22,20 @@ import { SelectField } from "../../ui/Field";
 import { Menu } from "../../ui/Menu";
 import { Sheet } from "../../ui/Sheet";
 import { EmptyState, ErrorState, OfflineBanner, SkeletonList } from "../../ui/States";
+import { toast } from "../../ui/toast";
 import { ProductDetailView } from "./ProductDetailView";
 import { ProductForm } from "./ProductForm";
 import { ProductChips, StockChip } from "./StockChip";
 
-const FILTERS: { id: ProductFilter | null; label: string; costs?: boolean }[] = [
+// A la vista, los tres filtros de todos los días; el resto, en "Más filtros".
+const FILTERS: { id: ProductFilter | null; label: string }[] = [
   { id: null, label: "Todos" },
   { id: "low", label: "Stock bajo" },
   { id: "out", label: "Sin stock" },
-  { id: "negative", label: "Negativo" },
-  { id: "expiring", label: "Por vencer" },
+];
+const MORE_FILTERS: { id: ProductFilter; label: string; costs?: boolean; lots?: boolean }[] = [
+  { id: "negative", label: "Stock negativo" },
+  { id: "expiring", label: "Por vencer", lots: true },
   { id: "stale", label: "Sin tocar 30 días" },
   { id: "no_cost", label: "Sin costo", costs: true },
   { id: "inactive", label: "Inactivos" },
@@ -99,8 +103,10 @@ function ChangeCategory({
   const qc = useQueryClient();
   const cats = useQuery({ queryKey: ["categories"], queryFn: fetchCategories, enabled: open });
   const [categoryId, setCategoryId] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const m = useMutation({
     mutationFn: async () => {
+      setError(null);
       for (const id of ids)
         await api(`/api/products/${id}`, {
           method: "PATCH",
@@ -111,15 +117,22 @@ function ChangeCategory({
       await qc.invalidateQueries({ queryKey: ["products"] });
       onClose();
     },
+    onError: (e) => setError(e instanceof Error ? e.message : "No se pudo cambiar la categoría."),
   });
   return (
     <Sheet
       open={open}
       onClose={onClose}
       title={`Cambiar categoría de ${ids.length} productos`}
+      error={error}
       footer={
-        <Button className="flex-1" onClick={() => m.mutate()} disabled={m.isPending}>
-          Cambiar
+        <Button
+          className="flex-1"
+          onClick={() => m.mutate()}
+          busy={m.isPending}
+          busyLabel="Cambiando…"
+        >
+          Cambiar categoría
         </Button>
       }
     >
@@ -152,6 +165,9 @@ export function ProductsPage() {
   const [search, setSearch] = useSearchParams();
   const seeCosts = useCan("view_costs");
   const canEdit = useCan("change_prices");
+  // Dar de alta un producto: quien cambia precios o quien vende (alta rápida); el repositor, no.
+  const canSell = useCan("sell");
+  const canCreate = canEdit || canSell;
   const { features } = useSettings();
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<ProductFilter | null>(null);
@@ -167,6 +183,11 @@ export function ProductsPage() {
     placeholderData: (prev) => prev,
   });
   const items = list.data?.items ?? [];
+  // El total del catálogo (sin búsqueda ni filtro), para que el buscador no diga "0 productos".
+  const [catalogTotal, setCatalogTotal] = useState(0);
+  useEffect(() => {
+    if (list.data && !q && !filter) setCatalogTotal(list.data.total);
+  }, [list.data, q, filter]);
   const allChecked = items.length > 0 && items.every((i) => selected.has(i.id));
   const ids = useMemo(() => [...selected], [selected]);
 
@@ -195,6 +216,43 @@ export function ProductsPage() {
     );
   }
 
+  // Las mismas acciones en la compu y en el celular (el celular no las tenía).
+  const actions = [
+    { label: "Modo carga", onSelect: () => navigate("/productos/carga"), hidden: !canCreate },
+    {
+      label: "Importar productos",
+      onSelect: () => navigate("/productos/importar"),
+      hidden: !canEdit,
+    },
+    {
+      label: "Cambio masivo de precios",
+      onSelect: () => navigate("/productos/precios"),
+      hidden: !canEdit,
+    },
+    {
+      label: "Categorías",
+      onSelect: () => navigate("/productos/categorias"),
+      hidden: !canEdit,
+    },
+    { label: "Etiquetas de góndola", onSelect: () => navigate("/productos/etiquetas") },
+    { label: "Planilla de códigos", onSelect: () => navigate("/productos/planilla") },
+    { label: "Movimientos de stock", onSelect: () => navigate("/productos/movimientos") },
+    {
+      label: "Conteos de inventario",
+      onSelect: () => navigate("/productos/conteos"),
+      hidden: !features.counts,
+    },
+    {
+      label: "Promociones",
+      onSelect: () => navigate("/productos/promociones"),
+      hidden: !features.promotions || !canEdit,
+    },
+    {
+      label: "Vencimientos",
+      onSelect: () => navigate("/productos/vencimientos"),
+      hidden: !features.lots,
+    },
+  ];
   const header = desktop ? (
     <div className="flex items-center gap-3">
       <h1 className="m-0 text-[22px] font-semibold">Productos</h1>
@@ -212,40 +270,7 @@ export function ProductsPage() {
           className="min-w-0 flex-1 bg-transparent text-texto outline-none"
         />
       </label>
-      <Menu
-        label="Más acciones"
-        items={[
-          { label: "Modo carga", onSelect: () => navigate("/productos/carga") },
-          {
-            label: "Importar desde Excel",
-            onSelect: () => navigate("/productos/importar"),
-            hidden: !canEdit,
-          },
-          {
-            label: "Cambio masivo de precios",
-            onSelect: () => navigate("/productos/precios"),
-            hidden: !canEdit,
-          },
-          { label: "Etiquetas de góndola", onSelect: () => navigate("/productos/etiquetas") },
-          { label: "Planilla de códigos", onSelect: () => navigate("/productos/planilla") },
-          { label: "Movimientos de stock", onSelect: () => navigate("/productos/movimientos") },
-          {
-            label: "Conteos de inventario",
-            onSelect: () => navigate("/productos/conteos"),
-            hidden: !features.counts,
-          },
-          {
-            label: "Promociones",
-            onSelect: () => navigate("/productos/promociones"),
-            hidden: !features.promotions || !canEdit,
-          },
-          {
-            label: "Vencimientos",
-            onSelect: () => navigate("/productos/vencimientos"),
-            hidden: !features.lots,
-          },
-        ]}
-      />
+      <Menu label="Más acciones" items={actions} />
       {canEdit && (
         <Button className="h-9 text-[13px]" onClick={() => setForm({ product: null })}>
           Nuevo producto
@@ -253,36 +278,62 @@ export function ProductsPage() {
       )}
     </div>
   ) : (
-    <div className="flex items-center gap-2 border-b border-borde bg-superficie px-4 py-3">
-      <label className="flex h-12 min-w-0 flex-1 items-center gap-2.5 rounded-lg border border-borde bg-fondo px-3 text-texto-suave">
+    <div className="flex flex-wrap items-center gap-2 border-b border-borde bg-superficie px-4 py-3">
+      <label className="flex h-12 min-w-0 basis-full items-center gap-2.5 rounded-lg border border-borde bg-fondo px-3 text-texto-suave sm:basis-0 sm:flex-1">
         <Search size={22} aria-hidden />
         <input
           aria-label="Buscar productos"
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder={
-            list.data
-              ? `Buscar en ${list.data.total.toLocaleString("es-AR")} productos`
+            catalogTotal
+              ? `Buscar en ${catalogTotal.toLocaleString("es-AR")} productos`
               : "Nombre o código"
           }
           className="min-w-0 flex-1 bg-transparent text-base text-texto outline-none"
         />
       </label>
+      <Menu label="Más acciones" items={actions} />
       {canEdit && (
-        <IconButton label="Nuevo producto" onClick={() => setForm({ product: null })}>
-          <Plus size={24} />
-        </IconButton>
+        <Button
+          className="h-12 px-3"
+          icon={<Plus size={20} aria-hidden />}
+          onClick={() => setForm({ product: null })}
+          aria-label="Nuevo producto"
+        >
+          Nuevo
+        </Button>
       )}
     </div>
   );
 
   const filters = (
     <div className={cx("flex gap-2", desktop ? "flex-wrap" : "overflow-x-auto px-4 pt-3")}>
-      {FILTERS.filter((f) => !f.costs || seeCosts).map((f) => (
+      {FILTERS.map((f) => (
         <FilterChip key={f.label} active={filter === f.id} onClick={() => setFilter(f.id)}>
           {f.label}
         </FilterChip>
       ))}
+      <select
+        aria-label="Más filtros"
+        value={MORE_FILTERS.some((f) => f.id === filter) ? (filter ?? "") : ""}
+        onChange={(e) => setFilter((e.target.value || null) as ProductFilter | null)}
+        className={cx(
+          "h-11 shrink-0 rounded-full border px-3 text-[13px] font-semibold lg:h-8",
+          MORE_FILTERS.some((f) => f.id === filter)
+            ? "border-texto bg-texto text-fondo"
+            : "border-borde bg-superficie",
+        )}
+      >
+        <option value="">Más filtros</option>
+        {MORE_FILTERS.filter((f) => (!f.costs || seeCosts) && (!f.lots || features.lots)).map(
+          (f) => (
+            <option key={f.id} value={f.id}>
+              {f.label}
+            </option>
+          ),
+        )}
+      </select>
     </div>
   );
 
@@ -359,7 +410,11 @@ export function ProductsPage() {
               <th className="font-semibold">Producto</th>
               <th className="font-semibold">Stock</th>
               {seeCosts && <th className="text-right font-semibold">Costo</th>}
-              {seeCosts && <th className="text-right font-semibold">Gan.</th>}
+              {seeCosts && (
+                <th className="text-right font-semibold" title="Ganancia sobre el costo">
+                  Ganancia
+                </th>
+              )}
               <th className="text-right font-semibold">Precio</th>
               {showDate && <th className="font-semibold">Actualiz.</th>}
             </tr>
@@ -388,7 +443,7 @@ export function ProductsPage() {
                   <span className="truncate text-[13px] font-medium">{p.name}</span>
                   <span className="truncate text-[11px] text-texto-suave">
                     {[
-                      p.barcodes[0] ?? (p.internalCode ? `PLU ${p.internalCode}` : null),
+                      p.barcodes[0] ?? (p.internalCode ? `código ${p.internalCode}` : null),
                       p.supplierName,
                     ]
                       .filter(Boolean)
@@ -491,7 +546,15 @@ export function ProductsPage() {
           open
           product={form.product}
           onClose={() => setForm(null)}
-          onSaved={(p) => desktop && setSearch({ p: p.id })}
+          onSaved={(p) => {
+            if (desktop) setSearch({ p: p.id });
+            else
+              toast({
+                text: `Guardado: ${p.name}`,
+                action: { label: "Ver", run: () => navigate(`/productos/${p.id}`) },
+                ms: 5000,
+              });
+          }}
         />
       )}
       <ChangeCategory ids={ids} open={catSheet} onClose={() => setCatSheet(false)} />

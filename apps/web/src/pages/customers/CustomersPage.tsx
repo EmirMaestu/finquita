@@ -12,7 +12,7 @@ import {
   waLink,
 } from "@mostrador/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { MessageCircle, Search, Share2 } from "lucide-react";
+import { ChevronLeft, MessageCircle, Search, Share2 } from "lucide-react";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { NoPermissionFor } from "../../app/guards";
@@ -20,11 +20,13 @@ import { useCan, useGrant, useMe } from "../../app/session";
 import { useRegister } from "../../cash/useRegister";
 import { ApiError, api, downloadFile } from "../../data/api";
 import { collectCreditLocal, saveCustomerLocal } from "../../data/customers";
+import { localDb } from "../../data/db";
 import { Button } from "../../ui/Button";
 import { Checkbox } from "../../ui/Checkbox";
 import { Chip, FilterChip } from "../../ui/Chip";
 import { cx } from "../../ui/cx";
 import { SelectField, TextField } from "../../ui/Field";
+import { MoreFields } from "../../ui/MoreFields";
 import { NumPad } from "../../ui/NumPad";
 import { Sheet } from "../../ui/Sheet";
 import { EmptyState, ErrorState, SkeletonList } from "../../ui/States";
@@ -114,9 +116,11 @@ export function CustomerForm({
   });
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) =>
     setF((x) => ({ ...x, [k]: e.target.value }));
+  const [error, setError] = useState<string | null>(null);
   const save = useMutation({
     mutationFn: async () => {
       if (!me) throw new Error("Sin sesión");
+      setError(null);
       return saveCustomerLocal(me.member.id, customer?.id ?? null, {
         name: f.name.trim(),
         nickname: f.nickname.trim() || null,
@@ -132,16 +136,20 @@ export function CustomerForm({
       setTimeout(() => void qc.invalidateQueries({ queryKey: ["customer", id] }), 800);
       onClose(id);
     },
+    onError: (e) => setError(e instanceof Error ? e.message : "No se pudo guardar."),
   });
   return (
     <Sheet
       open
       onClose={() => onClose()}
       title={customer ? "Editar cliente" : "Nuevo cliente"}
+      error={error}
       footer={
         <Button
           className="flex-1"
-          disabled={!f.name.trim() || save.isPending}
+          disabled={!f.name.trim()}
+          busy={save.isPending}
+          busyLabel="Guardando…"
           onClick={() => save.mutate()}
         >
           Guardar
@@ -155,12 +163,7 @@ export function CustomerForm({
           onChange={set("name")}
           placeholder="Rosa Giménez"
         />
-        <div className="grid grid-cols-2 gap-3">
-          <TextField label="Apodo" value={f.nickname} onChange={set("nickname")} />
-          <TextField label="Teléfono" inputMode="tel" value={f.phone} onChange={set("phone")} />
-        </div>
-        <TextField label="Dirección" value={f.address} onChange={set("address")} />
-        <TextField label="DNI (opcional)" inputMode="numeric" value={f.dni} onChange={set("dni")} />
+        <TextField label="Teléfono" inputMode="tel" value={f.phone} onChange={set("phone")} />
         <div className="grid grid-cols-2 gap-3">
           <TextField
             label="Límite"
@@ -178,6 +181,11 @@ export function CustomerForm({
             ))}
           </SelectField>
         </div>
+        <MoreFields open={Boolean(f.nickname || f.address || f.dni || error?.includes("DNI"))}>
+          <TextField label="Apodo" value={f.nickname} onChange={set("nickname")} />
+          <TextField label="Dirección" value={f.address} onChange={set("address")} />
+          <TextField label="DNI" inputMode="numeric" value={f.dni} onChange={set("dni")} />
+        </MoreFields>
       </div>
     </Sheet>
   );
@@ -189,17 +197,27 @@ export function CollectSheet({ customer, onClose }: { customer: Detail; onClose:
   const qc = useQueryClient();
   const reg = useRegister();
   const [typed, setTyped] = useState("");
-  const [method, setMethod] = useState<"cash" | "transfer" | "debit">("cash");
+  const [method, setMethod] = useState<"cash" | "transfer" | "debit" | "credit">("cash");
   const [mode, setMode] = useState<"oldest" | "pick">("oldest");
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [receipt, setReceipt] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const amount = Number(typed || "0") * 100;
   const open = customer.movements.filter((m) => (m.openCents ?? 0) > 0).reverse();
+  // No se cobra más de lo que debe: un dedo de más no deja "saldo a favor" por error.
+  const owed = Math.max(0, customer.balanceCents);
+  const tooMuch = amount > owed;
+  const amountHint = tooMuch
+    ? `Debe ${formatMoney(owed)}: no se puede cobrar más que eso.`
+    : typed && amount <= 0
+      ? "Poné cuánto paga."
+      : null;
   const pay = useMutation({
     mutationFn: async () => {
       if (!me) throw new Error("Sin sesión");
       if (amount <= 0) throw new Error("Tipeá cuánto paga.");
+      if (amount > owed)
+        throw new Error(`Debe ${formatMoney(owed)}: no se puede cobrar más que eso.`);
       if (method === "cash" && !reg.shift) throw new Error("Abrí la caja para cobrar en efectivo.");
       await collectCreditLocal(me.member.id, {
         customerId: customer.id,
@@ -235,16 +253,33 @@ export function CollectSheet({ customer, onClose }: { customer: Detail; onClose:
           </pre>
         </section>
         <div className="mt-3 flex flex-wrap gap-2">
-          <a
-            href={waLink(customer.phone, receipt)}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex h-11 items-center gap-2 rounded-lg bg-primario px-4 font-semibold text-white no-underline"
+          {!customer.phone && (
+            <span className="w-full text-sm text-texto-suave">
+              Sin teléfono cargado: el recibo se manda a mano.
+            </span>
+          )}
+          {customer.phone && (
+            <a
+              href={waLink(customer.phone, receipt)}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex h-11 items-center gap-2 rounded-lg bg-primario px-4 font-semibold text-white no-underline"
+            >
+              <MessageCircle size={18} aria-hidden /> Mandar por WhatsApp
+            </a>
+          )}
+          <Button
+            variant="secondary"
+            onClick={() => {
+              const nav = navigator as Navigator & { share?: (d: ShareData) => Promise<void> };
+              if (nav.share) void nav.share({ title: "Recibo", text: receipt }).catch(() => {});
+              else window.print();
+            }}
           >
-            <MessageCircle size={18} aria-hidden /> Mandar por WhatsApp
-          </a>
+            Compartir o imprimir
+          </Button>
           <Button variant="secondary" onClick={onClose}>
-            Listo
+            Cerrar
           </Button>
         </div>
       </Sheet>
@@ -259,7 +294,9 @@ export function CollectSheet({ customer, onClose }: { customer: Detail; onClose:
         <Button
           className="flex-1"
           size="lg"
-          disabled={!amount || pay.isPending}
+          disabled={!amount || tooMuch}
+          busy={pay.isPending}
+          busyLabel="Registrando el pago…"
           onClick={() => pay.mutate()}
         >
           Registrar pago y dar recibo
@@ -283,33 +320,44 @@ export function CollectSheet({ customer, onClose }: { customer: Detail; onClose:
               aria-label="Queda debiendo"
               className={cx(
                 "tnum text-[28px] leading-tight font-semibold",
-                customer.balanceCents - amount < 0 && "text-exito",
+                tooMuch ? "text-peligro" : customer.balanceCents - amount === 0 && "text-exito",
               )}
             >
               {money(customer.balanceCents - amount)}
             </output>
           </div>
         </div>
-        <NumPad
-          onKey={(k) =>
-            setTyped((t) =>
-              k === "back"
-                ? t.slice(0, -1)
-                : k === ","
-                  ? t
-                  : (t + k).replace(/^0+/, "").slice(0, 9),
-            )
-          }
-        />
+        {amountHint && (
+          <div role="alert" className="text-[13px] font-semibold text-alerta">
+            {amountHint}
+          </div>
+        )}
+        <div data-keypad>
+          <NumPad
+            onKey={(k) =>
+              setTyped((t) =>
+                k === "back"
+                  ? t.slice(0, -1)
+                  : k === ","
+                    ? t
+                    : (t + k).replace(/^0+/, "").slice(0, 9),
+              )
+            }
+          />
+        </div>
         <fieldset className="m-0 flex flex-wrap gap-2 border-0 p-0" aria-label="Medio de pago">
           <FilterChip active={method === "cash"} onClick={() => setMethod("cash")}>
             Efectivo
           </FilterChip>
           <FilterChip active={method === "transfer"} onClick={() => setMethod("transfer")}>
-            Transf. o QR
+            Transferencia o QR
           </FilterChip>
+          {/* Débito y crédito por separado: el recibo y la caja dicen cuál fue. */}
           <FilterChip active={method === "debit"} onClick={() => setMethod("debit")}>
-            Tarjeta
+            Débito
+          </FilterChip>
+          <FilterChip active={method === "credit"} onClick={() => setMethod("credit")}>
+            Crédito
           </FilterChip>
         </fieldset>
         {method === "cash" && (
@@ -333,6 +381,7 @@ export function CollectSheet({ customer, onClose }: { customer: Detail; onClose:
               <Checkbox
                 key={m.id}
                 label={`${formatDate(new Date(m.at)).slice(0, 5)} · ${m.label} · ${formatMoney(m.openCents ?? 0)}`}
+                showLabel
                 checked={picked.has(m.id)}
                 onChange={(v) =>
                   setPicked((s) => {
@@ -363,7 +412,24 @@ function CustomerView({ id, onEdit }: { id: string; onEdit: (d: Detail) => void 
   const [collecting, setCollecting] = useState(false);
   const q = useQuery({
     queryKey: ["customer", id],
-    queryFn: () => api<Detail>(`/api/customers/${id}`),
+    queryFn: async () => {
+      try {
+        return await api<Detail>(`/api/customers/${id}`);
+      } catch (err) {
+        // Recién creado (todavía viaja por la cola) o sin internet: la copia local.
+        const local = id ? await localDb().customers.get(id) : undefined;
+        if (!local) throw err;
+        return {
+          ...local,
+          address: null,
+          dni: null,
+          availableCents: Math.max(0, local.creditLimitCents - local.balanceCents),
+          movements: [],
+          overLimit: local.balanceCents > local.creditLimitCents,
+          local: true,
+        } as unknown as Detail;
+      }
+    },
   });
   const reverse = useMutation({
     mutationFn: (entryId: string) =>
@@ -468,19 +534,26 @@ function CustomerView({ id, onEdit }: { id: string; onEdit: (d: Detail) => void 
                   : ""}
                 {m.openCents != null && m.openCents > 0 && m.openCents < m.amountCents ? (
                   <span className="block text-xs text-texto-suave">
-                    queda {formatMoney(m.openCents)}
+                    falta pagar {formatMoney(m.openCents)} de esta compra
                   </span>
                 ) : null}
               </span>
-              <span className={cx("tnum font-semibold", m.amountCents < 0 && "text-exito")}>
-                {m.amountCents < 0 ? `−${formatMoney(-m.amountCents)}` : formatMoney(m.amountCents)}
+              <span className="flex shrink-0 flex-col items-end">
+                <span className={cx("tnum font-semibold", m.amountCents < 0 && "text-exito")}>
+                  {m.amountCents < 0
+                    ? `−${formatMoney(-m.amountCents)}`
+                    : formatMoney(m.amountCents)}
+                </span>
+                <span className="tnum text-xs text-texto-suave">saldo {money(m.balanceCents)}</span>
               </span>
-              <span className="tnum w-20 text-right text-texto-suave">{money(m.balanceCents)}</span>
               {canReverse && !m.reversed && m.kind !== "reversal" && (
                 <button
                   type="button"
                   className="text-xs font-semibold text-peligro"
-                  onClick={() => reverse.mutate(m.id)}
+                  onClick={() =>
+                    window.confirm(`¿Anular "${m.label}" por ${money(Math.abs(m.amountCents))}?`) &&
+                    reverse.mutate(m.id)
+                  }
                   aria-label={`Anular ${m.label} del ${formatDate(new Date(m.at)).slice(0, 5)}`}
                 >
                   Anular
@@ -503,9 +576,12 @@ function CustomerView({ id, onEdit }: { id: string; onEdit: (d: Detail) => void 
             )
           }
         >
-          PDF
+          Descargar PDF
         </Button>
         <span className="flex-1" />
+        {c.balanceCents <= 0 && (
+          <span className="self-center text-[13px] text-texto-suave">Nada que cobrar</span>
+        )}
         <Button onClick={() => setCollecting(true)} disabled={c.balanceCents <= 0}>
           Cobrar fiado
         </Button>
@@ -557,7 +633,10 @@ export function CustomersPage() {
         <>
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="m-0 flex-1 text-[22px] font-semibold">Clientes y fiado</h1>
-            <Button onClick={() => setForm({ c: null })}>Nuevo cliente</Button>
+            {/* Con la ficha abierta, la primaria es "Cobrar fiado": esta pasa a secundaria. */}
+            <Button variant={id ? "secondary" : "primary"} onClick={() => setForm({ c: null })}>
+              Nuevo cliente
+            </Button>
           </div>
           {t && (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -602,7 +681,7 @@ export function CustomersPage() {
                 {counts.data ? ` · ${counts.data[f]}` : ""}
               </FilterChip>
             ))}
-            <label className="ml-auto flex h-10 items-center gap-2 rounded-lg border border-borde bg-superficie px-3">
+            <label className="ml-auto flex h-12 items-center gap-2 rounded-lg lg:h-10 border border-borde bg-superficie px-3">
               <Search size={16} className="text-texto-suave" aria-hidden />
               <input
                 aria-label="Buscar cliente"
@@ -642,6 +721,18 @@ export function CustomersPage() {
               className="m-0 list-none overflow-hidden rounded-card border border-borde bg-superficie p-0"
               aria-label="Clientes"
             >
+              {/* Qué es cada monto (ronda 3: "dos montos sin encabezado"). */}
+              {wide && (
+                <li
+                  aria-hidden
+                  className="flex items-center gap-3 border-b border-borde bg-fondo px-4 py-2 text-xs font-semibold text-texto-suave"
+                >
+                  <span className="flex-1">Cliente</span>
+                  <span className="w-24 text-right">Límite</span>
+                  <span className="w-24 text-right">Saldo</span>
+                  <span className="w-32 text-right">Estado</span>
+                </li>
+              )}
               {q.data.items.map((c) => (
                 <li key={c.id}>
                   <button
@@ -660,7 +751,7 @@ export function CustomersPage() {
                       </span>
                       <span className="block truncate text-[13px] text-texto-suave">
                         {c.phone ?? "sin teléfono"}
-                        {c.oldestDebtDays != null ? ` · ${c.oldestDebtDays} días` : ""} ·{" "}
+                        {c.oldestDebtDays != null ? ` · deuda de ${c.oldestDebtDays} días` : ""} ·{" "}
                         {when(c.lastMovementAt)}
                       </span>
                     </span>
@@ -678,7 +769,11 @@ export function CustomersPage() {
                     >
                       {money(c.balanceCents)}
                     </span>
-                    {wide && <span className="w-32 text-right">{statusChip(c)}</span>}
+                    {wide ? (
+                      <span className="w-32 text-right">{statusChip(c)}</span>
+                    ) : (
+                      (c.overdueCents > 0 || c.overLimit) && statusChip(c)
+                    )}
                   </button>
                 </li>
               ))}
@@ -690,8 +785,13 @@ export function CustomersPage() {
             className="rounded-card border border-borde bg-superficie"
           >
             {!wide && (
-              <Button variant="ghost" className="m-2" onClick={() => navigate("/clientes")}>
-                ← Clientes
+              <Button
+                variant="ghost"
+                className="m-2"
+                icon={<ChevronLeft size={18} />}
+                onClick={() => navigate("/clientes")}
+              >
+                Clientes y fiado
               </Button>
             )}
             <CustomerView key={id} id={id} onEdit={(c) => setForm({ c })} />
@@ -703,7 +803,11 @@ export function CustomersPage() {
           customer={form.c}
           onClose={(newId) => {
             setForm(null);
-            if (newId && !form.c) navigate(`/clientes/${newId}`);
+            if (newId && !form.c) {
+              // El recién creado no tiene deuda: con el filtro "Con deuda" no se vería.
+              setFilter("all");
+              navigate(`/clientes/${newId}`);
+            }
           }}
         />
       )}

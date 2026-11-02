@@ -9,7 +9,15 @@ test("recepción del pedido 0042 en el iPhone: falta yogur y el dueño completa 
   await loginOwner(owner);
   await owner.goto("/compras/pedidos");
   await owner.getByRole("button", { name: /0042/ }).click();
-  await owner.getByRole("button", { name: "Marcar enviado" }).click();
+  // (Si otro test ya lo marcó enviado, el botón no está: se sigue igual.)
+  const send = owner.getByRole("button", { name: "Marcar enviado" });
+  if (
+    await send.waitFor({ state: "visible", timeout: 5000 }).then(
+      () => true,
+      () => false,
+    )
+  )
+    await send.click();
   await expect(
     owner
       .getByRole("complementary", { name: "Detalle del pedido" })
@@ -39,20 +47,27 @@ test("recepción del pedido 0042 en el iPhone: falta yogur y el dueño completa 
   await yogur.getByLabel("Recibido Yogur bebible 1 L").fill("10");
   await expect(yogur.getByText("Faltan 2")).toBeVisible();
   await yogur.getByLabel("Recibido Yogur bebible 1 L").press("Enter");
+  await expect(nico.getByRole("status", { name: "Avance" })).toHaveText("1 de 14");
+  // Un corte de red (y la sincronización al volver) no borra lo cargado (ronda 3).
+  await nico.context().setOffline(true);
+  await nico.waitForTimeout(3000);
+  await nico.context().setOffline(false);
+  await nico.waitForTimeout(4000);
+  await expect(nico.getByRole("status", { name: "Avance" })).toHaveText("1 de 14");
 
   const leche = await scan("7790000002014", "Leche entera 1 L sachet");
   await leche.getByLabel("Recibido Leche entera 1 L sachet").fill("24");
-  await leche.getByRole("button", { name: "Lote y vencimiento" }).click();
-  await leche.getByLabel("Lote").fill("L-881");
-  await leche.getByLabel("Vence").fill("2026-10-20");
-  await leche.getByRole("button", { name: "Listo" }).click();
+  // Con lotes apagados (modo simple) no se ofrece "Lote y vencimiento" (antes había un botón
+  // invisible que igual abría los campos).
+  await expect(leche.getByRole("button", { name: "Lote y vencimiento" })).toHaveCount(0);
+  await leche.getByRole("button", { name: /^Listo/ }).click();
 
   await nico.getByRole("button", { name: "Todo lo demás como pedido" }).click();
   await expect(nico.getByRole("status", { name: "Avance" })).toHaveText("14 de 14");
   await nico.getByRole("button", { name: "Confirmar recepción" }).click();
   const diff = nico.getByRole("dialog", { name: "Recepción con diferencias" });
   await expect(diff.getByRole("list", { name: "Diferencias" })).toHaveText(
-    "Faltan 2 u de Yogur bebible 1 L",
+    "Faltan 2 unidades de Yogur bebible 1 L",
   );
   await diff.getByRole("button", { name: "Confirmar igual" }).click();
   await expect(nico.getByText("Recepción confirmada: entró el stock")).toBeVisible();

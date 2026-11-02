@@ -4,10 +4,12 @@ import { ChevronLeft, Star } from "lucide-react";
 import { useState } from "react";
 import { useCan } from "../../app/session";
 import { fetchProduct, type ProductDetail } from "../../data/products";
+import { ADJUST_REASONS } from "../../data/stock";
 import { Button } from "../../ui/Button";
 import { Chip } from "../../ui/Chip";
 import { ErrorState, Skeleton } from "../../ui/States";
 import { Tabs } from "../../ui/Tabs";
+import { useWide } from "../../ui/useMedia";
 import { AdjustStockSheet } from "./AdjustStockSheet";
 import { ProductChips, StockChip } from "./StockChip";
 import {
@@ -24,7 +26,7 @@ const MOVE_LABEL: Record<string, string> = {
   return: "Devolución",
   receipt: "Recepción",
   adjustment: "Ajuste",
-  waste: "Merma",
+  waste: "Sale del stock",
   count: "Conteo",
   void: "Anulación",
 };
@@ -64,12 +66,8 @@ function PriceChart({ p }: { p: ProductDetail }) {
     prices.push(lastPrice);
     costs.push(lastCost);
   }
-  if (prices.length < 2)
-    return (
-      <div className="text-xs text-texto-suave">
-        Todavía no hay cambios de precio para graficar.
-      </div>
-    );
+  // Sin cambios de precio no hay nada que graficar: no se muestra.
+  if (prices.length < 2) return null;
   const max = Math.max(...prices, ...costs) * 1.05;
   const min = Math.min(...prices, ...costs.filter(Boolean)) * 0.9;
   const toPts = (v: number[]) =>
@@ -77,24 +75,42 @@ function PriceChart({ p }: { p: ProductDetail }) {
       .map((x, i) => `${(i / (v.length - 1)) * 300},${80 - ((x - min) / (max - min || 1)) * 76}`)
       .join(" ");
   return (
-    <svg
-      viewBox="0 0 300 80"
-      className="h-20 w-full"
-      preserveAspectRatio="none"
-      role="img"
-      aria-label="Costo y precio en el tiempo"
-    >
-      <polyline points={toPts(prices)} fill="none" stroke="var(--primario)" strokeWidth="2" />
-      {costs.some(Boolean) && (
-        <polyline
-          points={toPts(costs)}
-          fill="none"
-          stroke="var(--texto-apagado)"
-          strokeWidth="2"
-          strokeDasharray="4 3"
-        />
-      )}
-    </svg>
+    <>
+      <div className="flex justify-between text-xs text-texto-suave">
+        <span>Costo y precio</span>
+        {/* Qué línea es cada una. */}
+        <span className="flex items-center gap-3">
+          <span className="inline-flex items-center gap-1">
+            <span aria-hidden className="inline-block h-0.5 w-4 bg-primario" /> Precio
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <span
+              aria-hidden
+              className="inline-block w-4 border-t-2 border-dashed border-texto-apagado"
+            />{" "}
+            Costo
+          </span>
+        </span>
+      </div>
+      <svg
+        viewBox="0 0 300 80"
+        className="h-20 w-full"
+        preserveAspectRatio="none"
+        role="img"
+        aria-label="Costo y precio en el tiempo"
+      >
+        <polyline points={toPts(prices)} fill="none" stroke="var(--primario)" strokeWidth="2" />
+        {costs.some(Boolean) && (
+          <polyline
+            points={toPts(costs)}
+            fill="none"
+            stroke="var(--texto-apagado)"
+            strokeWidth="2"
+            strokeDasharray="4 3"
+          />
+        )}
+      </svg>
+    </>
   );
 }
 
@@ -110,6 +126,15 @@ export function ProductDetailView({
   onBack?: () => void;
 }) {
   const [tab, setTab] = useState<Tab>("general");
+  // En el celular, secciones apiladas (§ Productos 2); en la compu, pestañas.
+  const stacked = !useWide();
+  const show = (t: Tab) => stacked || tab === t;
+  const head = (label: string) =>
+    stacked ? (
+      <h3 className="m-0 mt-3 text-xs font-semibold tracking-[.06em] text-texto-suave uppercase">
+        {label}
+      </h3>
+    ) : null;
   const seeCosts = useCan("view_costs");
   const canEdit = useCan("change_prices");
   const canAdjust = useCan("adjust_stock");
@@ -132,6 +157,13 @@ export function ProductDetailView({
   const unit = p.saleUnit === "unit" ? "unit" : "kg";
   const primary = p.suppliers.find((s) => s.isPrimary) ?? p.suppliers[0];
   const lastChange = p.history.find((h) => h.action === "product.price_changed");
+  // "Último cambio 28/09 · +6 %": cuánto cambió el precio, no solo cuándo.
+  const before = Number(lastChange?.before?.priceCents);
+  const after = Number(lastChange?.after?.priceCents);
+  const lastChangePct =
+    before > 0 && after > 0 && after !== before
+      ? Math.round(((after - before) / before) * 100)
+      : null;
 
   return (
     <div className="flex h-full flex-col">
@@ -153,7 +185,7 @@ export function ProductDetailView({
         <div className="flex min-w-0 flex-col gap-1">
           <h2 className="m-0 text-base font-semibold">{p.name}</h2>
           <div className="text-xs text-texto-suave">
-            {[p.categoryName, p.barcodes[0] ?? (p.internalCode ? `PLU ${p.internalCode}` : null)]
+            {[p.categoryName, p.barcodes[0] ?? (p.internalCode ? `código ${p.internalCode}` : null)]
               .filter(Boolean)
               .join(" · ")}
           </div>
@@ -163,20 +195,23 @@ export function ProductDetailView({
           </div>
         </div>
       </div>
-      <Tabs
-        className="mt-3.5 px-4 lg:px-[18px]"
-        value={tab}
-        onChange={setTab}
-        tabs={[
-          { id: "general", label: "General" },
-          { id: "precio", label: "Precio" },
-          { id: "stock", label: "Stock" },
-          { id: "proveedores", label: "Proveedores" },
-          { id: "historial", label: "Historial" },
-        ]}
-      />
+      {!stacked && (
+        <Tabs
+          className="mt-3.5 px-4 lg:px-[18px]"
+          value={tab}
+          onChange={setTab}
+          tabs={[
+            { id: "general", label: "General" },
+            { id: "precio", label: "Precio" },
+            { id: "stock", label: "Stock" },
+            { id: "proveedores", label: "Proveedores" },
+            { id: "historial", label: "Historial" },
+          ]}
+        />
+      )}
       <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto px-4 py-3.5 text-[13px] lg:px-[18px]">
-        {tab === "general" && (
+        {head("General")}
+        {show("general") && (
           <div>
             <Row label="Tipo">
               {p.kind === "service"
@@ -188,9 +223,10 @@ export function ProductDetailView({
             <Row label="Códigos de barras">
               {p.barcodes.length ? p.barcodes.join(", ") : "Sin código"}
             </Row>
-            <Row label="Código interno">{p.internalCode ?? "—"}</Row>
-            <Row label="Ubicación">{p.location ?? "—"}</Row>
-            <Row label="Restricción">{p.ageRestricted ? "Mayores de 18" : "Ninguna"}</Row>
+            {/* Solo lo que tiene dato: las filas en "—" o "Ninguna" no suman. */}
+            {p.internalCode && <Row label="Código interno">{p.internalCode}</Row>}
+            {p.location && <Row label="Ubicación">{p.location}</Row>}
+            {p.ageRestricted && <Row label="Restricción">Mayores de 18</Row>}
             {p.purchaseUnitName && (
               <Row label="Unidad de compra">
                 {p.purchaseUnitName} × {formatQty(p.purchaseUnitQty ?? 1)}
@@ -211,7 +247,8 @@ export function ProductDetailView({
             )}
           </div>
         )}
-        {tab === "precio" && (
+        {head("Precio")}
+        {show("precio") && (
           <>
             <div className="grid grid-cols-2 gap-2.5">
               {seeCosts && (
@@ -241,17 +278,9 @@ export function ProductDetailView({
                 )}
               </div>
             </div>
-            <div className="flex justify-between text-xs text-texto-suave">
-              <span>Costo y precio</span>
-            </div>
-            <PriceChart p={p} />
+            {seeCosts && <PriceChart p={p} />}
             <div>
-              <Row label="IVA">{formatPercent(p.vatBp, { decimals: 1 })} · para fase 2</Row>
-              <Row label="Precio fijo">
-                {p.fixedPrice
-                  ? "Sí · queda afuera del cambio masivo"
-                  : "No · entra al cambio masivo"}
-              </Row>
+              {p.fixedPrice && <Row label="Precio fijo">Sí · queda afuera del cambio masivo</Row>}
               {primary && (
                 <Row label="Proveedor principal">
                   {primary.name}
@@ -261,12 +290,16 @@ export function ProductDetailView({
               {lastChange && (
                 <Row label="Último cambio">
                   {formatDate(new Date(lastChange.createdAt)).slice(0, 5)}
+                  {lastChangePct !== null
+                    ? ` · ${lastChangePct > 0 ? "+" : "−"}${Math.abs(lastChangePct)} %`
+                    : ""}
                 </Row>
               )}
             </div>
           </>
         )}
-        {tab === "stock" && (
+        {head("Stock")}
+        {show("stock") && (
           <>
             <div>
               <Row label="Stock">{formatQty(p.stockQty, unit)}</Row>
@@ -295,7 +328,12 @@ export function ProductDetailView({
                   </span>
                   <span className="text-xs text-texto-suave">
                     {formatDate(new Date(m.createdAt))} {formatTime(new Date(m.createdAt))}
-                    {m.reason ? ` · ${m.reason}` : ""}
+                    {m.reason
+                      ? ` · ${ADJUST_REASONS[m.reason as keyof typeof ADJUST_REASONS] ?? m.reason}`
+                      : ""}
+                    {(m as { note?: string | null }).note
+                      ? ` · ${(m as { note?: string | null }).note}`
+                      : ""}
                   </span>
                 </div>
                 <span className={`tnum font-semibold ${m.qty < 0 ? "text-peligro" : "text-exito"}`}>
@@ -306,7 +344,8 @@ export function ProductDetailView({
             ))}
           </>
         )}
-        {tab === "proveedores" && (
+        {head("Proveedores")}
+        {show("proveedores") && (
           <>
             {p.suppliers.length ? (
               <ul className="m-0 list-none p-0" aria-label="Proveedores del producto">
@@ -394,7 +433,8 @@ export function ProductDetailView({
             )}
           </>
         )}
-        {tab === "historial" &&
+        {head("Historial")}
+        {show("historial") &&
           (p.history.length ? (
             p.history.map((h) => (
               <div key={h.id} className="flex flex-col gap-0.5 border-t border-borde py-2">

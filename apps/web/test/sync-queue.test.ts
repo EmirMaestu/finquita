@@ -19,8 +19,40 @@ function saleOp(): SyncOp {
   };
 }
 
+/** Una venta válida (la cola valida con el esquema del servidor antes de guardar). */
 function sale(): SyncOp {
-  return { ...saleOp(), type: "sale.create" } as unknown as SyncOp;
+  const id = newId();
+  return {
+    ...saleOp(),
+    type: "sale.create",
+    payload: {
+      id,
+      registerId: newId(),
+      shiftId: newId(),
+      number: 1,
+      customerId: null,
+      lines: [
+        {
+          id: newId(),
+          kind: "product",
+          productId: YERBA,
+          description: "Yerba",
+          qty: 1,
+          unit: "unit",
+          unitPriceCents: 690000,
+          discountCents: 0,
+          totalCents: 690000,
+        },
+      ],
+      payments: [{ id: newId(), method: "cash", amountCents: 690000, tenderedCents: 690000 }],
+      subtotalCents: 690000,
+      discountCents: 0,
+      surchargeCents: 0,
+      totalCents: 690000,
+      changeCents: 0,
+      receiptType: "ticket",
+    },
+  } as unknown as SyncOp;
 }
 
 type FakeServer = {
@@ -278,6 +310,27 @@ describe("motor de sincronización", () => {
     await engine.kick();
     expect(getSyncStatus()).toMatchObject({ online: true, pendingSales: 0, justDrained: true });
     expect(syncLabel(getSyncStatus())).toBe("Todo sincronizado");
+    setSyncStatus({ justDrained: false });
+    await engine.idle();
+  });
+
+  it("al volver internet avisa que se subió lo guardado sin conexión", async () => {
+    const server = fakeServer();
+    server.offline = true;
+    const client = new SyncClient(db, server.transport);
+    const notify = vi.fn();
+    const engine = new SyncEngine(client, { ...fakeEnv().env, notify });
+    await client.enqueue(sale());
+    await engine.kick();
+    expect(notify).not.toHaveBeenCalled();
+    server.offline = false;
+    await engine.kick();
+    expect(notify).toHaveBeenCalledWith(
+      "Volvió internet: se subió la venta guardada en el dispositivo.",
+    );
+    // Una sola vez: el ciclo siguiente no repite el aviso.
+    await engine.kick();
+    expect(notify).toHaveBeenCalledTimes(1);
     setSyncStatus({ justDrained: false });
     await engine.idle();
   });

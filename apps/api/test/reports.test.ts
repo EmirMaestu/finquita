@@ -127,3 +127,49 @@ describe("reportes", () => {
     expect((await nico.get(`/api/reports/sales?${q}`)).status).toBe(403);
   });
 });
+
+describe("recargos en el reporte de ventas", () => {
+  it("por categoría y por producto cierran con el total: el recargo es un renglón", async () => {
+    const tomas = await as(app(), ref.t.db, "tomas");
+    const shift = newId();
+    const base = saleOf(shift, [{ key: "aceite" }], { method: "debit" }, 8201);
+    const surcharge = Math.round(base.totalCents * 0.1);
+    const pay = base.payments[0];
+    if (!pay) throw new Error("sin pago");
+    const sale = {
+      ...base,
+      surchargeCents: surcharge,
+      totalCents: base.totalCents + surcharge,
+      payments: [
+        {
+          ...pay,
+          method: "credit" as const,
+          amountCents: pay.amountCents + surcharge,
+          surchargeCents: surcharge,
+        },
+      ],
+    };
+    const r = await tomas.post("/api/sync/push", {
+      deviceNow: new Date().toISOString(),
+      ops: [openShift(shift), op("sale.create", sale)],
+    });
+    expect(r.body.results.every((x: { status: string }) => x.status === "applied")).toBe(true);
+    const carlos = await as(app(), ref.t.db, "carlos");
+    const s = (await carlos.get(`/api/reports/sales?${q}`)).body;
+    const total = s.headline.value as number;
+    for (const key of ["categories", "products"]) {
+      const rows = s.tables.find((t: { key: string }) => t.key === key).rows as Row[];
+      expect(rows.reduce((a, x) => a + (x.total as number), 0)).toBe(total);
+      expect(rows.some((x) => x.name === "Recargos por medio de pago")).toBe(true);
+    }
+  });
+});
+
+describe("gráfico por día", () => {
+  it("las barras suman lo mismo que el total del período", async () => {
+    const carlos = await as(app(), ref.t.db, "carlos");
+    const s = (await carlos.get(`/api/reports/sales?${q}`)).body;
+    const bars = (s.chart.points as { value: number }[]).reduce((a, p) => a + p.value, 0);
+    expect(bars).toBe(s.headline.value);
+  });
+});

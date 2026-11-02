@@ -10,11 +10,14 @@ export function Menu({
   items,
   className,
   align = "right",
+  up = false,
 }: {
   label: string;
   items: MenuItem[];
   className?: string;
   align?: "left" | "right";
+  /** Abre hacia arriba (para un menú al pie de la pantalla). */
+  up?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -38,7 +41,7 @@ export function Menu({
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen(!open)}
-        className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-borde bg-superficie px-3 text-[13px] font-semibold hover:bg-neutro-suave"
+        className="inline-flex h-11 items-center lg:h-9 gap-1.5 rounded-lg border border-borde bg-superficie px-3 text-[13px] font-semibold hover:bg-neutro-suave"
       >
         {label}
         <ChevronDown size={16} aria-hidden />
@@ -47,8 +50,9 @@ export function Menu({
         <div
           role="menu"
           className={cx(
-            "absolute top-11 z-30 flex w-60 flex-col rounded-card border border-borde bg-superficie p-1 shadow-lg",
+            "absolute z-30 flex w-60 flex-col rounded-card border border-borde bg-superficie p-1 shadow-lg",
             align === "right" ? "right-0" : "left-0",
+            up ? "bottom-12" : "top-11",
           )}
         >
           {items
@@ -62,7 +66,7 @@ export function Menu({
                   setOpen(false);
                   i.onSelect();
                 }}
-                className="flex h-10 items-center gap-2 rounded-lg px-3 text-left text-sm font-medium hover:bg-neutro-suave"
+                className="flex h-12 items-center gap-2 rounded-lg px-3 text-left text-sm font-medium lg:h-10 hover:bg-neutro-suave"
               >
                 {i.icon}
                 {i.label}

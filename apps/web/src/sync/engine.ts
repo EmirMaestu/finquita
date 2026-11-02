@@ -1,5 +1,6 @@
 import { OfflineError } from "../data/api";
 import { uploadPendingFiles } from "../data/files";
+import { toast } from "../ui/toast";
 import type { SyncClient } from "./client";
 import { bumpLocalVersion, getSyncStatus, setSyncStatus } from "./status";
 
@@ -10,6 +11,10 @@ type Env = {
   clearInterval: (id: unknown) => void;
   addEventListener: (type: "online" | "offline", fn: () => void) => void;
   removeEventListener: (type: "online" | "offline", fn: () => void) => void;
+  /** Lo que dice el navegador (sin internet, una respuesta del service worker no cuenta). */
+  isOnline?: () => boolean;
+  /** Aviso a la persona (en el navegador, un toast). */
+  notify?: (text: string) => void;
 };
 
 const browserEnv = (): Env => ({
@@ -17,6 +22,8 @@ const browserEnv = (): Env => ({
   clearInterval: (id) => window.clearInterval(id as number),
   addEventListener: (t, fn) => window.addEventListener(t, fn),
   removeEventListener: (t, fn) => window.removeEventListener(t, fn),
+  isOnline: () => navigator.onLine,
+  notify: (text) => toast({ text, tone: "ok", ms: 5000 }),
 });
 
 /**
@@ -29,6 +36,8 @@ export class SyncEngine {
   private again = false;
   private timer: unknown = null;
   private stops: (() => void)[] = [];
+  /** Lo que quedó guardado sin internet (para avisar cuando se suba). */
+  private heldOffline: { sales: number; ops: number } | null = null;
 
   constructor(
     private client: SyncClient,
@@ -83,7 +92,10 @@ export class SyncEngine {
     try {
       await this.client.sync();
       await uploadPendingFiles().catch(() => undefined);
-      setSyncStatus({ online: true, lastSyncAt: new Date().toISOString() });
+      setSyncStatus({
+        online: this.env.isOnline?.() ?? true,
+        lastSyncAt: new Date().toISOString(),
+      });
       bumpLocalVersion();
     } catch (err) {
       if (err instanceof OfflineError) setSyncStatus({ online: false });
@@ -96,12 +108,31 @@ export class SyncEngine {
   async refreshCounts(): Promise<void> {
     const before = getSyncStatus().pendingSales;
     const pendingSales = await this.client.pending("sale.create");
-    const drained = before > 0 && pendingSales === 0 && getSyncStatus().online;
+    const pendingOps = await this.client.pending();
+    const online = getSyncStatus().online;
+    const drained = before > 0 && pendingSales === 0 && online;
     setSyncStatus({
       pendingSales,
-      pendingOps: await this.client.pending(),
+      pendingOps,
       ...(drained ? { justDrained: true } : {}),
     });
+    // Al volver internet se dice que lo guardado en el dispositivo ya se subió (ronda 3).
+    if (!online && pendingOps > 0)
+      this.heldOffline = {
+        sales: Math.max(this.heldOffline?.sales ?? 0, pendingSales),
+        ops: Math.max(this.heldOffline?.ops ?? 0, pendingOps),
+      };
+    else if (online && pendingOps === 0 && this.heldOffline) {
+      const { sales } = this.heldOffline;
+      this.heldOffline = null;
+      this.env.notify?.(
+        sales === 1
+          ? "Volvió internet: se subió la venta guardada en el dispositivo."
+          : sales > 1
+            ? `Volvió internet: se subieron las ${sales} ventas guardadas en el dispositivo.`
+            : "Volvió internet: se subió lo guardado en el dispositivo.",
+      );
+    }
     // "Todo sincronizado" se muestra unos segundos al vaciarse la cola.
     if (drained) setTimeout(() => setSyncStatus({ justDrained: false }), 5000);
   }

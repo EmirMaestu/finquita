@@ -123,3 +123,19 @@ export const DEFAULT_SETTINGS: SettingsMap = {
 export function surchargeFor(amountCents: number, bp: number): number {
   return Math.round((amountCents * bp) / 10000);
 }
+
+/** "20000, 10000, 2.000" → [20000, 10000, 2000]; "1.000,50" o "abc" → null. */
+export function parseDenominations(text: string): number[] | null {
+  // "1,5" (coma entre números, sin espacio) es un decimal: no se parte en dos billetes.
+  if (/\d,\d/.test(text)) return null;
+  const out: number[] = [];
+  for (const raw of text.split(/[,;\n]+/)) {
+    const t = raw.trim();
+    if (!t) continue;
+    if (!/^\d{1,3}(\.\d{3})*$|^\d+$/.test(t)) return null;
+    const n = Number(t.replace(/\./g, ""));
+    if (!n || n > 100_000 || out.includes(n)) return null;
+    out.push(n);
+  }
+  return out.length ? out.sort((a, b) => b - a) : null;
+}

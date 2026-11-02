@@ -41,7 +41,9 @@ export async function enablePush(): Promise<PushState> {
   if (!pushSupported()) return "unsupported";
   const { publicKey } = await api<{ publicKey: string | null }>("/api/push/key");
   if (!publicKey)
-    throw new Error("El servidor todavía no tiene las claves de notificaciones (VAPID).");
+    throw new Error(
+      "Las notificaciones todavía no están configuradas en el servidor. Avisale a quien lo instaló.",
+    );
   const perm = await Notification.requestPermission();
   if (perm !== "granted") return "denied";
   const reg = await navigator.serviceWorker.ready;

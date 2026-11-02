@@ -20,7 +20,7 @@ import { rgb } from "pdf-lib";
 import { z } from "zod";
 import type { AppEnv } from "../app";
 import { actorOf, requireActor } from "../auth/actor";
-import { loadOverrides, requireFull, requirePermission } from "../auth/permissions";
+import { authorize, loadOverrides, requireFull, requirePermission } from "../auth/permissions";
 import type { Db } from "../db/client";
 import {
   members,
@@ -357,6 +357,8 @@ orderRoutes.post(
     const b = c.req.valid("json");
     const db = c.get("db");
     const { member } = actorOf(c);
+    // Mandar el pedido al proveedor es un permiso propio (matriz: el encargado, opcional).
+    if (b.status === "sent" && b.via === "whatsapp") await authorize(c, "send_orders");
     const costs = await seesCosts(c);
     const from = await db.transaction(async (tx) => {
       const [o] = await tx

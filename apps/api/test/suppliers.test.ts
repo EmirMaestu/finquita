@@ -91,10 +91,23 @@ describe("proveedores", () => {
     expect(r.body.products.length).toBe(14);
   });
 
-  it("permisos: el cajero no edita; el repositor ve la lista", async () => {
+  it("permisos: el cajero no edita ni ve la lista (con los WhatsApp); el repositor sí la ve", async () => {
     const tomas = await as(app(), ref.t.db, "tomas");
     expect((await tomas.post("/api/suppliers", { name: "X" })).status).toBe(403);
+    expect((await tomas.get("/api/suppliers")).status).toBe(403);
     const nico = await as(app(), ref.t.db, "nico");
     expect((await nico.get("/api/suppliers")).status).toBe(200);
+  });
+});
+
+describe("lo que pegó el destructor en la ronda 3", () => {
+  it("no deja un segundo proveedor con el mismo nombre ni un CUIT de 3 números", async () => {
+    const carlos = await as(app(), ref.t.db, "carlos");
+    const dup = await carlos.post("/api/suppliers", { name: "distribuidora andina" });
+    expect(dup.status).toBe(409);
+    expect(dup.body.error.message).toContain("Ya hay un proveedor");
+    const cuit = await carlos.post("/api/suppliers", { name: "Nuevo QA", cuit: "123" });
+    expect(cuit.status).toBe(400);
+    expect(cuit.body.error.message).toContain("CUIT");
   });
 });

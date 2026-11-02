@@ -52,9 +52,8 @@ test("venta sin conexión de punta a punta: 3 ventas quedan en el servidor una s
   // Vuelve internet: se sincroniza sola.
   await context.setOffline(false);
   await page.evaluate(() => window.dispatchEvent(new Event("online")));
-  await expect(page.getByRole("status", { name: /Todo sincronizado|En línea/ })).toBeVisible({
-    timeout: 30_000,
-  });
+  // El chip de "Sin conexión" se va (dice "Todo sincronizado" un rato y después desaparece).
+  await expect(chip).toBeHidden({ timeout: 30_000 });
 
   await expect
     .poll(async () => (await apiFromPage<Reg[]>(page, "/api/registers"))[0]?.lastSaleNumber, {

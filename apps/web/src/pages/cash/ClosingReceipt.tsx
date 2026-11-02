@@ -1,4 +1,5 @@
 import { Button } from "../../ui/Button";
+import { toast } from "../../ui/toast";
 
 /** Comprobante de cierre: para imprimir o compartir. */
 export function ClosingReceipt({ lines, onDone }: { lines: string[]; onDone?: () => void }) {
@@ -15,11 +16,24 @@ export function ClosingReceipt({ lines, onDone }: { lines: string[]; onDone?: ()
     const text = lines.join("\n");
     const nav = navigator as Navigator & { share?: (d: ShareData) => Promise<void> };
     if (nav.share) await nav.share({ title: "Cierre de caja", text }).catch(() => {});
-    else await navigator.clipboard?.writeText(text).catch(() => {});
+    else {
+      // Se avisa "copiado" solo si se pudo copiar.
+      const ok = await (
+        navigator.clipboard?.writeText(text).then(() => true) ?? Promise.resolve(false)
+      ).catch(() => false);
+      toast(
+        ok
+          ? { text: "Copiado: pegalo en WhatsApp o en un mail." }
+          : { text: "No se pudo copiar: usá Imprimir.", tone: "error" },
+      );
+    }
   };
+  // Un solo nombre, "cierre de caja", como el comprobante; en el historial va dentro del panel
+  // (h2: la página ya tiene su título).
+  const Title = onDone ? "h1" : "h2";
   return (
     <div className="mx-auto flex max-w-md flex-col gap-4 p-4 lg:p-6">
-      <h1 className="m-0 text-[22px] font-semibold">Turno cerrado</h1>
+      <Title className="m-0 text-[22px] font-semibold">Cierre de caja</Title>
       <pre
         role="document"
         aria-label="Comprobante de cierre"
@@ -35,7 +49,7 @@ export function ClosingReceipt({ lines, onDone }: { lines: string[]; onDone?: ()
           Compartir
         </Button>
       </div>
-      {onDone && <Button onClick={onDone}>Listo</Button>}
+      {onDone && <Button onClick={onDone}>Volver a Caja</Button>}
     </div>
   );
 }

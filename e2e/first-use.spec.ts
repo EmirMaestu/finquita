@@ -25,8 +25,12 @@ test("primer uso: de la base vacía a la primera venta", async ({ page }) => {
   await steps.getByRole("button", { name: "Medios de pago" }).click();
   const transfer = page.getByRole("region", { name: "Transferencia y QR" });
   await transfer.getByLabel("Alias").fill("don.pepe.mp");
-  await transfer.getByRole("button", { name: "Guardar" }).click();
+  // Se guarda solo al salir del campo, como los interruptores (ronda 3).
+  await transfer.getByLabel("Alias").blur();
   await expect(page.getByText("Guardado")).toBeVisible();
+  await transfer.getByLabel("CVU").fill("abc");
+  await expect(transfer.getByText("Son 22 números, sin letras")).toBeVisible();
+  await transfer.getByLabel("CVU").fill("");
   await page.getByRole("link", { name: "Inicio" }).click();
   await expect(steps).toContainText("2 de 7");
 

@@ -6,6 +6,7 @@ import {
   newId,
   PERMISSIONS,
   type Permission,
+  plainText,
   type SettingsMap,
   writeCsv,
 } from "@mostrador/shared";
@@ -15,7 +16,7 @@ import { z } from "zod";
 import type { AppEnv } from "../app";
 import { requireActor } from "../auth/actor";
 import { requireFull } from "../auth/permissions";
-import { hashPin } from "../auth/pin";
+import { hashPin, pinInUse } from "../auth/pin";
 import {
   barcodes,
   businesses,
@@ -30,7 +31,7 @@ import {
 } from "../db/schema/index";
 import { auditFrom, diff } from "../lib/audit";
 import { ApiError, conflict, notFound } from "../lib/errors";
-import { validate } from "../lib/validate";
+import { validate, validationError } from "../lib/validate";
 
 export const settingsRoutes = new Hono<AppEnv>();
 const owner = requireFull("settings");
@@ -121,7 +122,7 @@ function merge<T>(base: T, patch: unknown): T {
   return out as T;
 }
 
-async function current(db: AppEnv["Variables"]["db"]): Promise<SettingsMap> {
+export async function currentSettings(db: AppEnv["Variables"]["db"]): Promise<SettingsMap> {
   const rows = await db.select().from(settings);
   const out = structuredClone(DEFAULT_SETTINGS);
   for (const r of rows)
@@ -135,7 +136,7 @@ async function current(db: AppEnv["Variables"]["db"]): Promise<SettingsMap> {
 
 /** Todas las secciones, con los valores por defecto para lo que falte. */
 settingsRoutes.get("/settings", requireActor(), owner, async (c) =>
-  c.json(await current(c.get("db"))),
+  c.json(await currentSettings(c.get("db"))),
 );
 
 /** Cambiar una sección. Los cambios quedan en Actividad. */
@@ -144,15 +145,9 @@ settingsRoutes.put("/settings/:key", requireActor(), owner, async (c) => {
   const schema = SCHEMAS[key];
   if (!schema) throw notFound("Esa sección no existe.");
   const parsed = schema.safeParse(await c.req.json().catch(() => null));
-  if (!parsed.success)
-    throw new ApiError(
-      400,
-      "validation",
-      parsed.error.issues[0]?.message ?? "Revisá los datos.",
-      parsed.error.issues,
-    );
+  if (!parsed.success) throw validationError(parsed.error);
   const db = c.get("db");
-  const before = (await current(db))[key];
+  const before = (await currentSettings(db))[key];
   const after = merge(before, parsed.data);
   if (
     key === "payments" &&
@@ -244,14 +239,18 @@ settingsRoutes.get("/members", requireActor(), owner, async (c) => {
 });
 
 const PIN_RE = /^\d{4,6}$/;
-const memberBody = z.object({
-  name: z.string().min(1).max(60),
-  nickname: z.string().max(30).nullable().optional(),
+const memberFields = z.object({
+  name: plainText(60),
+  nickname: plainText(30, 0).nullable().optional(),
   role: roles,
   email: z.email().nullable().optional(),
   phone: z.string().max(30).nullable().optional(),
   pin: z.string().regex(PIN_RE, "El PIN tiene que tener de 4 a 6 números").optional(),
 });
+const memberBody = memberFields.refine(
+  (m) => m.role === "owner" || m.role === "manager" || Boolean(m.pin),
+  { path: ["pin"], message: "Cajeros y repositores entran con PIN: poné uno de 4 a 6 números" },
+);
 
 /** Invitar: el dueño carga a la persona; si es encargado (o dueño) con email, crea su cuenta desde el ingreso. */
 settingsRoutes.post("/members", requireActor(), owner, validate("json", memberBody), async (c) => {
@@ -270,6 +269,8 @@ settingsRoutes.post("/members", requireActor(), owner, validate("json", memberBo
       .where(eq(members.email, b.email.toLowerCase()));
     if (dup) throw conflict("Ya hay alguien con ese email.");
   }
+  if (b.pin && (await pinInUse(db, b.pin)))
+    throw new ApiError(400, "validation", "Ese PIN no se puede usar: elegí otro.");
   const id = newId();
   await db.insert(members).values({
     id,
@@ -295,7 +296,7 @@ settingsRoutes.patch(
   owner,
   validate(
     "json",
-    memberBody.omit({ pin: true }).partial().extend({ active: z.boolean().optional() }),
+    memberFields.omit({ pin: true }).partial().extend({ active: z.boolean().optional() }),
   ),
   async (c) => {
     const id = c.req.param("id");

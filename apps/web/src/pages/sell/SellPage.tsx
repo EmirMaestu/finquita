@@ -3,23 +3,31 @@ import {
   addProduct,
   applyPromotions,
   bumpQty,
+  type CartLine,
   cartTotals,
   creditNeedsPin,
   discountFor,
   formatMoney,
+  formatQty,
   METHOD_LABEL,
+  moneyInput,
+  OpValidationError,
   overDiscountCap,
   parseMoney,
+  plural,
   removeLine,
   todayAR,
+  updateLine,
 } from "@mostrador/shared";
-import { Lock, Menu as MenuIcon, Pause, ShieldAlert, User } from "lucide-react";
+import { Pause, ShieldAlert, User } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { NoPermissionFor } from "../../app/guards";
+import { useLockScreen } from "../../app/lock";
 import { useCan, useGrant, useMe } from "../../app/session";
 import { useViewport } from "../../app/useViewport";
 import { requestPin } from "../../auth/pinAuth";
+import { OtherShiftNotice } from "../../cash/OtherShiftNotice";
 import { useRegister } from "../../cash/useRegister";
 import { localStock } from "../../data/catalog";
 import { localBalance } from "../../data/customers";
@@ -29,16 +37,20 @@ import { useLocalPromotions } from "../../data/promotions";
 import { useSettings } from "../../data/settings";
 import type { LocalProduct } from "../../data/types";
 import { beep } from "../../scan/beep";
-import { scanRouter } from "../../scan/GlobalScan";
+import { type ScanSource, scanRouter } from "../../scan/GlobalScan";
 import { stripScanLeak } from "../../scan/useScanner";
 import { completeSale, type Payment } from "../../sell/complete";
 import { productIndex } from "../../sell/searchIndex";
 import { heldSales, sale, useHeldSales, useSale } from "../../sell/store";
 import { printTicket, shareTicket, ticketFromSale } from "../../sell/ticket";
+import { syncEngine } from "../../sync";
 import { useSyncStatus } from "../../sync/status";
 import { Button } from "../../ui/Button";
 import { cx } from "../../ui/cx";
 import { TextField } from "../../ui/Field";
+import { Key } from "../../ui/Key";
+import { Menu } from "../../ui/Menu";
+import { NumPad } from "../../ui/NumPad";
 import { Sheet } from "../../ui/Sheet";
 import { toast } from "../../ui/toast";
 import { MovementSheet } from "../cash/MovementSheet";
@@ -59,15 +71,16 @@ import {
 import { WeightDialog } from "./WeightDialog";
 
 type Dialog =
-  | { kind: "pay" }
+  | { kind: "pay"; tab?: "account" }
   | { kind: "misc" }
   | { kind: "unknown"; code: string }
   | { kind: "held" }
   | { kind: "help" }
   | { kind: "weight"; product: LocalProduct }
   | { kind: "discount" }
+  | { kind: "qty"; lineId: string }
   | { kind: "cash" }
-  | { kind: "customer" }
+  | { kind: "customer"; back?: "pay" }
   | null;
 
 type Done = {
@@ -79,30 +92,144 @@ type Done = {
 };
 
 /** Descuento general (F4): porcentaje o monto; por encima del tope, el cajero necesita PIN. */
+/** Cantidad de una línea, tocando el número en el celular. */
+/**
+ * Tocar una línea: cantidad (con el teclado), descuento a ese producto, precio (con permiso) y
+ * nota (§ Vender, "Tocar una línea abre cantidad, descuento por ítem, precio y nota").
+ */
+/** Hora de la última tecla de un carácter: un Enter pegado a ella es el final de un escaneo. */
+let lastCharAt = 0;
+
+function QtyDialog({
+  line,
+  canPrice,
+  onApply,
+  onClose,
+}: {
+  line: CartLine | null;
+  canPrice: boolean;
+  onApply: (
+    n: number,
+    extra: { discountCents: number; unitPriceCents: number; note: string | null },
+  ) => void;
+  onClose: () => void;
+}) {
+  const [typed, setTyped] = useState("");
+  const [discount, setDiscount] = useState(
+    line?.discountCents ? moneyInput(line.discountCents) : "",
+  );
+  const [price, setPrice] = useState(line ? moneyInput(line.unitPriceCents) : "");
+  const [note, setNote] = useState(line?.note ?? "");
+  if (!line) return null;
+  const n = typed ? Number(typed) : null;
+  const qty = n ?? line.qty;
+  const priceCents = canPrice ? parseMoney(price) : line.unitPriceCents;
+  const discountCents = discount.trim() ? parseMoney(discount) : 0;
+  const lineSub = Math.round((priceCents ?? 0) * qty);
+  const error =
+    priceCents === null || priceCents <= 0
+      ? "Precio: poné un monto, por ejemplo 4600"
+      : discountCents === null || discountCents < 0
+        ? "Descuento: poné un monto, por ejemplo 500"
+        : discountCents > lineSub
+          ? `El descuento no puede pasar de ${formatMoney(lineSub)}`
+          : note.length > 200
+            ? "La nota es muy larga (hasta 200 letras)"
+            : null;
+  const apply = () =>
+    !error &&
+    onApply(qty, {
+      discountCents: discountCents ?? 0,
+      unitPriceCents: priceCents ?? line.unitPriceCents,
+      note: note.trim() || null,
+    });
+  return (
+    <Sheet open onClose={onClose} title={line.description}>
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4" data-keypad>
+          <output aria-label="Cantidad" className="tnum text-center text-[40px] font-semibold">
+            {typed || formatQty(line.qty, line.unit)}
+          </output>
+          {line.unit === "unit" && (
+            <NumPad
+              big
+              onKey={(k) => setTyped((t) => (k === "back" ? t.slice(0, -1) : (t + k).slice(0, 3)))}
+            />
+          )}
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <TextField
+            label="Descuento a este producto ($)"
+            inputMode="decimal"
+            value={discount}
+            onChange={(e) => setDiscount(e.target.value)}
+            placeholder="0"
+          />
+          {canPrice && (
+            <TextField
+              label={line.unit === "kg" ? "Precio por kg" : "Precio"}
+              inputMode="decimal"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+            />
+          )}
+        </div>
+        <TextField
+          label="Nota"
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          placeholder="Ej.: sin cortar"
+        />
+        {error && (
+          <div role="alert" className="text-[13px] font-semibold text-peligro">
+            {error}
+          </div>
+        )}
+        <Button size="xl" disabled={Boolean(error)} onClick={apply}>
+          {n === 0 ? "Quitar de la venta" : "Listo"}
+        </Button>
+      </div>
+    </Sheet>
+  );
+}
+
 function DiscountDialog({
+  currentCents,
   subtotalCents,
   capBp,
   onApply,
   onClose,
 }: {
+  currentCents: number;
   subtotalCents: number;
   capBp: number;
   onApply: (cents: number) => void;
   onClose: () => void;
 }) {
-  const [value, setValue] = useState("");
+  const [value, setValue] = useState(currentCents ? moneyInput(currentCents) : "");
   const pct = value.trim().endsWith("%");
-  const n = pct ? Number(value.replace("%", "").replace(",", ".")) : null;
+  const n = pct ? Number(value.replace("%", "").replace(",", ".").trim()) : null;
   const cents = pct
-    ? discountFor(subtotalCents, { percentBp: Math.round((n ?? 0) * 100) })
+    ? Number.isFinite(n)
+      ? discountFor(subtotalCents, { percentBp: Math.round((n ?? 0) * 100) })
+      : 0
     : (parseMoney(value) ?? 0);
+  // Un descuento va de $ 0 al subtotal: ni negativo (sería un recargo) ni más que la venta.
+  const error = !value.trim()
+    ? null
+    : cents <= 0
+      ? "Poné un descuento mayor que $ 0 (por ejemplo, 10% o 500)."
+      : cents > subtotalCents
+        ? `El descuento no puede superar el subtotal (${formatMoney(subtotalCents)}).`
+        : null;
+  const valid = Boolean(value.trim()) && !error;
   return (
     <Sheet open onClose={onClose} title="Descuento">
       <form
         className="flex flex-col gap-3"
         onSubmit={(e) => {
           e.preventDefault();
-          onApply(Math.min(cents, subtotalCents));
+          if (valid) onApply(cents);
         }}
       >
         <TextField
@@ -110,10 +237,11 @@ function DiscountDialog({
           value={value}
           onChange={(e) => setValue(e.target.value)}
           placeholder="10% o 500"
-          hint={`${formatMoney(cents)} · tope sin PIN ${capBp / 100} %`}
+          hint={`${formatMoney(Math.max(0, cents))} · tope sin PIN ${capBp / 100} %`}
+          error={error}
         />
-        <Button type="submit" size="lg">
-          Aplicar · Enter
+        <Button type="submit" size="lg" disabled={!valid}>
+          Aplicar <Key>Enter</Key>
         </Button>
       </form>
     </Sheet>
@@ -123,6 +251,7 @@ function DiscountDialog({
 export function SellPage() {
   const canSell = useCan("sell");
   const discountGrant = useGrant("discount_over_cap");
+  const priceGrant = useGrant("change_prices");
   const drawerGrant = useGrant("open_drawer");
   const me = useMe();
   const navigate = useNavigate();
@@ -196,6 +325,8 @@ export function SellPage() {
   const addToSale = useCallback(
     async (p: LocalProduct, qty?: number) => {
       if (p.saleUnit !== "unit" && qty === undefined) {
+        // El teclado de peso se abre con la cámara cerrada: si no, queda tapado por el visor.
+        scanRouter.closeCamera();
         setDialog({ kind: "weight", product: p });
         return;
       }
@@ -204,29 +335,62 @@ export function SellPage() {
       sale.setCart(r.cart, r.lineId);
       sale.set({ multiplier: null });
       setQuery("");
-      if (p.kind !== "service") {
+      if (scanRouter.isCameraOpen()) {
+        // Con la cámara abierta no se ve la lista: se avisa cada lectura.
+        const line = r.cart.lines.find((l) => l.id === r.lineId);
+        const n = line?.qty ?? q;
+        toast({
+          text: `Agregado: ${p.name}${n > 1 ? ` × ${formatQty(n, line?.unit ?? "unit")}` : ""}`,
+          ms: 1800,
+        });
+      }
+      // Un producto recién creado desde el mostrador (sin stock cargado) no pregunta por stock.
+      if (p.kind !== "service" && !p.needsReview) {
         const stock = await localStock(p);
         if (stock - q < 0) {
+          if (scanRouter.isCameraOpen())
+            toast({
+              text: `${p.name}: sin stock según el sistema, se vende igual`,
+              tone: "error",
+              ms: 3000,
+            });
           setWarnings((w) => [
             ...w.filter((x) => x.lineId !== r.lineId),
             {
               lineId: r.lineId,
-              text: `Sin stock según el sistema. ¿Vender igual? El stock queda en ${Math.round((stock - q) * 1000) / 1000} y se avisa.`,
+              text: `Sin stock suficiente según el sistema: hay ${formatQty(stock, p.saleUnit === "unit" ? "unit" : "kg")} y llevás ${formatQty(q, p.saleUnit === "unit" ? "unit" : "kg")}. ¿Vender igual? Queda en ${formatQty(Math.round((stock - q) * 1000) / 1000, p.saleUnit === "unit" ? "unit" : "kg")} y se avisa.`,
             },
           ]);
         }
       }
-      if (p.ageRestricted)
+      if (p.ageRestricted) {
         setAdultNotice(`${p.name} es para mayores de 18. Pedí documento si hace falta.`);
-      focusSearch();
+        if (scanRouter.isCameraOpen())
+          toast({
+            text: `${p.name} es para mayores de 18: pedí documento`,
+            tone: "info",
+            ms: 3000,
+          });
+      }
+      // Con la cámara abierta el buscador queda tapado: enfocarlo solo desplaza la página.
+      if (!scanRouter.isCameraOpen()) focusSearch();
     },
     [focusSearch],
   );
+  // Dentro del visor se ve lo que va: "3 ítems · $ 18.550".
+  useEffect(() => {
+    scanRouter.setStatus(
+      totals.itemCount
+        ? `${plural(totals.itemCount, "ítem", "ítems")} · ${formatMoney(totals.totalCents)}`
+        : "Todavía no hay nada en la venta",
+    );
+    return () => scanRouter.setStatus(null);
+  }, [totals.itemCount, totals.totalCents]);
 
   const dialogRef = useRef<Dialog>(null);
   dialogRef.current = dialog;
   const onCode = useCallback(
-    async (code: string) => {
+    async (code: string, from?: ScanSource) => {
       // Con el cobro u otra ventana abierta, un escaneo no hace nada.
       if (dialogRef.current) {
         beep("error");
@@ -234,7 +398,8 @@ export function SellPage() {
       }
       // Un escaneo con el cartel de "Venta lista" arranca la próxima venta.
       setDone(null);
-      setQuery((q) => stripScanLeak(q, code));
+      // Solo la pistola deja escapar su primer dígito al buscador ("coca 7" con la cámara queda).
+      if (from !== "camera") setQuery((q) => stripScanLeak(q, code));
       const idx = await productIndex(version);
       const p = idx.search(code, 1)[0];
       const exact =
@@ -254,13 +419,25 @@ export function SellPage() {
         return;
       }
       beep("error");
+      // Si el catálogo todavía no bajó nunca (recién habilitado), no es un código nuevo: se
+      // dice que se está bajando, en vez de ofrecer cargarlo.
+      if (!(await localDb().getMeta<string>("sync.cursor"))) {
+        toast({
+          text: "Todavía estamos bajando los productos. Probá de nuevo en un momento.",
+          tone: "info",
+          ms: 5000,
+        });
+        return;
+      }
+      // El diálogo de código desconocido necesita la pantalla: la cámara se cierra.
+      scanRouter.closeCamera();
       setDialog({ kind: "unknown", code });
     },
     [addToSale, version],
   );
 
   // La venta toma los escaneos (pistola y cámara).
-  useEffect(() => scanRouter.claim((c) => void onCode(c)), [onCode]);
+  useEffect(() => scanRouter.claim((c, from) => void onCode(c, from)), [onCode]);
 
   // Desde la ficha rápida: "Vender".
   useEffect(() => {
@@ -318,12 +495,13 @@ export function SellPage() {
           surchargeCents,
           authorizedBy,
         });
-        const main = payments.reduce((a, b) => (b.amountCents > a.amountCents ? b : a));
         setDone({
           number: s.number,
           totalCents: s.totalCents,
           changeCents: s.changeCents,
-          method: METHOD_LABEL[main.method].toLowerCase(),
+          method: [...new Set(payments.map((p) => METHOD_LABEL[p.method].toLowerCase()))].join(
+            " + ",
+          ),
           ticket:
             output === "print"
               ? "Ticket impreso"
@@ -341,6 +519,12 @@ export function SellPage() {
         setWarnings([]);
         setAdultNotice(null);
         sale.reset();
+      } catch (e) {
+        if (e instanceof OpValidationError) {
+          toast({ text: `No se cobró: ${e.message}`, tone: "error", ms: 6000 });
+          return;
+        }
+        throw e;
       } finally {
         setBusy(false);
       }
@@ -372,13 +556,15 @@ export function SellPage() {
       );
       if (!a) return;
     }
-    toast({ text: "Cajón abierto (sin impresora, abrilo a mano)", tone: "info" });
+    toast({ text: "Sin impresora conectada: abrí el cajón a mano.", tone: "info" });
   }, [drawerGrant, me]);
 
   // Atajos del mostrador. La app captura las teclas F aunque el navegador tenga las suyas.
+  const locked = useLockScreen();
   useEffect(() => {
-    if (dialog || done) return;
+    if (dialog || done || locked) return;
     const h = (e: KeyboardEvent) => {
+      if (e.key.length === 1) lastCharAt = e.timeStamp;
       const s = sale.get();
       const idx = s.cart.lines.findIndex((l) => l.id === s.selected);
       const searching = query.trim().length > 0;
@@ -396,6 +582,7 @@ export function SellPage() {
       if (k === "F6") return setDialog({ kind: "held" });
       if (k === "F9") return reg.shift && setDialog({ kind: "cash" });
       if (k === "F10") return void openDrawer();
+      if (k === "F8") return navigate("/caja");
       if (k === "F12" || (k === "Enter" && (e.ctrlKey || e.metaKey))) {
         stop();
         return openPay();
@@ -417,7 +604,43 @@ export function SellPage() {
       }
       if (k === "*" && /^\d+$/.test(query.trim())) {
         stop();
-        sale.set({ multiplier: Number(query.trim()) });
+        const n = Number(query.trim());
+        if (n < 1 || n > 999) {
+          toast({ text: "Para multiplicar, de 1 a 999: por ejemplo 3 *", tone: "error" });
+          return setQuery("");
+        }
+        sale.set({ multiplier: n });
+        return setQuery("");
+      }
+      // "-5 *" o "1,5 *" no son un multiplicador: se dice, no se ignora (ronda 3).
+      if (k === "*" && /^-?[\d.,]+$/.test(query.trim())) {
+        stop();
+        toast({
+          text: "Para multiplicar, un número entero de 1 a 999: por ejemplo 3 *",
+          tone: "error",
+        });
+        return setQuery("");
+      }
+      // "* 3" con una línea elegida: la deja en 3 unidades (el orden inverso de "3 *").
+      if (k === "Enter" && s.selected && /^\*\s*\d+$/.test(query.trim())) {
+        stop();
+        const n = Number(query.trim().slice(1));
+        const line = s.cart.lines.find((l) => l.id === s.selected);
+        if (line && n > 0 && n <= 999) {
+          let c = s.cart;
+          for (let i = 0; i < Math.abs(n - line.qty); i++)
+            c = bumpQty(c, s.selected, n > line.qty ? 1 : -1);
+          sale.setCart(c, s.selected);
+        } else if (line)
+          toast({ text: "La cantidad va de 1 a 999: por ejemplo * 3 y Enter", tone: "error" });
+        return setQuery("");
+      }
+      if (k === "Enter" && /^\*/.test(query.trim())) {
+        stop();
+        toast({
+          text: "Para cambiar la cantidad: elegí la línea y tipeá * 3 y Enter",
+          tone: "error",
+        });
         return setQuery("");
       }
       if (k === "Escape") {
@@ -428,6 +651,17 @@ export function SellPage() {
         if (s.multiplier) return sale.set({ multiplier: null });
       }
       if (searching) return;
+      if (k === "Enter" && s.selected && warnings.some((w) => w.lineId === s.selected)) {
+        stop();
+        return setWarnings((w) => w.filter((x) => x.lineId !== s.selected));
+      }
+      // Enter con el buscador vacío abre la línea elegida (cantidad, descuento, precio y nota).
+      // (No el Enter con que termina un escaneo: ese llega pegado a los dígitos.)
+      if (k === "Enter" && s.selected && !query.trim() && e.timeStamp - lastCharAt > 150) {
+        stop();
+        const sel = s.selected;
+        return setDialog({ kind: "qty", lineId: sel });
+      }
       if (k === "ArrowDown" || k === "ArrowUp") {
         stop();
         const next =
@@ -438,6 +672,12 @@ export function SellPage() {
       }
       if ((k === "+" || k === "-") && s.selected) {
         stop();
+        const sel = s.cart.lines.find((l) => l.id === s.selected);
+        // "−" con una unidad no borra: se quita con Supr (ronda 3).
+        if (k === "-" && sel && sel.qty <= 1) {
+          toast({ text: "Para sacarlo de la venta, Supr.", ms: 2000 });
+          return;
+        }
         return sale.setCart(bumpQty(s.cart, s.selected, k === "+" ? 1 : -1));
       }
       if (k === "Delete" && s.selected) {
@@ -453,10 +693,13 @@ export function SellPage() {
     query,
     results,
     active,
+    warnings,
     addToSale,
     focusSearch,
     openPay,
     openDrawer,
+    navigate,
+    locked,
     reg.shift,
   ]);
 
@@ -488,6 +731,8 @@ export function SellPage() {
               : null
           }
           busy={busy}
+          initialTab={dialog.tab}
+          onPickCustomer={() => setDialog({ kind: "customer", back: "pay" })}
           onConfirm={(p, s, o) => void finish(p, s, o)}
           onClose={() => {
             setDialog(null);
@@ -522,7 +767,10 @@ export function SellPage() {
           canHold={cart.lines.length > 0}
           onClose={() => setDialog(null)}
           onHoldCurrent={() => {
-            heldSales.hold(cart, `${totals.itemCount} ítems · ${cart.lines[0]?.description ?? ""}`);
+            heldSales.hold(
+              cart,
+              `${plural(totals.itemCount, "ítem", "ítems")} · ${cart.lines[0]?.description ?? ""}`,
+            );
             sale.reset();
             setDialog(null);
             toast({ text: "Venta en espera" });
@@ -532,7 +780,7 @@ export function SellPage() {
             if (cart.lines.length)
               heldSales.hold(
                 cart,
-                `${totals.itemCount} ítems · ${cart.lines[0]?.description ?? ""}`,
+                `${plural(totals.itemCount, "ítem", "ítems")} · ${cart.lines[0]?.description ?? ""}`,
               );
             if (c) sale.setCart(c);
             setDialog(null);
@@ -543,16 +791,17 @@ export function SellPage() {
       {dialog?.kind === "customer" && (
         <CustomerPicker
           current={cart.customerId}
-          onClose={() => setDialog(null)}
+          onClose={() => setDialog(dialog.back ? { kind: "pay", tab: "account" } : null)}
           onClear={() => {
             sale.setCart({ ...sale.get().cart, customerId: null });
-            setDialog(null);
+            setDialog(dialog.back ? { kind: "pay", tab: "account" } : null);
           }}
           onPick={(c) => {
             sale.setCart({ ...sale.get().cart, customerId: c.id });
-            setDialog(null);
+            // Desde el cobro (F5 adentro de Fiado) se vuelve al cobro con el cliente puesto.
+            setDialog(dialog.back ? { kind: "pay", tab: "account" } : null);
             if (c.overdueCents) toast({ text: `${c.name} tiene deuda vencida`, tone: "error" });
-            focusSearch();
+            if (!dialog.back) focusSearch();
           }}
         />
       )}
@@ -566,8 +815,42 @@ export function SellPage() {
           }}
         />
       )}
+      {dialog?.kind === "qty" && (
+        <QtyDialog
+          line={cart.lines.find((l) => l.id === dialog.lineId) ?? null}
+          canPrice={priceGrant === "allow"}
+          onApply={async (n, extra) => {
+            const line = sale.get().cart.lines.find((l) => l.id === dialog.lineId);
+            if (line && n > 0 && n <= 999) {
+              // El descuento por producto sobre el tope pide PIN, como el de toda la venta.
+              const sub = cartTotals(sale.get().cart).subtotalCents;
+              if (
+                extra.discountCents > line.discountCents &&
+                overDiscountCap(sub, extra.discountCents, settings.pricing.discountCapBp) &&
+                discountGrant === "pin"
+              ) {
+                const a = await requestPin(
+                  "discount_over_cap",
+                  `Descuento de ${formatMoney(extra.discountCents)} en ${line.description}, sobre el tope. Pedido por ${me?.member.name}.`,
+                );
+                if (!a) return;
+              }
+              let c = sale.get().cart;
+              if (line.unit === "unit")
+                for (let i = 0; i < Math.abs(n - line.qty); i++)
+                  c = bumpQty(c, line.id, n > line.qty ? 1 : -1);
+              c = updateLine(c, line.id, extra);
+              sale.setCart(c, line.id);
+            }
+            if (line && n === 0) sale.setCart(removeLine(sale.get().cart, line.id), null);
+            setDialog(null);
+          }}
+          onClose={() => setDialog(null)}
+        />
+      )}
       {dialog?.kind === "discount" && (
         <DiscountDialog
+          currentCents={totals.discountCents}
           subtotalCents={totals.subtotalCents}
           capBp={settings.pricing.discountCapBp}
           onApply={(c) => void applyDiscount(c)}
@@ -579,15 +862,17 @@ export function SellPage() {
           open
           onClose={() => setDialog(null)}
           shiftId={reg.shift.id}
-          expectedCashCents={0}
+          shift={reg.shift}
           registerName={reg.registerName}
         />
       )}
       {done && (
         <SaleDone
           {...done}
-          onDone={() => {
+          onDone={(key) => {
             setDone(null);
+            // "2 *" tipeado sobre la pantalla verde: el 2 arranca la venta nueva, no se pierde.
+            if (key && /^[0-9a-zá-úñ]$/i.test(key)) setQuery(key);
             focusSearch();
           }}
         />
@@ -610,7 +895,16 @@ export function SellPage() {
         {reg.registerId ? (
           <OpenShift registerId={reg.registerId} registerName={reg.registerName} />
         ) : (
-          <div className="text-texto-suave">Bajando la configuración de las cajas…</div>
+          <div className="flex flex-col items-center gap-3 text-center text-texto-suave">
+            <span>
+              {online
+                ? "Bajando la configuración de las cajas…"
+                : "Sin internet y todavía no bajó la configuración de las cajas: conectate una vez para poder vender."}
+            </span>
+            <Button variant="secondary" onClick={() => void syncEngine().kick()}>
+              Reintentar
+            </Button>
+          </div>
         )}
       </div>
     );
@@ -618,12 +912,17 @@ export function SellPage() {
 
   const notices = (
     <>
+      <OtherShiftNotice />
       {adultNotice && (
         <div className="flex items-center gap-2.5 rounded-lg bg-alerta-suave px-3.5 py-2.5 text-[13px] font-medium text-alerta">
           <ShieldAlert size={16} aria-hidden />
           <span className="flex-1">{adultNotice}</span>
-          <button type="button" className="font-semibold" onClick={() => setAdultNotice(null)}>
-            Listo
+          <button
+            type="button"
+            className="inline-flex h-11 items-center rounded-lg px-3 font-semibold lg:h-9"
+            onClick={() => setAdultNotice(null)}
+          >
+            Entendido
           </button>
         </div>
       )}
@@ -659,7 +958,9 @@ export function SellPage() {
           lines={cart.lines}
           warnings={warnings}
           onQty={(id, dir) => sale.setCart(bumpQty(cart, id, dir))}
+          onEditQty={(id) => setDialog({ kind: "qty", lineId: id })}
           onRemove={(id) => sale.setCart(removeLine(cart, id), null)}
+          onDismissWarning={(id) => setWarnings((w) => w.filter((x) => x.lineId !== id))}
         />
         <div className="px-4 pt-3.5 pb-1.5 text-xs font-semibold tracking-[.06em] text-texto-suave uppercase">
           Sin código
@@ -683,15 +984,19 @@ export function SellPage() {
           >
             Varios
           </Button>
-          <Button
-            variant="secondary"
-            size="lg"
-            className="flex-1"
-            onClick={() => cart.lines.length && setDialog({ kind: "discount" })}
-            icon={<MenuIcon size={18} />}
-          >
-            Más
-          </Button>
+          <Menu
+            label="Más"
+            className="flex-1 [&>button]:h-12 [&>button]:w-full [&>button]:justify-center [&>button]:text-base"
+            items={[
+              { label: "Asignar cliente o fiado", onSelect: () => setDialog({ kind: "customer" }) },
+              {
+                label: "Descuento",
+                onSelect: () => cart.lines.length && setDialog({ kind: "discount" }),
+              },
+              { label: "Historial de ventas", onSelect: () => navigate("/vender/historial") },
+              { label: "Ventas en espera", onSelect: () => setDialog({ kind: "held" }) },
+            ]}
+          />
         </div>
         <div className="fixed inset-x-0 bottom-[76px] z-20 border-t border-borde bg-superficie px-4 py-3">
           <button
@@ -701,7 +1006,7 @@ export function SellPage() {
             className="flex h-[60px] w-full items-center justify-between rounded-lg bg-primario px-5 text-lg font-semibold text-sobre-primario disabled:bg-deshabilitado disabled:text-texto-apagado"
           >
             <span className="text-[15px] font-medium">
-              {totals.itemCount} ítems · {formatMoney(totals.totalCents)}
+              {plural(totals.itemCount, "ítem", "ítems")} · {formatMoney(totals.totalCents)}
             </span>
             <span>Cobrar</span>
           </button>
@@ -732,7 +1037,12 @@ export function SellPage() {
           <SaleTable
             lines={cart.lines}
             selected={selected}
-            onSelect={(id) => sale.set({ selected: id })}
+            // Tocar la línea ya elegida la abre (como Enter).
+            onSelect={(id) =>
+              sale.get().selected === id
+                ? setDialog({ kind: "qty", lineId: id })
+                : sale.set({ selected: id })
+            }
             warnings={warnings}
             onDismissWarning={(id) => setWarnings((w) => w.filter((x) => x.lineId !== id))}
             onQty={(id, dir) => sale.setCart(bumpQty(cart, id, dir))}
@@ -768,26 +1078,29 @@ export function SellPage() {
       <aside aria-label="Total" className="flex flex-col gap-3.5 bg-superficie p-5">
         <div className="flex justify-between text-[13px] text-texto-suave">
           <span>Venta en curso</span>
-          <span>{totals.itemCount} ítems</span>
+          <span>{plural(totals.itemCount, "ítem", "ítems")}</span>
         </div>
-        <div className="flex flex-col gap-1.5 text-sm">
-          <div className="flex justify-between">
-            <span className="text-texto-suave">Subtotal</span>
-            <span className="tnum">{formatMoney(totals.subtotalCents)}</span>
+        {/* Subtotal, promociones y descuento solo cuando hay algo que restar. */}
+        {(promoTotal > 0 || totals.discountCents > 0) && (
+          <div className="flex flex-col gap-1.5 text-sm">
+            <div className="flex justify-between">
+              <span className="text-texto-suave">Subtotal</span>
+              <span className="tnum">{formatMoney(totals.subtotalCents)}</span>
+            </div>
+            {promoTotal > 0 && (
+              <div className="flex justify-between">
+                <span className="text-texto-suave">Promociones</span>
+                <span className="tnum text-exito">−{formatMoney(promoTotal)}</span>
+              </div>
+            )}
+            {totals.discountCents > 0 && (
+              <div className="flex justify-between">
+                <span className="text-texto-suave">Descuento</span>
+                <span className="tnum text-exito">−{formatMoney(totals.discountCents)}</span>
+              </div>
+            )}
           </div>
-          <div className="flex justify-between">
-            <span className="text-texto-suave">Promociones</span>
-            <span className={cx("tnum", promoTotal ? "text-exito" : "text-texto-suave")}>
-              {promoTotal ? `−${formatMoney(promoTotal)}` : "Ninguna"}
-            </span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-texto-suave">Descuento</span>
-            <span className={cx("tnum", totals.discountCents ? "text-exito" : "text-texto-suave")}>
-              {totals.discountCents ? `−${formatMoney(totals.discountCents)}` : "Ninguno"}
-            </span>
-          </div>
-        </div>
+        )}
         <div className="flex flex-col gap-0.5 border-t border-borde pt-3">
           <span className="text-[13px] text-texto-suave">Total</span>
           <output
@@ -832,6 +1145,7 @@ export function SellPage() {
         <Button onClick={openPay} disabled={!cart.lines.length} className="h-[72px] text-[22px]">
           Cobrar <kbd className="rounded bg-white/20 px-1.5 py-0.5 text-xs">F12</kbd>
         </Button>
+        {/* Modo simple: Cobrar domina; espera a mano y lo demás en Más (las teclas F siguen). */}
         <div className="flex gap-2">
           <Button
             variant="secondary"
@@ -840,38 +1154,27 @@ export function SellPage() {
           >
             Espera · F6{held.length ? ` (${held.length})` : ""}
           </Button>
-          <Button
-            variant="secondary"
-            className="h-11 flex-1 text-[13px]"
-            onClick={() => cart.lines.length && setDialog({ kind: "discount" })}
-          >
-            Descuento · F4
-          </Button>
-          <Button
-            variant="secondary"
-            className="h-11 flex-1 text-[13px]"
-            locked={drawerGrant === "pin"}
-            onClick={() => void openDrawer()}
-          >
-            Cajón
-          </Button>
-        </div>
-        <div className="flex items-center justify-between gap-2 text-xs text-texto-suave">
-          <button
-            type="button"
-            className="font-semibold text-primario"
-            onClick={() => navigate("/vender/historial")}
-          >
-            Historial de ventas
-          </button>
-          <button
-            type="button"
-            className="-my-1 inline-flex items-center gap-1.5 rounded-lg px-2 py-2 text-sm font-medium text-texto-suave hover:bg-borde/40 hover:text-texto"
-            onClick={() => navigate("/inicio")}
-          >
-            <Lock size={15} aria-hidden />
-            Salir del modo mostrador
-          </button>
+          <Menu
+            label="Más"
+            up
+            className="flex-1 [&>button]:h-11 [&>button]:w-full [&>button]:justify-center"
+            items={[
+              {
+                label: "Descuento · F4",
+                onSelect: () => cart.lines.length && setDialog({ kind: "discount" }),
+              },
+              {
+                label:
+                  drawerGrant === "pin" ? "Abrir el cajón (con PIN) · F10" : "Abrir el cajón · F10",
+                onSelect: () => void openDrawer(),
+              },
+              { label: "Historial de ventas", onSelect: () => navigate("/vender/historial") },
+              {
+                label: "Salir del modo mostrador",
+                onSelect: () => navigate(me?.member.role === "cashier" ? "/caja" : "/inicio"),
+              },
+            ]}
+          />
         </div>
       </aside>
       {dialogs}

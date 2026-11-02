@@ -8,6 +8,8 @@ import {
   METHOD_LABEL,
   PERMISSIONS,
   type Permission,
+  parseDecimal,
+  parseDenominations,
   parseMoney,
   type Role,
   type SettingsMap,
@@ -19,9 +21,11 @@ import { useNavigate, useParams } from "react-router";
 import { NoPermissionFor } from "../../app/guards";
 import { useCan } from "../../app/session";
 import { ApiError, api, credentials, downloadFile } from "../../data/api";
-import { useScanner } from "../../scan/useScanner";
+import { guessDevice } from "../../lib/device";
+import { scanRouter } from "../../scan/GlobalScan";
 import { syncEngine } from "../../sync";
 import { Button } from "../../ui/Button";
+import { Checkbox } from "../../ui/Checkbox";
 import { Chip } from "../../ui/Chip";
 import { cx } from "../../ui/cx";
 import { SelectField, TextField, Toggle } from "../../ui/Field";
@@ -31,18 +35,35 @@ import { useWide } from "../../ui/useMedia";
 
 const SECTIONS = [
   ["negocio", "Negocio", "Nombre, dirección, CUIT, condición fiscal y horario"],
-  ["usuarios", "Usuarios", "Invitar, rol, PIN, permisos finos y desactivar"],
-  ["cajas", "Cajas", "Puestos de cobro, fondo, tolerancia, conteo ciego y billetes"],
+  ["usuarios", "Usuarios", "Invitar, rol, PIN, qué puede hacer cada uno y desactivar"],
+  [
+    "cajas",
+    "Cajas",
+    "Puestos de cobro, fondo, diferencia aceptada, contar sin ver lo esperado y billetes",
+  ],
   ["medios", "Medios de pago", "Activar, recargos, alias y CVU, QR y comisiones"],
   ["precios", "Precios y stock", "Redondeo, ganancia, descuentos y vender sin stock"],
-  ["dispositivos", "Dispositivos", "Prueba de la pistola, impresora, planilla de códigos"],
-  ["tickets", "Tickets", "Encabezado, pie, impresión automática y copias"],
-  ["whatsapp", "WhatsApp", "Fase 2: el bot. Hoy, pedidos con enlace"],
-  ["avisos", "Avisos", "Qué aviso le llega a cada rol, en la app y por push"],
-  ["facturacion", "Facturación electrónica", "Próximamente"],
+  [
+    "dispositivos",
+    "Dispositivos",
+    "Habilitar este equipo, prueba de la pistola y planilla de códigos",
+  ],
+  [
+    "tickets",
+    "Tickets",
+    "Impresora, ancho del papel, encabezado, pie, impresión automática y copias",
+  ],
+  ["avisos", "Avisos", "Qué aviso le llega a cada rol, en la app y como notificación del celular"],
   ["datos", "Datos", "Importar, exportar y copias de seguridad"],
   ["actividad", "Actividad", "Quién cambió qué y cuándo"],
-  ["funciones", "Funciones", "Modo simple: prendé lo que necesites"],
+  [
+    "funciones",
+    "Funciones",
+    "Prendé promociones, lotes y vencimientos, conteos de inventario y varias cajas",
+  ],
+  // Lo que llega en la fase 2, al final: hoy casi no tiene nada para tocar.
+  ["whatsapp", "WhatsApp", "Próximamente el bot; hoy, pedidos por WhatsApp desde Compras"],
+  ["facturacion", "Facturación electrónica", "Próximamente"],
 ] as const;
 type SectionId = (typeof SECTIONS)[number][0];
 
@@ -53,12 +74,29 @@ const ROLE_LABEL: Record<Role, string> = {
   stocker: "Repositor",
 };
 const pctText = (bp: number) => String(bp / 100).replace(".", ",");
-const pctBp = (s: string) => Math.round((Number(s.replace(",", ".")) || 0) * 100);
+/** "10" o "1,5" → puntos básicos; con basura devuelve null (y no se guarda un 0 en silencio). */
+const pctBp = (s: string): number | null => {
+  if (!s.trim()) return 0;
+  const n = parseDecimal(s);
+  return n === null ? null : Math.round(n * 100);
+};
+const badPct = () => toast({ text: "Poné un porcentaje, por ejemplo 10 o 1,5.", tone: "error" });
+/** Recargos y comisiones van de −50 % a 50 %: más que eso es un error de tipeo. */
+const pctInRange = (bp: number | null, min: number) =>
+  bp !== null && bp >= min && bp <= 5000
+    ? true
+    : (toast({
+        text: `Tiene que ser un porcentaje entre ${min < 0 ? "−50" : "0"} y 50, por ejemplo 10.`,
+        tone: "error",
+      }),
+      false);
 
-function useSettingsServer() {
+function useSettingsServer(enabled = true) {
   return useQuery({
     queryKey: ["settings-server"],
     queryFn: () => api<SettingsMap>("/api/settings"),
+    // Sin permiso no se pide (la API respondía 403 y llenaba la consola).
+    enabled,
   });
 }
 
@@ -182,6 +220,16 @@ function UsersSection() {
   const [f, setF] = useState({ name: "", role: "cashier" as Role, email: "", phone: "", pin: "" });
   const [open, setOpen] = useState<string | null>(null);
   const refresh = () => qc.invalidateQueries({ queryKey: ["members"] });
+  const needsPin = f.role === "cashier" || f.role === "stocker";
+  const pinError = needsPin
+    ? f.pin.length === 0
+      ? "Cajeros y repositores entran con PIN: poné uno de 4 a 6 números."
+      : f.pin.length < 4
+        ? "El PIN tiene que tener de 4 a 6 números."
+        : null
+    : f.pin && f.pin.length < 4
+      ? "El PIN tiene que tener de 4 a 6 números."
+      : null;
   const invite = useMutation({
     mutationFn: () =>
       api("/api/members", {
@@ -198,7 +246,9 @@ function UsersSection() {
         text:
           f.email && (f.role === "manager" || f.role === "owner")
             ? "Listo: que cree su cuenta con ese email desde el ingreso"
-            : "Listo: ya puede entrar con su PIN",
+            : credentials.get().deviceToken
+              ? "Listo: ya puede entrar con su PIN en este dispositivo"
+              : "Listo. Para que entre con su PIN, habilitá la Mac del mostrador en Ajustes › Dispositivos.",
       });
       setF({ name: "", role: "cashier", email: "", phone: "", pin: "" });
       await refresh();
@@ -223,7 +273,10 @@ function UsersSection() {
   const pin = useMutation({
     mutationFn: (a: { id: string; pin: string }) =>
       api(`/api/members/${a.id}/pin`, { method: "PUT", body: { pin: a.pin } }),
-    onSuccess: () => toast({ text: "PIN cambiado" }),
+    onSuccess: async () => {
+      toast({ text: "PIN cambiado" });
+      await qc.invalidateQueries({ queryKey: ["members"] });
+    },
     onError: (e) =>
       toast({ text: e instanceof ApiError ? e.message : "No se pudo cambiar.", tone: "error" }),
   });
@@ -314,7 +367,12 @@ function UsersSection() {
       <Card
         title="Invitar"
         footer={
-          <Button disabled={!f.name.trim() || invite.isPending} onClick={() => invite.mutate()}>
+          <Button
+            disabled={!f.name.trim() || Boolean(pinError)}
+            busy={invite.isPending}
+            busyLabel="Invitando…"
+            onClick={() => invite.mutate()}
+          >
             Invitar
           </Button>
         }
@@ -355,6 +413,7 @@ function UsersSection() {
             value={f.pin}
             onChange={(e) => setF({ ...f, pin: e.target.value.replace(/\D/g, "").slice(0, 6) })}
             hint="De 4 a 6 números, para entrar en la Mac del mostrador."
+            error={f.pin || needsPin ? pinError : undefined}
           />
         </div>
       </Card>
@@ -381,7 +440,7 @@ function PinField({ onSave }: { onSave: (pin: string) => void }) {
           setV("");
         }}
       >
-        Cambiar
+        Cambiar PIN
       </Button>
     </div>
   );
@@ -425,8 +484,15 @@ function RegistersSection({ s }: { s: SettingsMap }) {
               label="Nombre"
               defaultValue={r.name}
               onBlur={(e) =>
-                e.target.value !== r.name &&
-                upd.mutate({ id: r.id, body: { name: e.target.value } })
+                !e.target.value.trim()
+                  ? toast({ text: "La caja necesita un nombre.", tone: "error" })
+                  : e.target.value.trim().length > 40
+                    ? toast({
+                        text: "El nombre de la caja: como mucho 40 caracteres.",
+                        tone: "error",
+                      })
+                    : e.target.value.trim() !== r.name &&
+                      upd.mutate({ id: r.id, body: { name: e.target.value.trim() } })
               }
             />
             <TextField
@@ -434,10 +500,12 @@ function RegistersSection({ s }: { s: SettingsMap }) {
               inputMode="decimal"
               defaultValue={String(r.suggestedFloatCents / 100)}
               onBlur={(e) =>
-                upd.mutate({
-                  id: r.id,
-                  body: { suggestedFloatCents: parseMoney(e.target.value) ?? 0 },
-                })
+                parseMoney(e.target.value) === null || (parseMoney(e.target.value) ?? 0) < 0
+                  ? toast({ text: "Poné un monto, por ejemplo 20000.", tone: "error" })
+                  : upd.mutate({
+                      id: r.id,
+                      body: { suggestedFloatCents: parseMoney(e.target.value) ?? 0 },
+                    })
               }
             />
             <TextField
@@ -445,7 +513,12 @@ function RegistersSection({ s }: { s: SettingsMap }) {
               inputMode="decimal"
               defaultValue={String(r.toleranceCents / 100)}
               onBlur={(e) =>
-                upd.mutate({ id: r.id, body: { toleranceCents: parseMoney(e.target.value) ?? 0 } })
+                parseMoney(e.target.value) === null
+                  ? toast({ text: "Poné un monto, por ejemplo 500.", tone: "error" })
+                  : upd.mutate({
+                      id: r.id,
+                      body: { toleranceCents: parseMoney(e.target.value) ?? 0 },
+                    })
               }
               hint="Más que esto, pide comentario y avisa al dueño."
             />
@@ -454,7 +527,7 @@ function RegistersSection({ s }: { s: SettingsMap }) {
       ))}
       {s.features.multiRegister ? (
         <Button variant="secondary" className="self-start" onClick={() => add.mutate()}>
-          Agregar caja
+          Agregar puesto de cobro
         </Button>
       ) : (
         <p className="m-0 text-sm text-texto-suave">
@@ -465,14 +538,15 @@ function RegistersSection({ s }: { s: SettingsMap }) {
         title="Arqueo"
         footer={
           <Button
-            onClick={() =>
-              save.mutate({
-                denominations: denoms
-                  .split(/[,\s]+/)
-                  .map(Number)
-                  .filter((n) => n > 0),
-              })
-            }
+            onClick={() => {
+              const parsed = parseDenominations(denoms);
+              if (!parsed)
+                return toast({
+                  text: "Billetes: montos enteros separados por coma, por ejemplo 20000, 10000, 2000.",
+                  tone: "error",
+                });
+              save.mutate({ denominations: parsed });
+            }}
           >
             Guardar billetes
           </Button>
@@ -500,6 +574,7 @@ function PaymentsSection({ s }: { s: SettingsMap }) {
   const save = useSave("payments");
   const [alias, setAlias] = useState(s.payments.alias);
   const [cvu, setCvu] = useState(s.payments.cvu);
+  const cvuError = cvu.trim() && !/^\d{22}$/.test(cvu.trim()) ? "Son 22 números, sin letras" : null;
   const fileRef = useRef<HTMLInputElement>(null);
   const methods = Object.keys(s.payments.methods) as (keyof SettingsMap["payments"]["methods"])[];
   return (
@@ -520,8 +595,11 @@ function PaymentsSection({ s }: { s: SettingsMap }) {
                 inputMode="decimal"
                 defaultValue={pctText(cfg.surchargeBp)}
                 onBlur={(e) =>
-                  pctBp(e.target.value) !== cfg.surchargeBp &&
-                  save.mutate({ methods: { [m]: { surchargeBp: pctBp(e.target.value) } } })
+                  pctBp(e.target.value) === null
+                    ? badPct()
+                    : pctInRange(pctBp(e.target.value), -5000) &&
+                      pctBp(e.target.value) !== cfg.surchargeBp &&
+                      save.mutate({ methods: { [m]: { surchargeBp: pctBp(e.target.value) } } })
                 }
                 hint="Negativo para descuento."
               />
@@ -530,8 +608,11 @@ function PaymentsSection({ s }: { s: SettingsMap }) {
                 inputMode="decimal"
                 defaultValue={pctText(cfg.feeBp)}
                 onBlur={(e) =>
-                  pctBp(e.target.value) !== cfg.feeBp &&
-                  save.mutate({ methods: { [m]: { feeBp: pctBp(e.target.value) } } })
+                  pctBp(e.target.value) === null
+                    ? badPct()
+                    : pctInRange(pctBp(e.target.value), 0) &&
+                      pctBp(e.target.value) !== cfg.feeBp &&
+                      save.mutate({ methods: { [m]: { feeBp: pctBp(e.target.value) } } })
                 }
                 hint="Para rentabilidad y resultado."
               />
@@ -539,23 +620,29 @@ function PaymentsSection({ s }: { s: SettingsMap }) {
           </Card>
         );
       })}
-      <Card
-        title="Transferencia y QR"
-        footer={
-          <Button onClick={() => save.mutate({ alias: alias.trim(), cvu: cvu.trim() })}>
-            Guardar
-          </Button>
-        }
-      >
+      {/* Todo se guarda solo, como los interruptores: no hay un botón para unos y no para
+          otros (ronda 3). */}
+      <Card title="Transferencia y QR">
         <div className="grid gap-3 sm:grid-cols-2">
-          <TextField label="Alias" value={alias} onChange={(e) => setAlias(e.target.value)} />
+          <TextField
+            label="Alias"
+            value={alias}
+            onChange={(e) => setAlias(e.target.value)}
+            onBlur={() => alias.trim() !== s.payments.alias && save.mutate({ alias: alias.trim() })}
+          />
           <TextField
             label="CVU"
             inputMode="numeric"
             value={cvu}
-            onChange={(e) => setCvu(e.target.value.replace(/\D/g, "").slice(0, 22))}
+            onChange={(e) => setCvu(e.target.value)}
+            onBlur={() =>
+              !cvuError && cvu.trim() !== s.payments.cvu && save.mutate({ cvu: cvu.trim() })
+            }
+            error={cvuError}
+            hint="22 números."
           />
         </div>
+        <p className="m-0 text-xs text-texto-suave">Se guarda solo al salir de cada campo.</p>
         <div className="flex items-center gap-3">
           {s.payments.qrImage ? (
             <img
@@ -597,7 +684,9 @@ function PricingSection({ s }: { s: SettingsMap }) {
   const blurPct =
     (k: "defaultMarginBp" | "minMarginBp" | "discountCapBp") =>
     (e: { target: { value: string } }) =>
-      pctBp(e.target.value) !== p[k] && save.mutate({ [k]: pctBp(e.target.value) });
+      pctBp(e.target.value) === null
+        ? badPct()
+        : pctBp(e.target.value) !== p[k] && save.mutate({ [k]: pctBp(e.target.value) });
   return (
     <Card>
       <div className="grid gap-3 sm:grid-cols-2">
@@ -671,8 +760,10 @@ function ThisDevice() {
     queryFn: () => api<Register[]>("/api/registers"),
   });
   const [has, setHas] = useState(() => !!credentials.get().deviceToken);
-  const [name, setName] = useState("Mac del mostrador");
-  const [kind, setKind] = useState<"mac" | "iphone" | "tablet" | "other">("mac");
+  // El nombre y el tipo propuestos salen del equipo desde el que se abre (no siempre es la Mac).
+  const guess = guessDevice();
+  const [name, setName] = useState(guess.name);
+  const [kind, setKind] = useState<"mac" | "iphone" | "tablet" | "other">(guess.kind);
   const [registerId, setRegisterId] = useState("");
   const enable = useMutation({
     mutationFn: () =>
@@ -722,6 +813,9 @@ function ThisDevice() {
         <TextField
           label="Nombre del dispositivo"
           value={name}
+          // Viene con un nombre propuesto: al entrar se selecciona entero, así lo que se tipea
+          // lo reemplaza en vez de mezclarse (ronda 3: "Mac del mostMac del mostradorrador").
+          onFocus={(e) => e.currentTarget.select()}
           onChange={(e) => setName(e.target.value)}
         />
         <SelectField
@@ -759,7 +853,8 @@ function DevicesSection() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["devices"] }),
   });
   const [last, setLast] = useState<string | null>(null);
-  useScanner({ onScan: (c) => setLast(c) });
+  // Mientras se prueba la pistola, el escaneo se muestra acá y no abre la ficha rápida.
+  useEffect(() => scanRouter.claim((c) => setLast(c)), []);
   return (
     <div className="flex flex-col gap-4">
       <ThisDevice />
@@ -858,6 +953,7 @@ function TicketsSection({ s }: { s: SettingsMap }) {
       </div>
       <Toggle
         label="Imprimir solo al cobrar"
+        hint="El ticket sale apenas se cobra, sin tocar Imprimir."
         checked={t.autoPrint}
         onChange={(v) => save.mutate({ autoPrint: v })}
       />
@@ -882,6 +978,39 @@ function AlertsSection({ s }: { s: SettingsMap }) {
     const next = on ? [...new Set([...row[ch], r])] : row[ch].filter((x) => x !== r);
     save.mutate({ [k]: { ...row, [ch]: next } });
   };
+  const wide = useWide();
+  // En el celular, un bloque por aviso con una fila por rol y casillas de 44 px (la tabla de
+  // ocho columnas no entraba).
+  if (!wide)
+    return (
+      <section aria-label="Matriz de avisos" className="flex flex-col gap-3">
+        {ALERT_KINDS.map((k) => (
+          <div key={k} className="rounded-card border border-borde bg-superficie px-4 py-3">
+            <div className="mb-1 font-semibold">{ALERT_LABEL[k]}</div>
+            {roles.map((r) => (
+              <div key={r} className="flex items-center gap-3 border-t border-borde py-1">
+                <span className="flex-1 text-sm">{ROLE_LABEL[r]}</span>
+                <Checkbox
+                  showLabel
+                  label="App"
+                  checked={s.alerts[k].app.includes(r)}
+                  onChange={(v) => toggle(k, "app", r, v)}
+                />
+                <Checkbox
+                  showLabel
+                  label="Notificación"
+                  checked={s.alerts[k].push.includes(r)}
+                  onChange={(v) => toggle(k, "push", r, v)}
+                />
+              </div>
+            ))}
+          </div>
+        ))}
+        <p className="m-0 text-xs text-texto-suave">
+          WhatsApp como canal se suma más adelante, con el bot.
+        </p>
+      </section>
+    );
   return (
     <section
       aria-label="Matriz de avisos"
@@ -894,7 +1023,7 @@ function AlertsSection({ s }: { s: SettingsMap }) {
             {roles.map((r) => (
               <th key={r} className="px-2 py-2 text-center">
                 {ROLE_LABEL[r]}
-                <span className="block font-normal">app · push</span>
+                <span className="block font-normal">app · notificación</span>
               </th>
             ))}
           </tr>
@@ -914,7 +1043,7 @@ function AlertsSection({ s }: { s: SettingsMap }) {
                   />{" "}
                   <input
                     type="checkbox"
-                    aria-label={`${ALERT_LABEL[k]}: ${ROLE_LABEL[r]} por push`}
+                    aria-label={`${ALERT_LABEL[k]}: ${ROLE_LABEL[r]} por notificación`}
                     checked={s.alerts[k].push.includes(r)}
                     onChange={(e) => toggle(k, "push", r, e.target.checked)}
                     className="size-4"
@@ -926,7 +1055,7 @@ function AlertsSection({ s }: { s: SettingsMap }) {
         </tbody>
       </table>
       <p className="m-0 px-4 py-3 text-xs text-texto-suave">
-        WhatsApp como canal se suma en la fase 2, con el bot.
+        WhatsApp como canal se suma más adelante, con el bot.
       </p>
     </section>
   );
@@ -937,7 +1066,7 @@ function AlertsSection({ s }: { s: SettingsMap }) {
 function InvoicingSection({ s }: { s: SettingsMap }) {
   const save = useSave("invoicing");
   return (
-    <Card title="Próximamente">
+    <Card title="Factura electrónica · próximamente">
       <p className="m-0 text-sm">
         Desde el cobro vas a poder emitir factura A, B o C con CAE de ARCA, sin salir de Mostrador.
       </p>
@@ -967,7 +1096,7 @@ function WhatsappSection() {
   const navigate = useNavigate();
   return (
     <Card
-      title="Fase 2"
+      title="Más adelante"
       footer={
         <Button variant="secondary" onClick={() => navigate("/compras/proveedores")}>
           Ir a Proveedores
@@ -975,7 +1104,7 @@ function WhatsappSection() {
       }
     >
       <p className="m-0 text-sm">
-        El bot que manda los pedidos y responde consultas llega en la fase 2.
+        El bot que manda los pedidos y responde consultas llega más adelante.
       </p>
       <p className="m-0 text-sm text-texto-suave">
         Hoy, el WhatsApp de cada proveedor se carga en su ficha y el pedido sale con un botón que
@@ -1199,7 +1328,7 @@ export function SettingsPage() {
   const navigate = useNavigate();
   const { section } = useParams();
   const [term, setTerm] = useState("");
-  const q = useSettingsServer();
+  const q = useSettingsServer(can);
   if (!can) return <NoPermissionFor perm="settings" />;
   const t = term.trim().toLowerCase();
   const list = SECTIONS.filter(
@@ -1210,13 +1339,13 @@ export function SettingsPage() {
     | null;
   const nav = (
     <nav aria-label="Secciones de ajustes" className="flex flex-col gap-1">
-      <label className="mb-2 flex h-10 items-center gap-2 rounded-lg border border-borde bg-superficie px-3">
+      <label className="mb-2 flex h-12 items-center gap-2 rounded-lg border border-borde bg-superficie px-3 lg:h-10">
         <Search size={16} className="text-texto-suave" aria-hidden />
         <input
           aria-label="Buscar en ajustes"
           value={term}
           onChange={(e) => setTerm(e.target.value)}
-          placeholder="Buscar"
+          placeholder="Buscar un ajuste"
           className="w-full bg-transparent outline-none"
         />
       </label>
@@ -1259,7 +1388,7 @@ export function SettingsPage() {
   );
   return (
     <div className="flex flex-col gap-4 p-4 lg:p-6">
-      <h1 className="m-0 text-[22px] font-semibold">Ajustes</h1>
+      <h1 className="m-0 hidden text-[22px] font-semibold lg:block">Ajustes</h1>
       {wide ? (
         <div className="grid grid-cols-[240px_minmax(0,1fr)] gap-6">
           {nav}

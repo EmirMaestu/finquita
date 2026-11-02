@@ -1,7 +1,9 @@
 import { formatMoney } from "@mostrador/shared";
 import { Camera, ScanBarcode } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
+import { NoPermissionFor } from "../../app/guards";
+import { useCan } from "../../app/session";
 import { useViewport } from "../../app/useViewport";
 import { findByCode } from "../../data/catalog";
 import type { LocalProduct } from "../../data/types";
@@ -18,12 +20,20 @@ type Loaded = { id: string; name: string; code: string | null; priceCents: numbe
  * nombre, precio, Enter y el siguiente.
  */
 export function LoadModePage() {
+  const canPrices = useCan("change_prices");
+  const canSell = useCan("sell");
+  const canCreate = canPrices || canSell;
   const { layout } = useViewport();
   const phone = layout === "phone";
   const navigate = useNavigate();
-  const [code, setCode] = useState<string | null>(null);
+  const [params, setParams] = useSearchParams();
+  // Desde "El código … no está cargado › Cargarlo" se llega con el código ya puesto.
+  const [code, setCode] = useState<string | null>(() => params.get("codigo"));
   const [existing, setExisting] = useState<LocalProduct | null>(null);
   const [loaded, setLoaded] = useState<Loaded[]>([]);
+  useEffect(() => {
+    if (params.get("codigo")) setParams({}, { replace: true });
+  }, [params, setParams]);
 
   useEffect(() => {
     return scanRouter.claim(async (c) => {
@@ -41,6 +51,7 @@ export function LoadModePage() {
     });
   }, []);
 
+  if (!canCreate) return <NoPermissionFor perm="change_prices" />;
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-4 p-4 lg:p-6">
       <div className="flex items-center gap-3">
@@ -71,7 +82,14 @@ export function LoadModePage() {
               <Button variant="secondary" onClick={() => navigate(`/productos/${existing.id}`)}>
                 Ver ficha
               </Button>
-              <Button onClick={() => setExisting(null)}>Seguir cargando</Button>
+              <Button
+                onClick={() => {
+                  setExisting(null);
+                  if (phone) scanRouter.openCamera();
+                }}
+              >
+                Seguir cargando
+              </Button>
             </div>
           </div>
         ) : code ? (
@@ -99,7 +117,7 @@ export function LoadModePage() {
             )}
             <button
               type="button"
-              className="text-sm font-semibold text-primario"
+              className="min-h-12 text-sm font-semibold text-primario lg:min-h-10"
               onClick={() => setCode("")}
             >
               Cargar sin código

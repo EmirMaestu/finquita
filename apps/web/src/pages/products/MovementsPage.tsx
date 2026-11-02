@@ -1,6 +1,8 @@
 import { formatDate, formatMoney, formatQty, formatTime } from "@mostrador/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ChevronLeft } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router";
 import { useGrant } from "../../app/session";
 import { api } from "../../data/api";
 import { ADJUST_REASONS } from "../../data/stock";
@@ -9,6 +11,7 @@ import { Button } from "../../ui/Button";
 import { Chip, FilterChip } from "../../ui/Chip";
 import { cx } from "../../ui/cx";
 import { EmptyState, ErrorState, SkeletonList } from "../../ui/States";
+import { toast } from "../../ui/toast";
 
 type Move = {
   id: string;
@@ -40,6 +43,7 @@ const KINDS = ["sale", "receipt", "adjustment", "waste", "return", "count"] as c
 
 /** Movimientos de stock, general; y los ajustes del repositor para aprobar. */
 export function MovementsPage() {
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const canApprove = useGrant("adjust_stock") === "allow";
   const { version } = useSyncStatus();
@@ -54,7 +58,27 @@ export function MovementsPage() {
     queryFn: () => api<Move[]>("/api/stock/pending"),
     enabled: canApprove,
   });
+  const approveAll = useMutation({
+    onError: (e) =>
+      toast({
+        text: e instanceof Error ? e.message : "No se pudo. Probá de nuevo.",
+        tone: "error",
+      }),
+    mutationFn: async () => {
+      for (const m of pending.data ?? [])
+        await api(`/api/stock/movements/${m.id}/review`, { body: { approve: true } });
+    },
+    onSettled: () =>
+      qc
+        .invalidateQueries({ queryKey: ["pending"] })
+        .then(() => qc.invalidateQueries({ queryKey: ["movements"] })),
+  });
   const review = useMutation({
+    onError: (e) =>
+      toast({
+        text: e instanceof Error ? e.message : "No se pudo. Probá de nuevo.",
+        tone: "error",
+      }),
     mutationFn: ({ id, approve }: { id: string; approve: boolean }) =>
       api(`/api/stock/movements/${id}/review`, { body: { approve } }),
     onSuccess: () =>
@@ -66,14 +90,36 @@ export function MovementsPage() {
     `${m.qty > 0 ? "+" : "−"}${formatQty(Math.abs(m.qty), m.saleUnit === "unit" ? "unit" : "kg")}`;
   return (
     <div className="flex flex-col gap-4 p-4 lg:p-6">
-      <h1 className="m-0 text-[22px] font-semibold">Movimientos de stock</h1>
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => navigate("/productos")}
+          className="inline-flex h-10 items-center gap-1 rounded-lg px-2 text-sm font-semibold text-primario hover:bg-primario-suave"
+        >
+          <ChevronLeft size={18} aria-hidden /> Productos
+        </button>
+        <h1 className="m-0 text-[22px] font-semibold">Movimientos de stock</h1>
+      </div>
       {canApprove && (pending.data?.length ?? 0) > 0 && (
         <section
           aria-label="Para aprobar"
           className="rounded-card border border-alerta bg-superficie"
         >
-          <div className="border-b border-borde px-4 py-2.5 font-semibold text-alerta">
-            Ajustes para aprobar · {pending.data?.length}
+          {/* Una sola primaria: "Aprobar todo"; por fila, secundarias. */}
+          <div className="flex flex-wrap items-center gap-2 border-b border-borde px-4 py-2.5">
+            <span className="flex-1 font-semibold text-alerta">
+              Ajustes para aprobar · {pending.data?.length}
+            </span>
+            <Button
+              busy={approveAll.isPending}
+              onClick={() =>
+                window.confirm(
+                  `¿Aprobar los ${pending.data?.length ?? 0} ajustes? Cambian el stock y no se deshace.`,
+                ) && approveAll.mutate()
+              }
+            >
+              Aprobar todo
+            </Button>
           </div>
           <ul className="m-0 list-none p-0">
             {pending.data?.map((m) => (
@@ -100,7 +146,12 @@ export function MovementsPage() {
                 >
                   Rechazar
                 </Button>
-                <Button onClick={() => review.mutate({ id: m.id, approve: true })}>Aprobar</Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => review.mutate({ id: m.id, approve: true })}
+                >
+                  Aprobar
+                </Button>
               </li>
             ))}
           </ul>

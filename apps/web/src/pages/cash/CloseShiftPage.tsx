@@ -11,11 +11,13 @@ import {
   signedMoney,
 } from "@mostrador/shared";
 import { useQuery } from "@tanstack/react-query";
-import { CircleAlert, EyeOff, Minus, Plus } from "lucide-react";
-import { useState } from "react";
+import { CircleAlert, EyeOff } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { NoPermissionFor } from "../../app/guards";
 import { useCan, useMe } from "../../app/session";
+import { useViewport } from "../../app/useViewport";
+import { requestPin } from "../../auth/pinAuth";
 import { closeShiftLocal, loadShiftView } from "../../cash/local";
 import { useRegister } from "../../cash/useRegister";
 import { localDb } from "../../data/db";
@@ -23,8 +25,10 @@ import { useSettings } from "../../data/settings";
 import { Button } from "../../ui/Button";
 import { cx } from "../../ui/cx";
 import { TextField } from "../../ui/Field";
+import { MoreFields } from "../../ui/MoreFields";
 import { Skeleton } from "../../ui/States";
 import { Stepper } from "../../ui/Stepper";
+import { toast } from "../../ui/toast";
 import { ClosingReceipt } from "./ClosingReceipt";
 
 const OTHER: { method: "debit" | "credit" | "qr" | "transfer"; label: string }[] = [
@@ -34,20 +38,83 @@ const OTHER: { method: "debit" | "credit" | "qr" | "transfer"; label: string }[]
   { method: "transfer", label: "Transferencias" },
 ];
 
+type Draft = {
+  counts: Record<string, number>;
+  other: Record<string, string>;
+  note: string;
+  left: string | null;
+};
+const DRAFT_KEY = "mostrador.closeDraft";
+function loadDraft(shiftId: string | undefined, memberId: string | undefined): Draft | null {
+  if (!shiftId || !memberId) return null;
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) return null;
+    const d = JSON.parse(raw) as Draft & { shiftId: string; memberId?: string };
+    // Lo contado es de quien lo contó: otra persona que entra no hereda el arqueo a medias.
+    return d.shiftId === shiftId && d.memberId === memberId ? d : null;
+  } catch {
+    return null;
+  }
+}
+function saveDraft(shiftId: string, memberId: string, d: Draft) {
+  try {
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({ shiftId, memberId, ...d }));
+  } catch {}
+}
+function clearDraft(shiftId: string, memberId: string) {
+  if (loadDraft(shiftId, memberId)) localStorage.removeItem(DRAFT_KEY);
+}
+
 /** Arqueo ciego y cierre: se cuenta sin ver el esperado, se comparan los otros medios y se cierra. */
 export function CloseShiftPage() {
   const can = useCan("shift");
   const me = useMe();
   const navigate = useNavigate();
+  const { layout } = useViewport();
+  const desktop = layout === "desktop" || layout === "wide";
   const settings = useSettings();
   const reg = useRegister();
+  const shift = reg.shift;
   const [step, setStep] = useState<"count" | "result" | "done">("count");
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [other, setOther] = useState<Record<string, string>>({});
   const [note, setNote] = useState("");
   const [left, setLeft] = useState<string | null>(null);
   const [lines, setLines] = useState<string[] | null>(null);
-  const shift = reg.shift;
+  // Lo contado sobrevive una recarga de la página (queda en el dispositivo hasta cerrar).
+  const loadedFor = useRef<string | null>(null);
+  useEffect(() => {
+    if (!shift || !me || loadedFor.current === shift.id) return;
+    loadedFor.current = shift.id;
+    const d = loadDraft(shift.id, me.member.id);
+    if (!d) return;
+    setCounts(d.counts);
+    setOther(d.other);
+    setNote(d.note);
+    setLeft(d.left);
+  }, [shift, me]);
+  useEffect(() => {
+    if (shift && me && loadedFor.current === shift.id && step !== "done")
+      saveDraft(shift.id, me.member.id, { counts, other, note, left });
+  }, [shift, me, step, counts, other, note, left]);
+  // Esc: del resultado vuelve a contar; contando, vuelve a Caja (lo contado queda guardado).
+  useEffect(() => {
+    if (step === "done") return;
+    const h = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || document.querySelector("[role=dialog]")) return;
+      e.preventDefault();
+      if (step === "result") setStep("count");
+      else navigate("/caja");
+    };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [step, navigate]);
+  // Al pedir el resultado, se lleva la pantalla hasta él (en el celular quedaba abajo de todo).
+  useEffect(() => {
+    if (step === "result")
+      document.querySelector("[aria-label='Resultado']")?.scrollIntoView?.({ block: "start" });
+  }, [step]);
   const view = useQuery({
     queryKey: ["shift-close", shift?.id],
     queryFn: () => (shift ? loadShiftView(shift) : null),
@@ -81,6 +148,21 @@ export function CloseShiftPage() {
       parseMoney(other[o.method] ?? "") ?? 0,
     ]),
   );
+  // Un monto que no se entiende o es negativo se marca en su campo (y no deja ver el resultado).
+  const otherErrors = Object.fromEntries(
+    OTHER.map((o) => {
+      const t = (other[o.method] ?? "").trim();
+      if (!t) return [o.method, null];
+      const c = parseMoney(t);
+      return [
+        o.method,
+        c === null ? "Poné un monto, por ejemplo 12500" : c < 0 ? "No puede ser negativo" : null,
+      ];
+    }),
+  ) as Record<string, string | null>;
+  const otherInvalid = Object.values(otherErrors).some(Boolean);
+  const isCashier = me?.member.role === "cashier";
+  const othersShift = Boolean(me && shift.memberId !== me.member.id);
   const result = v
     ? closeResult({
         expectedCashCents: v.summary.expectedCashCents,
@@ -96,10 +178,25 @@ export function CloseShiftPage() {
       : (parseMoney(left) ?? 0);
   const withdrawn = Math.max(0, counted - leftCents);
   const needsNote = result?.overTolerance ?? false;
+  const leftError =
+    left !== null && left.trim() !== "" && parseMoney(left) === null
+      ? "Poné un monto, por ejemplo 20000."
+      : leftCents > counted
+        ? `No puede quedar más de lo contado (${formatMoney(counted)}).`
+        : null;
 
   const close = async () => {
     if (!me || !v || !result) return;
     if (needsNote && !note.trim()) return;
+    // Un turno es de quien lo abrió: cerrarle el turno a otro, siendo cajero, pide PIN.
+    if (othersShift && isCashier) {
+      const a = await requestPin(
+        "cash_movement",
+        `Cerrar el turno que abrió ${reg.cashierName ?? "otra persona"} · pedido por ${me.member.name}.`,
+        "Cerrar el turno de otro",
+      );
+      if (!a) return;
+    }
     const otherMedia = Object.fromEntries(
       OTHER.map((o) => [
         o.method,
@@ -109,16 +206,25 @@ export function CloseShiftPage() {
         },
       ]),
     );
-    await closeShiftLocal({
-      memberId: me.member.id,
-      shiftId: shift.id,
-      countedCashCents: counted,
-      counts,
-      otherMedia,
-      expectedCashCents: v.summary.expectedCashCents,
-      note: note.trim() || null,
-      leftFloatCents: leftCents,
-    });
+    try {
+      await closeShiftLocal({
+        memberId: me.member.id,
+        shiftId: shift.id,
+        countedCashCents: counted,
+        counts,
+        otherMedia,
+        expectedCashCents: v.summary.expectedCashCents,
+        note: note.trim() || null,
+        leftFloatCents: leftCents,
+      });
+    } catch (e) {
+      toast({
+        text: `No se cerró: ${e instanceof Error ? e.message : "revisá los datos"}`,
+        tone: "error",
+        ms: 6000,
+      });
+      return;
+    }
     const cashier =
       ((await localDb().members.get(shift.memberId))?.name as string | undefined) ?? me.member.name;
     setLines(
@@ -128,6 +234,7 @@ export function CloseShiftPage() {
           registerName: reg.registerName,
           shiftLabel: shiftName(new Date(shift.openedAt)),
           cashier,
+          closedBy: me.member.name,
           openedAt: new Date(shift.openedAt),
           closedAt: new Date(),
           lines: v.summary.lines,
@@ -149,6 +256,7 @@ export function CloseShiftPage() {
         settings.tickets.width,
       ),
     );
+    clearDraft(shift.id, me.member.id);
     setStep("done");
   };
 
@@ -160,7 +268,18 @@ export function CloseShiftPage() {
         </h1>
         <span className="text-texto-suave">{reg.cashierName}</span>
       </div>
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[480px_minmax(0,1fr)]">
+      {/* Enter: en el conteo, "Ver resultado"; en el resultado, cerrar (ronda 3: con teclado). */}
+      <section
+        aria-label="Arqueo"
+        className="grid grid-cols-1 gap-4 lg:grid-cols-[480px_minmax(0,1fr)]"
+        onKeyDown={(e) => {
+          if (e.key !== "Enter" || !(e.target instanceof HTMLInputElement)) return;
+          e.preventDefault();
+          if (step === "count") {
+            if (v && !otherInvalid) setStep("result");
+          } else if (step === "result" && !leftError && !(needsNote && !note.trim())) void close();
+        }}
+      >
         <section
           aria-label="Contá el efectivo"
           className="flex flex-col overflow-hidden rounded-card border border-borde bg-superficie"
@@ -178,18 +297,19 @@ export function CloseShiftPage() {
               </span>
             )}
           </div>
-          {settings.cash.denominations.map((d) => {
+          {settings.cash.denominations.map((d, i) => {
             const n = counts[String(d)] ?? 0;
             return (
               <div
                 key={d}
-                className="grid h-14 grid-cols-[90px_1fr_110px] items-center gap-3 border-b border-borde px-4 lg:h-12"
+                className="grid h-14 grid-cols-[72px_1fr_84px] items-center gap-2 lg:grid-cols-[90px_1fr_110px] lg:gap-3 border-b border-borde px-4 lg:h-12"
               >
                 <span className="tnum font-semibold">{formatMoney(d * 100)}</span>
                 <Stepper
                   big
                   label={`billetes de ${formatMoney(d * 100)}`}
                   value={n}
+                  autoFocus={desktop && i === 0 && step === "count"}
                   onChange={(x) => setCounts((c) => ({ ...c, [String(d)]: x }))}
                 />
                 <span className="tnum text-right text-texto-suave">
@@ -214,23 +334,45 @@ export function CloseShiftPage() {
             aria-label="Otros medios"
             className="flex flex-col gap-2.5 rounded-card border border-borde bg-superficie px-5 py-4"
           >
-            <div className="font-semibold">2 · Otros medios, según cupones y app del banco</div>
-            <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
-              {OTHER.map((o) => (
-                <TextField
-                  key={o.method}
-                  label={o.label}
-                  inputMode="decimal"
-                  value={other[o.method] ?? ""}
-                  onChange={(e) => setOther((x) => ({ ...x, [o.method]: e.target.value }))}
-                  placeholder="0"
-                />
-              ))}
-            </div>
+            {/* Controlar los otros medios es opcional: plegado, el cierre se ve más corto. */}
+            <MoreFields
+              label="2 · Controlar tarjeta, QR y transferencias (opcional)"
+              open={Object.values(other).some((x) => x?.trim()) || otherInvalid}
+            >
+              <div className="text-[13px] text-texto-suave">
+                Cargá el total de los cupones del posnet y de la app del banco. Lo que dejes vacío
+                no se controla (queda como lo registró el sistema).
+              </div>
+              <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
+                {OTHER.map((o) => (
+                  <TextField
+                    key={o.method}
+                    label={o.label}
+                    inputMode="decimal"
+                    value={other[o.method] ?? ""}
+                    onChange={(e) => setOther((x) => ({ ...x, [o.method]: e.target.value }))}
+                    placeholder="0"
+                    error={otherErrors[o.method]}
+                  />
+                ))}
+              </div>
+            </MoreFields>
             {step === "count" && (
-              <Button className="self-start" onClick={() => setStep("result")} disabled={!v}>
-                Ver resultado
-              </Button>
+              <div className="flex flex-wrap items-center gap-3">
+                <Button onClick={() => setStep("result")} disabled={!v || otherInvalid}>
+                  Ver resultado{desktop ? " · Enter" : ""}
+                </Button>
+                {!v && (
+                  <span className="text-[13px] text-texto-suave">
+                    {view.isError ? "No pudimos cargar el turno." : "Cargando el turno…"}
+                  </span>
+                )}
+                {v && otherInvalid && (
+                  <span className="text-[13px] font-semibold text-peligro">
+                    Revisá los montos de otros medios.
+                  </span>
+                )}
+              </div>
             )}
           </section>
 
@@ -267,14 +409,7 @@ export function CloseShiftPage() {
                               : "",
                         )}
                       >
-                        <span className="inline-flex items-center gap-1">
-                          {r.differenceCents > 0 ? (
-                            <Plus size={14} aria-hidden />
-                          ) : r.differenceCents < 0 ? (
-                            <Minus size={14} aria-hidden />
-                          ) : null}
-                          {signedMoney(r.differenceCents)}
-                        </span>
+                        {signedMoney(r.differenceCents)}
                       </td>
                     </tr>
                   ))}
@@ -301,6 +436,7 @@ export function CloseShiftPage() {
               <div className="mx-5 mt-3">
                 <TextField
                   label={needsNote ? "Comentario (obligatorio)" : "Comentario"}
+                  autoFocus
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
                   placeholder="¿Qué pasó?"
@@ -313,6 +449,7 @@ export function CloseShiftPage() {
                   inputMode="decimal"
                   value={left ?? moneyInput(leftCents)}
                   onChange={(e) => setLeft(e.target.value)}
+                  error={leftError}
                 />
                 <div className="flex flex-col gap-0.5 rounded-lg border border-borde px-3 py-2.5">
                   <span className="text-xs text-texto-suave">Se retira a la caja fuerte</span>
@@ -323,14 +460,19 @@ export function CloseShiftPage() {
                 <Button variant="secondary" onClick={() => setStep("count")}>
                   Volver a contar
                 </Button>
-                <Button onClick={() => void close()} disabled={needsNote && !note.trim()}>
-                  Cerrar turno y avisar al dueño
+                <Button
+                  onClick={() => void close()}
+                  disabled={Boolean(leftError) || (needsNote && !note.trim())}
+                  locked={othersShift && isCashier}
+                >
+                  {me?.member.role === "owner" ? "Cerrar turno" : "Cerrar turno y avisar al dueño"}
+                  {desktop ? " · Enter" : ""}
                 </Button>
               </div>
             </section>
           )}
         </div>
-      </div>
+      </section>
     </div>
   );
 }

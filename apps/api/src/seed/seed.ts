@@ -283,7 +283,14 @@ export async function seed(db: Db, opts: SeedOptions = {}) {
         // El próximo jueves, día de entrega de Lácteos del Sur.
         expectedOn: nextDeliveryAfter(today, [4]) ?? addDays(today, 5),
         totalCents: total,
-        timeline: [{ at: at(0, "18:30").toISOString(), status: "draft" }],
+        // El borrador se armó a las 18:30 del día del escenario; si todavía no son las 18:30,
+        // queda a la hora actual (la línea de tiempo nunca muestra el futuro).
+        timeline: [
+          {
+            at: new Date(Math.min(at(0, "18:30").getTime(), Date.now())).toISOString(),
+            status: "draft",
+          },
+        ],
       })
       .onConflictDoNothing()
       .returning({ id: purchaseOrders.id });

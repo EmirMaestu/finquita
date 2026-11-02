@@ -1,10 +1,11 @@
-import { formatMoney, formatTime, parseMoney } from "@mostrador/shared";
+import { formatMoney, formatTime, MAX_CENTS, parseMoney } from "@mostrador/shared";
 import { TriangleAlert } from "lucide-react";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 import type { LocalProduct } from "../../data/types";
 import type { HeldSale } from "../../sell/store";
 import { Button } from "../../ui/Button";
 import { TextField } from "../../ui/Field";
+import { Key } from "../../ui/Key";
 import { Sheet } from "../../ui/Sheet";
 import { QuickCreateForm } from "../products/QuickCreate";
 
@@ -19,9 +20,12 @@ export function MiscDialog({
   const [amount, setAmount] = useState("");
   const [desc, setDesc] = useState("");
   const cents = parseMoney(amount);
+  const tooBig = cents !== null && cents > MAX_CENTS;
+  const descLong = desc.length > 200;
+  const valid = cents !== null && cents > 0 && !tooBig && !descLong;
   const submit = (e: FormEvent) => {
     e.preventDefault();
-    if (cents && cents > 0) onAdd(cents, desc);
+    if (valid) onAdd(cents, desc);
   };
   return (
     <Sheet open onClose={onClose} title="Producto varios">
@@ -32,16 +36,28 @@ export function MiscDialog({
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
           placeholder="1500"
-          hint={cents ? formatMoney(cents) : "Para lo que no está cargado."}
+          hint={
+            cents !== null && cents > 0 && !tooBig
+              ? formatMoney(cents)
+              : "Para lo que no está cargado."
+          }
+          error={
+            tooBig
+              ? `No puede pasar de ${formatMoney(MAX_CENTS)}.`
+              : amount.trim() && cents !== null && cents <= 0
+                ? "Poné un monto mayor que $ 0."
+                : undefined
+          }
         />
         <TextField
           label="Descripción"
           value={desc}
           onChange={(e) => setDesc(e.target.value)}
           placeholder="Opcional"
+          error={descLong ? "Descripción: como mucho 200 caracteres." : undefined}
         />
-        <Button type="submit" size="lg" disabled={!cents}>
-          Agregar · Enter
+        <Button type="submit" size="lg" disabled={!valid}>
+          Agregar <Key>Enter</Key>
         </Button>
       </form>
     </Sheet>
@@ -60,6 +76,18 @@ export function UnknownCodeDialog({
   onMisc: () => void;
   onClose: () => void;
 }) {
+  // El botón promete F3: con la hoja abierta los atajos de Vender están apagados, así que se escucha acá.
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => {
+      if (e.key === "F3") {
+        e.preventDefault();
+        e.stopPropagation();
+        onMisc();
+      }
+    };
+    window.addEventListener("keydown", h, true);
+    return () => window.removeEventListener("keydown", h, true);
+  }, [onMisc]);
   return (
     <Sheet open onClose={onClose} title={`El código ${code} no está cargado`}>
       <div className="flex flex-col gap-4">
@@ -78,7 +106,7 @@ export function UnknownCodeDialog({
           withStock
         />
         <Button variant="secondary" onClick={onMisc}>
-          Vender como varios · F3
+          Vender como varios <Key>F3</Key>
         </Button>
       </div>
     </Sheet>
@@ -107,8 +135,13 @@ export function HeldSalesSheet({
             Poner en espera la venta actual
           </Button>
         )}
-        {list.length === 0 && (
+        {list.length === 0 ? (
           <div className="py-4 text-center text-sm text-texto-suave">No hay ventas esperando.</div>
+        ) : (
+          <p className="m-0 text-[13px] text-texto-suave">
+            Las ventas en espera se guardan en este dispositivo hasta cerrar el turno.
+            {canHold ? " Al recuperar una, la que tenés ahora queda en espera." : ""}
+          </p>
         )}
         <ul className="m-0 list-none p-0">
           {list.map((h) => (
@@ -125,6 +158,7 @@ export function HeldSalesSheet({
                   </span>
                 </span>
                 <span className="tnum font-semibold">{formatMoney(h.totalCents)}</span>
+                <span className="font-semibold text-primario">Recuperar</span>
               </button>
             </li>
           ))}
@@ -143,9 +177,13 @@ export const SHORTCUTS: [string, string][] = [
   ["F9", "Retiro o gasto de caja"],
   ["F10", "Abrir el cajón"],
   ["F12", "Cobrar (también Ctrl + Enter)"],
-  ["*", 'Multiplicar: "3 *" y escanear agrega tres'],
+  ["*", 'Multiplicar: "3 *" y escanear agrega tres; "* 3" y Enter deja la línea elegida en 3'],
+  ["F8", "Ir a Caja (abrir o cerrar el turno)"],
   ["+ −", "Sumar o restar uno al ítem elegido"],
   ["Supr", "Quitar el ítem elegido"],
+  ["↑ ↓", "Elegir una línea de la venta"],
+  ["Enter", "Agregar lo buscado o cerrar un aviso"],
+  ["Ctrl 1 a 4", "En el cobro: $ 1.000, $ 2.000, $ 10.000 o $ 20.000 en efectivo"],
   ["Esc", "Cancelar o cerrar"],
 ];
 
@@ -157,6 +195,7 @@ export const SHORTCUTS_BAR: [string, string][] = [
   ["F5", "Cliente"],
   ["F6", "Espera"],
   ["F9", "Retiro"],
+  ["F8", "Caja"],
   ["F10", "Cajón"],
   ["F12", "Cobrar"],
 ];

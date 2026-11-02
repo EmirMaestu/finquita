@@ -23,8 +23,10 @@ export function formatMoney(cents: Cents): string {
  * Devuelve null si no es un número.
  */
 export function parseMoney(input: string): Cents | null {
-  const s = input.replace(/\$|\s/g, "").trim();
+  let s = input.replace(/\$|\s/g, "").trim();
   if (!s) return null;
+  // "1000.50" (sin coma y con uno o dos decimales después del punto) es 1.000,50, no 100.050.
+  if (!s.includes(",") && /^-?\d+\.\d{1,2}$/.test(s)) s = s.replace(".", ",");
   if (!/^-?[\d.]*(,\d{0,2})?$/.test(s)) return null;
   const [intPart = "", frac = ""] = s.split(",");
   const digits = intPart.replace(/\./g, "");
@@ -41,4 +43,24 @@ export function moneyInput(cents: Cents | null | undefined): string {
   const whole = Math.trunc(cents / 100);
   const frac = Math.abs(cents % 100);
   return frac ? `${whole},${String(frac).padStart(2, "0")}` : String(whole);
+}
+
+/**
+ * Lee una cantidad o un porcentaje tipeados a la argentina ("1,5", "1.000,5") y también
+ * con punto decimal ("1.5", "1000.50"). "1.000" son mil. Devuelve null si no es un número.
+ */
+export function parseDecimal(input: string): number | null {
+  let s = input.replace(/\s/g, "").trim();
+  if (!s) return null;
+  if (!s.includes(",") && s.includes(".")) {
+    // Puntos de miles ("1.000", "12.345.678") o un decimal ("1.5", "1000.50").
+    s = /^-?\d{1,3}(\.\d{3})+$/.test(s) ? s.replace(/\./g, "") : s.replace(".", ",");
+  }
+  if (!/^-?[\d.]*(,\d*)?$/.test(s)) return null;
+  const [intPart = "", frac = ""] = s.split(",");
+  const digits = intPart.replace(/\./g, "");
+  if (!digits.replace("-", "") && !frac) return null;
+  const n = Number(`${digits.replace("-", "") || "0"}.${frac || "0"}`);
+  if (!Number.isFinite(n)) return null;
+  return digits.startsWith("-") ? -n : n;
 }

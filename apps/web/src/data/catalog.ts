@@ -1,3 +1,4 @@
+import { assertOp } from "@mostrador/shared";
 import { localDb } from "./db";
 import type { LocalProduct } from "./types";
 
@@ -82,6 +83,19 @@ export async function quickCreateProduct(
     updatedAt: now,
     priceUpdatedAt: now,
   };
+  const payload = {
+    id,
+    changes: {
+      name: product.name,
+      priceCents: product.priceCents,
+      categoryId: product.categoryId,
+      saleUnit: product.saleUnit,
+      ...(input.costCents != null ? { costCents: input.costCents } : {}),
+    },
+    ...(input.code ? { barcodes: [input.code] } : {}),
+    ...(input.initialStock ? { initialStock: input.initialStock } : {}),
+  };
+  assertOp("product.upsert", payload);
   await db.products.put(product);
   if (input.code) await db.barcodes.put({ id: newId(), productId: id, code: input.code });
   await syncClient().enqueue(
@@ -90,18 +104,7 @@ export async function quickCreateProduct(
       type: "product.upsert",
       memberId,
       deviceAt: now,
-      payload: {
-        id,
-        changes: {
-          name: product.name,
-          priceCents: product.priceCents,
-          categoryId: product.categoryId,
-          saleUnit: product.saleUnit,
-          ...(input.costCents != null ? { costCents: input.costCents } : {}),
-        },
-        ...(input.code ? { barcodes: [input.code] } : {}),
-        ...(input.initialStock ? { initialStock: input.initialStock } : {}),
-      },
+      payload,
     },
     input.initialStock ? [{ kind: "stock", key: id, amount: input.initialStock }] : [],
   );

@@ -1,10 +1,10 @@
-import { effectiveGrant, newId } from "@mostrador/shared";
+import { effectiveGrant, newId, plainText } from "@mostrador/shared";
 import { and, asc, desc, eq, inArray, isNull, ne, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import type { AppEnv } from "../app";
 import { actorOf, requireActor } from "../auth/actor";
-import { loadOverrides, requireFull } from "../auth/permissions";
+import { loadOverrides, requireFull, requirePermission } from "../auth/permissions";
 import {
   barcodes,
   products,
@@ -43,7 +43,7 @@ async function balances(db: AppEnv["Variables"]["db"]) {
 }
 
 /** Lista con rubro, días de pedido y entrega, WhatsApp, saldo a pagar y último pedido. */
-supplierRoutes.get("/suppliers", requireActor(), async (c) => {
+supplierRoutes.get("/suppliers", requireActor(), requirePermission("count_receive"), async (c) => {
   const costs = await canRead(c);
   const db = c.get("db");
   const rows = await db
@@ -143,11 +143,16 @@ supplierRoutes.get("/suppliers/:id", requireActor(), async (c) => {
 });
 
 const supplierBody = z.object({
-  name: z.string().min(1).max(80),
-  legalName: z.string().max(120).nullable().optional(),
-  cuit: z.string().max(20).nullable().optional(),
-  category: z.string().max(60).nullable().optional(),
-  contactName: z.string().max(60).nullable().optional(),
+  name: plainText(80),
+  legalName: plainText(120, 0).nullable().optional(),
+  cuit: z
+    .string()
+    .max(20)
+    .regex(/^(\d{2}-?\d{8}-?\d)?$/, "El CUIT tiene 11 números, por ejemplo 30-71234567-8")
+    .nullable()
+    .optional(),
+  category: plainText(60, 0).nullable().optional(),
+  contactName: plainText(60, 0).nullable().optional(),
   whatsapp: z
     .string()
     .max(20)
@@ -172,6 +177,14 @@ supplierRoutes.post(
   validate("json", supplierBody),
   async (c) => {
     const b = c.req.valid("json");
+    // Dos proveedores con el mismo nombre confunden pedidos y facturas (ronda 3).
+    const [same] = await c
+      .get("db")
+      .select({ id: suppliers.id })
+      .from(suppliers)
+      .where(sql`lower(${suppliers.name}) = lower(${b.name.trim()})`)
+      .limit(1);
+    if (same) throw new ApiError(409, "conflict", `Ya hay un proveedor "${b.name.trim()}".`);
     const id = newId();
     await c
       .get("db")

@@ -1,8 +1,10 @@
 /** Pedidos a proveedores: estados, el mensaje de WhatsApp y el enlace wa.me (el bot es fase 2). */
+
 import { type DateStr, formatDate, weekday } from "./dates";
 import { formatMoney } from "./money";
 import { formatQty } from "./qty";
 import { packPlural } from "./suggested";
+import { plural } from "./text";
 
 export type OrderStatus =
   | "draft"
@@ -69,7 +71,10 @@ export type OrderMessageLine = {
 /** Cantidad para el proveedor: "24 u (2 cajones)" o "2,500 kg". */
 export function orderQty(l: OrderMessageLine): string {
   const unit = l.unit ?? "unit";
-  const base = unit === "unit" ? `${formatQty(l.qty, "unit")} u` : formatQty(l.qty, "kg");
+  const base =
+    unit === "unit"
+      ? plural(l.qty, "unidad", "unidades", formatQty(l.qty, "unit"))
+      : formatQty(l.qty, "kg");
   if (unit === "unit" && l.packQty && l.packQty > 1 && l.qty % l.packQty === 0) {
     const packs = l.qty / l.packQty;
     const name = (l.packName ?? "caja").toLowerCase();

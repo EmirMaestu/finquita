@@ -22,9 +22,9 @@ describe("mensaje del pedido", () => {
       [
         "Hola Marcelo, te paso el pedido 0042 de Almacén La Esquina para el jueves 8/10:",
         "",
-        "• Leche entera 1 L sachet: 24 u (2 cajones)",
-        "• Yogur bebible 1 L: 12 u (2 cajas)",
-        "• Ricota 500 g: 4 u",
+        "• Leche entera 1 L sachet: 24 unidades (2 cajones)",
+        "• Yogur bebible 1 L: 12 unidades (2 cajas)",
+        "• Ricota 500 g: 4 unidades",
         "• Queso cremoso: 2,500 kg",
         "",
         "4 productos, total estimado $ 186.400.",
@@ -41,23 +41,23 @@ describe("mensaje del pedido", () => {
       notes: "Si no hay, mandá la de 2 L.",
     });
     expect(text.split("\n")[0]).toBe("Hola, te paso el pedido 0007 de Almacén La Esquina:");
-    expect(text).toContain("• Lavandina 1 L [LC-1]: 12 u");
+    expect(text).toContain("• Lavandina 1 L [LC-1]: 12 unidades");
     expect(text).toContain("1 producto.\nSi no hay, mandá la de 2 L.");
   });
 
   it("bultos: solo si la cantidad es justa; 1 bulto en singular", () => {
     expect(orderQty({ description: "x", qty: 12, packQty: 12, packName: "Cajón" })).toBe(
-      "12 u (1 cajón)",
+      "12 unidades (1 cajón)",
     );
-    expect(orderQty({ description: "x", qty: 13, packQty: 12 })).toBe("13 u");
+    expect(orderQty({ description: "x", qty: 13, packQty: 12 })).toBe("13 unidades");
     expect(deliveryLabel("2026-10-05")).toBe("lunes 5/10");
   });
 });
 
 describe("enlace wa.me", () => {
   it("arma el enlace con el número y el texto codificado", () => {
-    expect(waLink("5492614000002", "Hola Marcelo, pedido 0042:\n• Leche: 24 u")).toBe(
-      "https://wa.me/5492614000002?text=Hola%20Marcelo%2C%20pedido%200042%3A%0A%E2%80%A2%20Leche%3A%2024%20u",
+    expect(waLink("5492614000002", "Hola Marcelo, pedido 0042:\n• Leche: 24 unidades")).toBe(
+      "https://wa.me/5492614000002?text=Hola%20Marcelo%2C%20pedido%200042%3A%0A%E2%80%A2%20Leche%3A%2024%20unidades",
     );
     // Sin número: abre WhatsApp para elegir el contacto.
     expect(waLink(null, "Hola")).toBe("https://wa.me/?text=Hola");

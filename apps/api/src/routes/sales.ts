@@ -26,7 +26,8 @@ const listQuery = z.object({
   from: z.iso.date().optional(),
   to: z.iso.date().optional(),
   memberId: z.uuid().optional(),
-  method: z.enum(["cash", "debit", "credit", "transfer", "qr", "account"]).optional(),
+  /** "card" es débito o crédito (el filtro Tarjeta del historial). */
+  method: z.enum(["cash", "debit", "credit", "transfer", "qr", "account", "card"]).optional(),
   status: z.enum(["completed", "voided", "returned"]).optional(),
   number: z.coerce.number().int().positive().optional(),
   customerId: z.uuid().optional(),
@@ -54,7 +55,11 @@ salesRoutes.get("/sales", requireActor(), validate("query", listQuery), async (c
     where.push(
       sql`exists (select 1 from ${saleReturns} where ${saleReturns.saleId} = ${sales.id})`,
     );
-  if (f.method)
+  if (f.method === "card")
+    where.push(
+      sql`exists (select 1 from ${salePayments} where ${salePayments.saleId} = ${sales.id} and ${salePayments.method} in ('debit', 'credit'))`,
+    );
+  else if (f.method)
     where.push(
       sql`exists (select 1 from ${salePayments} where ${salePayments.saleId} = ${sales.id} and ${salePayments.method} = ${f.method})`,
     );

@@ -6,21 +6,25 @@ import {
   METHOD_LABEL,
   makeTender,
   type PaymentMethodCode,
+  plural,
 } from "@mostrador/shared";
 import { Banknote, CreditCard, HandCoins, QrCode, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useGrant } from "../../app/session";
 import { useSettings } from "../../data/settings";
 import { Button } from "../../ui/Button";
 import { cx } from "../../ui/cx";
+import { Key } from "../../ui/Key";
 import { NumPad } from "../../ui/NumPad";
+import { toast } from "../../ui/toast";
 
 type Tab = "cash" | "card" | "transfer" | "account";
 
-const TABS: { id: Tab; label: string; icon: typeof Banknote }[] = [
-  { id: "cash", label: "Efectivo", icon: Banknote },
-  { id: "card", label: "Tarjeta", icon: CreditCard },
-  { id: "transfer", label: "Transferencia o QR", icon: QrCode },
-  { id: "account", label: "Fiado", icon: HandCoins },
+const TABS: { id: Tab; label: string; icon: typeof Banknote; key: string }[] = [
+  { id: "cash", label: "Efectivo", icon: Banknote, key: "E" },
+  { id: "card", label: "Tarjeta", icon: CreditCard, key: "T" },
+  { id: "transfer", label: "Transferencia o QR", icon: QrCode, key: "Q" },
+  { id: "account", label: "Fiado", icon: HandCoins, key: "F" },
 ];
 
 const BILLS = [100_000, 200_000, 1_000_000, 2_000_000];
@@ -46,6 +50,8 @@ export function PaymentDialog({
   onConfirm,
   onClose,
   busy,
+  initialTab,
+  onPickCustomer,
 }: {
   saleLabel: string;
   itemCount: number;
@@ -55,11 +61,16 @@ export function PaymentDialog({
   onConfirm: (payments: Tender[], surchargeCents: number, output: TicketOutput) => void;
   onClose: () => void;
   busy?: boolean;
+  /** Pestaña con la que abre (al volver de elegir cliente: Fiado). */
+  initialTab?: Tab;
+  /** F5 adentro del cobro: elegir el cliente sin cerrar la venta. */
+  onPickCustomer?: () => void;
 }) {
   const settings = useSettings();
   const methods = settings.payments.methods;
+  const creditGrant = useGrant("credit_over_limit");
   const [payments, setPayments] = useState<Tender[]>([]);
-  const [tab, setTab] = useState<Tab>("cash");
+  const [tab, setTab] = useState<Tab>(initialTab ?? "cash");
   const [card, setCard] = useState<"debit" | "credit">("debit");
   const [transfer, setTransfer] = useState<"transfer" | "qr">("qr");
   const [verified, setVerified] = useState(false);
@@ -90,17 +101,24 @@ export function PaymentDialog({
   const extra = pending?.surchargeCents ?? 0;
   /** Lo que todavía falta, contando lo que se está tipeando en el medio elegido. */
   const current = pending ? pending.amountCents - extra : 0;
-  // Con algo tipeado, "Falta" descuenta ese monto; sin tipear, muestra lo que falta.
+  // "Falta" es lo que queda después de los pagos ya agregados; con algo tipeado, descuenta eso.
+  // Sin pagos y sin tipear no se muestra: el medio elegido cubre justo el total.
   const stillDue = typed !== null ? Math.max(0, remaining - current) : remaining;
+  const showDue = payments.length > 0 || (typed !== null && stillDue > 0);
+  // Lo que se muestra en grande: en efectivo, lo recibido; con otro medio, lo que se cobra
+  // (con el recargo incluido: es el número que va al posnet).
+  const shown = tab === "cash" ? current : (pending?.amountCents ?? 0);
   const projectedChange =
     tab === "cash" && pending ? Math.max(0, pending.amountCents - remaining) : changeCents;
 
   const blocked =
     tab === "transfer" && !verified
-      ? 'Tildá "Verificada en el banco" antes de confirmar.'
+      ? 'Para confirmar, tildá "Verificada en el banco" (tecla V).'
       : tab === "account" && !fiado
-        ? "Asigná un cliente con F5 para fiar."
+        ? "Elegí el cliente para fiar (F5)."
         : null;
+  /** "crédito", "débito", pero "QR o billetera" (la sigla no se baja). */
+  const lower = (label: string) => (/^[A-Z]{2}/.test(label) ? label : label.toLowerCase());
 
   const confirm = useCallback(() => {
     if (busy) return;
@@ -118,20 +136,79 @@ export function PaymentDialog({
     onConfirm(list, checkoutState(totalCents, list).surchargeCents, output);
   }, [busy, payments, remaining, blocked, pending, totalCents, onConfirm, output]);
 
-  // Teclado: dígitos al monto, Enter o Ctrl+Enter confirma, Esc vuelve a la venta.
+  const pickTab = useCallback(
+    (t: Tab) => {
+      if (t === "account" && !methods.account.enabled) return;
+      setTab(t);
+      setTyped(null);
+    },
+    [methods.account.enabled],
+  );
+
+  // Teclado: dígitos al monto; E, T, Q y F eligen el medio; V tilda "Verificada"; F5 elige
+  // cliente; Enter agrega el pago o confirma; Ctrl+Enter y F12 confirman; Esc vuelve a la venta.
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
+      const k = e.key;
+      if (k === "Escape") {
         e.preventDefault();
         onClose();
-      } else if (e.key === "Enter" || e.key === "F12") {
+        return;
+      }
+      if (k === "F5") {
+        e.preventDefault();
+        onPickCustomer?.();
+        return;
+      }
+      // Ctrl+1 a Ctrl+4: los billetes de efectivo rápido ($ 1.000, $ 2.000, $ 10.000, $ 20.000).
+      if ((e.ctrlKey || e.metaKey) && /^[1-4]$/.test(k) && tab === "cash") {
+        e.preventDefault();
+        const b = BILLS[Number(k) - 1] ?? 0;
+        setTyped((t) => String((Number(t ?? "0") || 0) + b / 100));
+        return;
+      }
+      const letter = k.length === 1 ? k.toUpperCase() : "";
+      const t = TABS.find((x) => x.key === letter);
+      if (t && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        pickTab(t.id);
+        return;
+      }
+      // D y C: tarjeta de débito o de crédito, sin tabular hasta el botón (ronda 3).
+      if ((letter === "D" || letter === "C") && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        pickTab("card");
+        setCard(letter === "D" ? "debit" : "credit");
+        box.current?.focus();
+        return;
+      }
+      if (letter === "V" && tab === "transfer") {
+        e.preventDefault();
+        setVerified((v) => !v);
+        return;
+      }
+      if (k === "Enter" || k === "F12") {
+        // Enter sobre un botón o una casilla enfocados los activa (eso es lo que uno espera al
+        // llegar con Tab hasta "Tarjeta"): no confirma el cobro.
+        const el = document.activeElement;
+        if (
+          k === "Enter" &&
+          !e.ctrlKey &&
+          !e.metaKey &&
+          el instanceof HTMLElement &&
+          el !== box.current &&
+          box.current?.contains(el) &&
+          (el.tagName === "BUTTON" || el.tagName === "INPUT" || el.tagName === "LABEL")
+        ) {
+          return;
+        }
         e.preventDefault();
         confirm();
       }
     };
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
-  }, [confirm, onClose]);
+  }, [confirm, onClose, onPickCustomer, pickTab, tab]);
 
   const onKey = useCallback((k: string) => {
     setTyped((t) => {
@@ -155,18 +232,19 @@ export function PaymentDialog({
         role="dialog"
         aria-modal="true"
         aria-label="Cobrar"
+        data-keypad
         className="outline-none grid max-h-[96vh] w-full overflow-y-auto rounded-t-2xl bg-superficie shadow-xl lg:max-w-[960px] lg:grid-cols-[400px_1fr] lg:rounded-card"
       >
         <div className="flex flex-col gap-4 border-borde bg-fondo p-5 lg:border-r lg:p-7">
           <div className="flex items-center justify-between text-[13px] text-texto-suave">
             <span>
-              {saleLabel} · {itemCount} ítems
+              {saleLabel} · {plural(itemCount, "ítem", "ítems")}
             </span>
             <button
               type="button"
               aria-label="Volver a la venta"
               onClick={onClose}
-              className="inline-flex size-10 items-center justify-center rounded-lg lg:hidden"
+              className="inline-flex size-12 items-center justify-center rounded-lg lg:hidden"
             >
               <X size={20} />
             </button>
@@ -179,14 +257,17 @@ export function PaymentDialog({
           </output>
           {(surcharge > 0 || extra > 0) && (
             <div className="text-[13px] text-texto-suave">
-              Incluye recargo {METHOD_LABEL[method].toLowerCase()}{" "}
+              Incluye recargo {lower(METHOD_LABEL[method])}{" "}
               {formatMoney(surcharge + (remaining > 0 ? extra : 0))}
             </div>
           )}
           <div className="flex flex-col gap-2">
-            <div className="text-xs font-semibold tracking-[.06em] text-texto-suave uppercase">
-              Pagos
-            </div>
+            {/* Sin pagos cargados, el rótulo solo no dice nada (ronda 3: "PAGOS" vacío). */}
+            {summary.length > 0 && (
+              <div className="text-xs font-semibold tracking-[.06em] text-texto-suave uppercase">
+                Pagos
+              </div>
+            )}
             {summary.map((p) => (
               <div
                 key={p.key}
@@ -196,7 +277,7 @@ export function PaymentDialog({
                 <span className="tnum font-semibold">{formatMoney(p.amountCents)}</span>
               </div>
             ))}
-            {stillDue > 0 ? (
+            {!showDue ? null : stillDue > 0 ? (
               <div className="flex justify-between rounded-lg bg-alerta-suave px-3 py-2.5 font-semibold text-alerta">
                 <span>Falta</span>
                 <span className="tnum">{formatMoney(stillDue)}</span>
@@ -237,7 +318,7 @@ export function PaymentDialog({
                   aria-pressed={output === id}
                   onClick={() => setOutput(id)}
                   className={cx(
-                    "h-9 flex-1 rounded-lg border text-[13px] font-semibold",
+                    "h-11 flex-1 rounded-lg border text-[13px] font-semibold lg:h-9",
                     output === id
                       ? "border-primario bg-primario-suave text-primario"
                       : "border-borde bg-superficie",
@@ -251,9 +332,10 @@ export function PaymentDialog({
         </div>
 
         <div className="flex flex-col gap-4 p-5 lg:p-7">
-          <div className="hidden items-center justify-between lg:flex">
+          {/* Título arriba y la ayuda debajo: en la misma línea se encimaban (ronda 3). */}
+          <div className="hidden flex-col gap-0.5 lg:flex">
             <span className="text-xl font-semibold">Cobrar</span>
-            <span className="text-[13px] text-texto-suave">Esc vuelve a la venta</span>
+            <span className="text-[13px] text-texto-suave">Enter cobra · Esc vuelve</span>
           </div>
           <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
             {TABS.map((t) => (
@@ -261,11 +343,14 @@ export function PaymentDialog({
                 key={t.id}
                 type="button"
                 aria-pressed={tab === t.id}
+                aria-keyshortcuts={t.key}
                 disabled={t.id === "account" && !methods.account.enabled}
-                onClick={() => {
-                  setTab(t.id);
-                  setTyped(null);
-                }}
+                title={
+                  t.id === "account" && !methods.account.enabled
+                    ? "El fiado está apagado en Ajustes › Medios de pago"
+                    : undefined
+                }
+                onClick={() => pickTab(t.id)}
                 className={cx(
                   "flex h-14 items-center justify-center gap-2 rounded-lg text-sm font-semibold lg:h-[60px]",
                   tab === t.id
@@ -275,6 +360,7 @@ export function PaymentDialog({
               >
                 <t.icon size={20} aria-hidden />
                 {t.label}
+                <Key>{t.key}</Key>
               </button>
             ))}
           </div>
@@ -287,14 +373,21 @@ export function PaymentDialog({
                   key={c}
                   type="button"
                   aria-pressed={card === c}
-                  onClick={() => setCard(c)}
+                  onClick={() => {
+                    setCard(c);
+                    // El foco vuelve al cobro: el Enter siguiente cobra.
+                    box.current?.focus();
+                  }}
                   className={cx(
-                    "h-8 rounded-full px-3 text-xs font-semibold",
+                    "h-12 rounded-full px-3 text-xs font-semibold lg:h-8",
                     card === c ? "bg-texto text-fondo" : "border border-borde bg-superficie",
                   )}
                 >
                   {METHOD_LABEL[c]}
                   {methods[c].surchargeBp ? ` +${methods[c].surchargeBp / 100} %` : ""}
+                  <span className="ml-1 hidden opacity-70 lg:inline">
+                    ({c === "debit" ? "D" : "C"})
+                  </span>
                 </button>
               ))}
               <span className="ml-auto text-texto-suave">
@@ -312,7 +405,7 @@ export function PaymentDialog({
                     aria-pressed={transfer === c}
                     onClick={() => setTransfer(c)}
                     className={cx(
-                      "h-8 rounded-full px-3 text-xs font-semibold",
+                      "h-12 rounded-full px-3 text-xs font-semibold lg:h-8",
                       transfer === c ? "bg-texto text-fondo" : "border border-borde bg-superficie",
                     )}
                   >
@@ -337,6 +430,20 @@ export function PaymentDialog({
                   <span className="font-semibold">
                     {settings.payments.alias || "Sin alias cargado"}
                   </span>
+                  {settings.payments.alias && (
+                    <button
+                      type="button"
+                      className="h-11 self-start rounded-lg border border-borde px-3 text-[13px] font-semibold lg:h-9"
+                      onClick={() =>
+                        navigator.clipboard
+                          ?.writeText(settings.payments.alias)
+                          .then(() => toast({ text: "Alias copiado" }))
+                          .catch(() => toast({ text: "No se pudo copiar", tone: "error" }))
+                      }
+                    >
+                      Copiar alias
+                    </button>
+                  )}
                   {settings.payments.cvu && (
                     <span className="text-[13px] break-all text-texto-suave">
                       CVU {settings.payments.cvu}
@@ -351,12 +458,13 @@ export function PaymentDialog({
                   onChange={(e) => setVerified(e.target.checked)}
                   className="size-6 accent-[var(--primario)]"
                 />
-                <span>
+                <span className="flex-1">
                   Verificada en el banco
                   <span className="block text-[13px] text-texto-suave">
                     No entregues contra una captura.
                   </span>
                 </span>
+                <Key>V</Key>
               </label>
             </div>
           )}
@@ -372,12 +480,19 @@ export function PaymentDialog({
                   {(fiado.overdue ||
                     fiado.balanceCents + Math.min(base, remaining) > fiado.limitCents) && (
                     <span className="font-semibold text-peligro">
-                      {fiado.overdue ? "Tiene deuda vencida" : "Se pasa del límite"}: pide PIN.
+                      {fiado.overdue ? "Tiene deuda vencida" : "Se pasa del límite"}
+                      {creditGrant === "allow" ? ": lo autorizás vos." : ": pide PIN."}
                     </span>
                   )}
                 </div>
               ) : (
-                "Asigná un cliente con F5 para fiar."
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span>Para fiar hace falta un cliente.</span>
+                  <Button variant="secondary" onClick={() => onPickCustomer?.()}>
+                    Elegir cliente
+                    <Key>F5</Key>
+                  </Button>
+                </div>
               )}
             </div>
           )}
@@ -387,14 +502,16 @@ export function PaymentDialog({
               <div className="flex min-h-[72px] flex-col justify-center rounded-lg border border-borde bg-fondo px-3.5 py-2.5">
                 <div className="text-xs text-texto-suave">
                   {tab === "cash"
-                    ? "Recibido en efectivo"
-                    : `Monto con ${METHOD_LABEL[method].toLowerCase()}`}
+                    ? typed === null
+                      ? "Recibido en efectivo · justo"
+                      : "Recibido en efectivo"
+                    : `Cobrá con ${lower(METHOD_LABEL[method])}${extra > 0 ? ` · incluye recargo ${formatMoney(extra)}` : ""}`}
                 </div>
                 <output
                   className="block tnum text-[32px] font-semibold tracking-[-.02em]"
                   aria-label="Monto"
                 >
-                  {formatMoney(current)}
+                  {formatMoney(shown)}
                 </output>
               </div>
               <NumPad onKey={onKey} keyboard />
@@ -405,12 +522,13 @@ export function PaymentDialog({
                   <div className="text-xs font-semibold tracking-[.06em] text-texto-suave uppercase">
                     Efectivo rápido
                   </div>
+                  {/* Ctrl+1 a Ctrl+4 siguen andando; la lista de atajos (F1) los explica. */}
                   {BILLS.map((b) => (
                     <button
                       key={b}
                       type="button"
-                      onClick={() => setTyped(String(b / 100))}
-                      className="h-12 rounded-lg border border-borde bg-superficie text-[15px] font-semibold hover:bg-neutro-suave"
+                      onClick={() => setTyped((t) => String((Number(t ?? "0") || 0) + b / 100))}
+                      className="flex h-14 items-center justify-center gap-2 rounded-lg border border-borde bg-superficie text-[15px] font-semibold hover:bg-neutro-suave"
                     >
                       {formatMoney(b)}
                     </button>
@@ -427,7 +545,7 @@ export function PaymentDialog({
               <div className="mt-auto flex flex-col gap-0.5 rounded-lg bg-exito-suave p-3 text-exito">
                 <span className="text-xs font-semibold">Vuelto</span>
                 <output
-                  className="tnum text-[32px] leading-none font-semibold tracking-[-.02em]"
+                  className="tnum text-[40px] leading-none font-semibold tracking-[-.02em]"
                   aria-label="Vuelto"
                 >
                   {formatMoney(projectedChange)}
@@ -435,18 +553,30 @@ export function PaymentDialog({
               </div>
             </div>
           </div>
-          {blocked && remaining > 0 && (
-            <div className="text-[13px] font-semibold text-alerta">{blocked}</div>
-          )}
-          <Button
-            size="xl"
-            onClick={confirm}
-            disabled={busy || (remaining > 0 && Boolean(blocked))}
-            className="h-16 text-xl"
-          >
-            {remaining > 0 && current < remaining ? "Agregar pago" : "Confirmar cobro"}
-            <kbd className="rounded bg-white/20 px-1.5 py-0.5 text-xs">Ctrl ⏎</kbd>
-          </Button>
+          <div className="sticky -mx-5 -mb-5 bottom-0 bg-superficie px-5 pt-2 pb-5 lg:-mx-7 lg:-mb-7 lg:px-7 lg:pb-7">
+            {blocked && remaining > 0 && (
+              <div role="alert" className="mb-2 text-[13px] font-semibold text-alerta">
+                {blocked}
+              </div>
+            )}
+            <Button
+              // "Agregar pago" y "Confirmar cobro" son dos botones distintos: el freno al doble
+              // clic de cada uno no se come el clic del otro.
+              key={remaining > 0 && current < remaining ? "add" : "confirm"}
+              size="xl"
+              onClick={confirm}
+              disabled={busy || (remaining > 0 && Boolean(blocked))}
+              className="h-16 w-full text-xl"
+            >
+              {remaining > 0 && current < remaining ? "Agregar pago" : "Confirmar cobro"}
+              <kbd
+                aria-hidden
+                className="hidden rounded bg-white/20 px-1.5 py-0.5 text-xs lg:inline"
+              >
+                Ctrl ⏎
+              </kbd>
+            </Button>
+          </div>
         </div>
       </div>
     </div>

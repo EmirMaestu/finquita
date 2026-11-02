@@ -164,7 +164,7 @@ countRoutes.get("/counts/:id", requireActor(), requirePermission("count_receive"
   });
 });
 
-const lineBody = z.object({ productId: z.uuid(), countedQty: z.number().min(0) });
+const lineBody = z.object({ productId: z.uuid(), countedQty: z.number().min(0).max(100_000) });
 
 /** Anotar lo contado de un producto. */
 countRoutes.put(

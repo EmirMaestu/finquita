@@ -29,7 +29,7 @@ export function StockChip({ p, size }: { p: P; size?: "sm" | "md" }) {
     case "low":
       return (
         <Chip tone="alerta" icon={CHIP_ICONS.low} size={size}>
-          Bajo · {q(p.stockQty)} / {q(p.minStock ?? 0)}
+          Bajo · {q(p.stockQty)} / mín. {q(p.minStock ?? 0)}
         </Chip>
       );
     default:

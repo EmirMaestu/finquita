@@ -3,6 +3,7 @@ import {
   CircleAlert,
   CircleHelp,
   Clock,
+  Info,
   Lock,
   type LucideIcon,
   Pencil,
@@ -26,6 +27,14 @@ const TONE: Record<Tone, string> = {
   primario: "bg-primario-suave text-primario",
 };
 
+/** Ícono de cada tono cuando el chip no trae uno propio (§ Accesibilidad: ícono y palabra). */
+const TONE_ICON: Partial<Record<Tone, LucideIcon>> = {
+  ok: Check,
+  alerta: TriangleAlert,
+  peligro: CircleAlert,
+  info: Info,
+};
+
 /** Chip de estado: siempre ícono y palabra, nunca solo color. */
 export function Chip({
   tone = "neutro",
@@ -40,6 +49,7 @@ export function Chip({
   className?: string;
   size?: "sm" | "md";
 }) {
+  const Shown = Icon ?? TONE_ICON[tone];
   return (
     <span
       className={cx(
@@ -49,7 +59,7 @@ export function Chip({
         className,
       )}
     >
-      {Icon && <Icon size={size === "sm" ? 12 : 14} aria-hidden className="shrink-0" />}
+      {Shown && <Shown size={size === "sm" ? 12 : 14} aria-hidden className="shrink-0" />}
       <span className="truncate">{children}</span>
     </span>
   );
@@ -87,7 +97,7 @@ export function FilterChip({
       aria-pressed={active}
       onClick={onClick}
       className={cx(
-        "inline-flex h-8 shrink-0 items-center gap-1 rounded-full border px-3 text-[13px] font-semibold",
+        "inline-flex h-11 lg:h-8 shrink-0 items-center gap-1 rounded-full border px-3 text-[13px] font-semibold",
         active
           ? "border-texto bg-texto text-fondo"
           : "border-borde bg-superficie text-texto hover:bg-neutro-suave",

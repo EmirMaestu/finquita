@@ -73,10 +73,20 @@ export function LockScreen({
         </div>
       ) : (
         <div className="flex w-full max-w-md flex-col gap-4">
-          <h1 className="m-0 text-center text-[22px] font-semibold">¿Quién va a usar la caja?</h1>
+          <h1 className="m-0 text-center text-[22px] font-semibold">¿Quién sos?</h1>
           {people.isError && (
-            <div className="text-center text-sm text-peligro">
-              Este dispositivo no está habilitado. Pedile al dueño que lo habilite.
+            <div className="flex flex-col items-center gap-2 text-center text-sm text-peligro">
+              {/* Sin internet no es lo mismo que un dispositivo sin habilitar. */}
+              {people.error instanceof ApiError
+                ? "Este dispositivo no está habilitado. Pedile al dueño que lo habilite."
+                : "Sin conexión: no pudimos traer la lista de personas."}
+              <button
+                type="button"
+                className="h-11 rounded-lg border border-borde px-4 font-semibold text-texto"
+                onClick={() => void people.refetch()}
+              >
+                Reintentar
+              </button>
             </div>
           )}
           <div className="grid grid-cols-2 gap-3">

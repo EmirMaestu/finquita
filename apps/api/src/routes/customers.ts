@@ -13,7 +13,16 @@ import { z } from "zod";
 import type { AppEnv } from "../app";
 import { requireActor } from "../auth/actor";
 import { requireFull, requirePermission } from "../auth/permissions";
-import { customerLedger, customers, ledgerAllocations, members, sales } from "../db/schema/index";
+import {
+  cashMovements,
+  customerLedger,
+  customers,
+  ledgerAllocations,
+  members,
+  sales,
+  shifts,
+} from "../db/schema/index";
+import { addCash, openShiftOf } from "../domain/cash";
 import { creditDown, getCustomer } from "../domain/credit";
 import { runDomain } from "../domain/request";
 import { Rejection } from "../domain/types";
@@ -248,6 +257,29 @@ customerRoutes.post(
           updatedAt: new Date(),
         })
         .where(eq(customers.id, id));
+      // Si el pago había entrado a la caja, sale con un contramovimiento: en el mismo turno si
+      // sigue abierto, si no en el turno abierto de esa caja (el libro de caja solo crece).
+      const [move] = await tx
+        .select()
+        .from(cashMovements)
+        .where(and(eq(cashMovements.refId, e.id), eq(cashMovements.kind, "credit_payment")));
+      if (move) {
+        const [s] = await tx.select().from(shifts).where(eq(shifts.id, move.shiftId));
+        const target = s?.status === "open" ? s : s ? await openShiftOf(tx, s.registerId) : null;
+        if (target)
+          await addCash(tx, {
+            shiftId: target.id,
+            kind: "credit_payment",
+            method: move.method,
+            amountCents: -move.amountCents,
+            reason: `Anulación del cobro de fiado${reason ? `: ${reason}` : ""}`,
+            refType: "customer_ledger",
+            refId: newEntry,
+            memberId: ctx.memberId,
+            deviceId: ctx.deviceId,
+            at: ctx.at,
+          });
+      }
       return newEntry;
     });
     await auditFrom(c, c.get("db"), {

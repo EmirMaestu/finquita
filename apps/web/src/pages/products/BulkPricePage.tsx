@@ -1,4 +1,4 @@
-import { type BulkRow, formatMoney, formatPercent } from "@mostrador/shared";
+import { type BulkRow, formatMoney, formatPercent, parseDecimal } from "@mostrador/shared";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
@@ -49,7 +49,7 @@ export function BulkPricePage() {
     ...(categoryId ? { categoryId } : {}),
     ...(supplierId ? { supplierId } : {}),
     mode,
-    percentBp: Math.round(Number(pct.replace(",", ".") || "0") * 100),
+    percentBp: Math.round((parseDecimal(pct) ?? 0) * 100),
     roundingCents: rounding,
   });
   const preview = useMutation({
@@ -171,7 +171,9 @@ export function BulkPricePage() {
         >
           <div className="flex flex-wrap gap-4 text-sm">
             <span>
-              <strong>{preview.data.summary.changed}</strong> precios cambian, en promedio{" "}
+              <strong>{preview.data.summary.changed}</strong>{" "}
+              {preview.data.summary.changed === 1 ? "precio cambia" : "precios cambian"}, en
+              promedio{" "}
               {formatPercent(preview.data.summary.avgChangeBp, { sign: true, decimals: 1 })}
             </span>
             {preview.data.summary.skipped > 0 && (
@@ -232,7 +234,7 @@ export function BulkPricePage() {
               onClick={() => apply.mutate()}
               disabled={!online || apply.isPending || !preview.data.summary.changed}
             >
-              Confirmar {preview.data.summary.changed} precios
+              Aplicar {preview.data.summary.changed} precios nuevos
             </Button>
           </div>
         </section>
@@ -244,7 +246,10 @@ export function BulkPricePage() {
           className="flex flex-col items-start gap-3 rounded-card border border-borde bg-superficie p-5"
         >
           <div className="text-lg font-semibold">
-            Listo: cambiaron {apply.data.changedIds.length} precios
+            Listo:{" "}
+            {apply.data.changedIds.length === 1
+              ? "cambió 1 precio"
+              : `cambiaron ${apply.data.changedIds.length} precios`}
           </div>
           <div className="text-sm text-texto-suave">¿Imprimís las etiquetas de lo que cambió?</div>
           <div className="flex gap-2">

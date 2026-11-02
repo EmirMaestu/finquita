@@ -3,17 +3,20 @@ import {
   formatDate,
   formatMoney,
   formatQty,
+  MAX_QTY,
   orderNumber,
+  parseDecimal,
   parseMoney,
   receiptSummary,
   roundQty,
 } from "@mostrador/shared";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Camera, CircleCheck, PackageCheck, ScanBarcode, TriangleAlert } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { NoPermissionFor } from "../../app/guards";
 import { useCan, useGrant, useMe } from "../../app/session";
+import { useViewport } from "../../app/useViewport";
 import { api } from "../../data/api";
 import { findByCode } from "../../data/catalog";
 import { localDb } from "../../data/db";
@@ -23,6 +26,7 @@ import { confirmReceiptLocal } from "../../data/receive";
 import { useSettings } from "../../data/settings";
 import { beep } from "../../scan/beep";
 import { scanRouter } from "../../scan/GlobalScan";
+import { getSyncStatus, useSyncStatus } from "../../sync/status";
 import { Button } from "../../ui/Button";
 import { Chip } from "../../ui/Chip";
 import { cx } from "../../ui/cx";
@@ -90,8 +94,10 @@ const centsText = (c: number | null) => (c == null ? "" : String(c / 100).replac
 function Start() {
   const navigate = useNavigate();
   const costs = useGrant("view_costs") === "allow";
+  const { version } = useSyncStatus();
   const expected = useQuery({
-    queryKey: ["receipts-expected"],
+    queryKey: ["receipts-expected", version],
+    placeholderData: (prev) => prev,
     queryFn: () => api<Expected[]>("/api/receipts/expected"),
   });
   const pending = useQuery({
@@ -150,10 +156,16 @@ function Start() {
                   Pedido {orderNumber(o.number)} · {o.supplierName}
                 </span>
                 <span className="block text-[13px] text-texto-suave">
-                  {o.expectedOn ? `Entrega ${formatDate(o.expectedOn).slice(0, 5)}` : "Sin fecha"}
+                  {o.status === "partial"
+                    ? "Recibido parcial: falta parte del pedido"
+                    : o.expectedOn
+                      ? `Entrega ${formatDate(o.expectedOn).slice(0, 5)}`
+                      : "Sin fecha"}
                 </span>
               </span>
-              <span className="font-semibold text-primario">Recibir</span>
+              <span className="font-semibold text-primario">
+                {o.status === "partial" ? "Recibir lo que falta" : "Recibir"}
+              </span>
             </button>
           ))
         )}
@@ -296,6 +308,7 @@ function Receiving({
 }) {
   const me = useMe();
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const settings = useSettings();
   const costs = useGrant("view_costs") === "allow";
   const [lines, setLines] = useState<Line[]>(() =>
@@ -325,6 +338,7 @@ function Receiving({
   const [summary, setSummary] = useState(false);
   const [search, setSearch] = useState("");
   const qtyRef = useRef<HTMLInputElement>(null);
+  const phone = useViewport().layout === "phone";
   const codes = useMemo(
     () =>
       new Map(
@@ -335,6 +349,40 @@ function Receiving({
 
   const set = (key: string, patch: Partial<Line>) =>
     setLines((ls) => ls.map((l) => (l.key === key ? { ...l, ...patch } : l)));
+  // La línea quedó cargada: en el celular, la cámara vuelve sola para el próximo producto
+  // (si la línea se abrió escaneando).
+  const scannedRef = useRef(false);
+  /** Qué está mal en una línea cargada, en palabras; null si está bien. */
+  const lineProblem = (l: Line): string | null => {
+    const rec = num(l.received);
+    const dmg = num(l.damaged);
+    if (l.received !== "" && parseDecimal(l.received) === null)
+      return "Recibido: poné una cantidad.";
+    if (rec < 0 || dmg < 0) return "Las cantidades no pueden ser negativas.";
+    if (rec > 100_000) return "Recibido: no puede pasar de 100.000.";
+    if (l.unit === "unit" && (!Number.isInteger(rec) || !Number.isInteger(dmg)))
+      return "Se recibe por unidad: poné números enteros.";
+    if (dmg > rec) return `Dañados: no pueden ser más que los ${qtyText(rec, l.unit)} recibidos.`;
+    if (
+      l.expiresOn &&
+      l.expiresOn < new Date(Date.now() - 30 * 86_400_000).toISOString().slice(0, 10)
+    )
+      return "Vence: esa fecha ya pasó, revisala.";
+    if (l.cost.trim() && (parseMoney(l.cost) === null || (parseMoney(l.cost) ?? 0) < 0))
+      return "Costo por unidad: poné un monto, por ejemplo 1500.";
+    return null;
+  };
+  const doneLine = () => {
+    const l = lines.find((x) => x.key === active);
+    const problem = l ? lineProblem(l) : null;
+    if (problem) {
+      toast({ text: problem, tone: "error" });
+      return;
+    }
+    setActive(null);
+    if (scannedRef.current && phone) scanRouter.openCamera();
+    scannedRef.current = false;
+  };
   const activate = (key: string) => {
     setActive(key);
     setTimeout(() => {
@@ -386,6 +434,8 @@ function Receiving({
       const key = codes.get(code);
       if (key) {
         beep("ok");
+        // Solo si leyó la cámara se la reabre al terminar la línea (con la pistola, no).
+        scannedRef.current = scanRouter.isCameraOpen();
         scanRouter.closeCamera();
         activate(key);
         return;
@@ -454,11 +504,32 @@ function Receiving({
       });
     },
     onSuccess: () => {
-      toast({ text: "Recepción confirmada: entró el stock" });
+      toast({
+        text: `${
+          getSyncStatus().online
+            ? "Recepción confirmada: entró el stock"
+            : "Recepción guardada en el dispositivo: entró el stock y se manda al volver internet"
+        }${costs ? "" : ". El dueño o el encargado completan los costos"}`,
+        ms: getSyncStatus().online ? 2500 : 6000,
+      });
+      void qc.invalidateQueries({ queryKey: ["receipts-expected"] });
+      void qc.invalidateQueries({ queryKey: ["receive-order"] });
+      void qc.invalidateQueries({ queryKey: ["order"] });
       navigate("/compras/recepcion");
     },
+    onError: (e) =>
+      toast({ text: e instanceof Error ? e.message : "No se pudo confirmar.", tone: "error" }),
   });
-  const tryConfirm = () => (sum.hasDifferences ? setSummary(true) : confirm.mutate());
+  const tryConfirm = () => {
+    const bad = touched.map((l) => [l, lineProblem(l)] as const).find(([, p]) => p);
+    if (bad) {
+      toast({ text: `${bad[0].name}: ${bad[1]}`, tone: "error" });
+      setActive(bad[0].key);
+      return;
+    }
+    if (sum.hasDifferences) setSummary(true);
+    else confirm.mutate();
+  };
 
   const lineCard = (l: Line) => {
     const rec = num(l.received);
@@ -467,6 +538,18 @@ function Receiving({
     const ex = extras[l.key] ?? { damaged: num(l.damaged) > 0, lot: !!l.lotCode || !!l.expiresOn };
     const step = (d: number) =>
       set(l.key, { received: String(Math.max(0, roundQty(rec + d))).replace(".", ",") });
+    // Cada error en su campo, en el momento (ronda 3: costo −100 proponía precio −$ 100).
+    const costCents = l.cost.trim() ? parseMoney(l.cost) : null;
+    const costError =
+      l.cost.trim() && (costCents === null || costCents < 0)
+        ? "Poné un monto, por ejemplo 1500"
+        : null;
+    const expiresError =
+      l.expiresOn && l.expiresOn < new Date(Date.now() - 30 * 86_400_000).toISOString().slice(0, 10)
+        ? "Esa fecha ya pasó, revisala"
+        : null;
+    const damagedError =
+      num(l.damaged) > rec ? `No pueden ser más que los ${qtyText(rec, l.unit)} recibidos` : null;
     return (
       <section
         aria-label={`Recibiendo ${l.name}`}
@@ -495,12 +578,12 @@ function Receiving({
             aria-label={`Recibido ${l.name}`}
             inputMode="decimal"
             value={l.received}
-            placeholder={l.ordered != null ? String(l.ordered).replace(".", ",") : "0"}
+            placeholder=""
             onChange={(e) => set(l.key, { received: e.target.value.replace(/[^\d,]/g, "") })}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();
-                setActive(null);
+                doneLine();
               }
             }}
             className="tnum h-14 w-24 rounded-lg border-2 border-borde-fuerte text-center text-2xl font-semibold"
@@ -516,28 +599,32 @@ function Receiving({
         </div>
         <div className="flex flex-wrap gap-2">
           {missing > 0 && <Chip tone="alerta">Faltan {qtyText(missing, l.unit)}</Chip>}
-          <button
-            type="button"
+          {/* Botones de verdad (48 px, con estado), no chips con un botón invisible alrededor. */}
+          <Button
+            variant="secondary"
+            aria-pressed={ex.damaged}
+            className={cx(ex.damaged && "border-peligro text-peligro")}
             onClick={() => setExtras((x) => ({ ...x, [l.key]: { ...ex, damaged: !ex.damaged } }))}
           >
-            <Chip size="md" tone={ex.damaged ? "peligro" : "neutro"}>
-              Dañado
-            </Chip>
-          </button>
-          <button
-            type="button"
-            onClick={() => setExtras((x) => ({ ...x, [l.key]: { ...ex, lot: !ex.lot } }))}
-          >
-            <Chip size="md" tone={ex.lot || l.tracksExpiry ? "info" : "neutro"}>
+            Dañado
+          </Button>
+          {(settings.features.lots || l.tracksExpiry) && (
+            <Button
+              variant="secondary"
+              aria-pressed={ex.lot || l.tracksExpiry}
+              className={cx((ex.lot || l.tracksExpiry) && "border-info text-info")}
+              onClick={() => setExtras((x) => ({ ...x, [l.key]: { ...ex, lot: !ex.lot } }))}
+            >
               Lote y vencimiento
-            </Chip>
-          </button>
+            </Button>
+          )}
         </div>
         {ex.damaged && (
           <TextField
             label="Dañados (no entran al stock)"
             inputMode="decimal"
             value={l.damaged}
+            error={damagedError}
             onChange={(e) => set(l.key, { damaged: e.target.value.replace(/[^\d,]/g, "") })}
           />
         )}
@@ -552,6 +639,7 @@ function Receiving({
               label="Vence"
               type="date"
               value={l.expiresOn}
+              error={expiresError}
               onChange={(e) => set(l.key, { expiresOn: e.target.value })}
             />
           </div>
@@ -562,20 +650,23 @@ function Receiving({
               label="Costo por unidad"
               inputMode="decimal"
               value={l.cost}
+              error={costError}
               onChange={(e) =>
                 set(l.key, { cost: e.target.value, newPriceCents: null, later: false })
               }
             />
-            <CostNotice
-              line={l}
-              rounding={settings.pricing.roundingCents}
-              onUpdate={(p) => set(l.key, { newPriceCents: p })}
-              onLater={() => set(l.key, { later: true })}
-            />
+            {!costError && (
+              <CostNotice
+                line={l}
+                rounding={settings.pricing.roundingCents}
+                onUpdate={(p) => set(l.key, { newPriceCents: p })}
+                onLater={() => set(l.key, { later: true })}
+              />
+            )}
           </>
         )}
-        <Button variant="secondary" onClick={() => setActive(null)}>
-          Listo
+        <Button variant="secondary" onClick={doneLine}>
+          Listo, siguiente producto
         </Button>
       </section>
     );
@@ -628,7 +719,7 @@ function Receiving({
             <button
               key={p.id}
               type="button"
-              className="rounded-md px-3 py-2 text-left hover:bg-neutro-suave"
+              className="min-h-12 rounded-md px-3 py-2 text-left hover:bg-neutro-suave lg:min-h-10"
               onClick={() => {
                 setSearch("");
                 void addProduct(p.id);
@@ -653,7 +744,10 @@ function Receiving({
             )
           }
         >
-          Todo lo demás como pedido
+          {/* Sin nada contado todavía, dice lo que pasa casi siempre: llegó todo. */}
+          {lines.every((l) => l.received === "")
+            ? "Llegó todo como el pedido"
+            : "Todo lo demás como pedido"}
         </Button>
       )}
       {lines.length > 0 && (
@@ -672,13 +766,18 @@ function Receiving({
                 )}
               >
                 <span className="min-w-0 flex-1 truncate">{l.name}</span>
-                <span className="tnum text-sm text-texto-suave">
-                  {l.ordered != null ? qtyText(l.ordered, l.unit) : "—"} →{" "}
-                  <strong className="text-texto">
-                    {l.received === "" ? "…" : qtyText(num(l.received), l.unit)}
-                  </strong>
+                {/* Con palabras: "12 → …" no se entendía (ronda 3). */}
+                <span className="tnum text-right text-sm text-texto-suave">
+                  {l.ordered != null ? `Pedido ${qtyText(l.ordered, l.unit)} · ` : "Sin pedir · "}
+                  {l.received === "" ? (
+                    "falta contar"
+                  ) : (
+                    <strong className="text-texto">Llegó {qtyText(num(l.received), l.unit)}</strong>
+                  )}
                 </span>
-                {l.received !== "" && (
+                {l.received !== "" && lineProblem(l) ? (
+                  <TriangleAlert size={18} className="text-peligro" aria-label="Para revisar" />
+                ) : l.received !== "" ? (
                   <CircleCheck
                     size={18}
                     className={
@@ -688,13 +787,14 @@ function Receiving({
                     }
                     aria-hidden
                   />
-                )}
+                ) : null}
               </button>
             </li>
           ))}
         </ul>
       )}
-      <div className="flex flex-wrap items-center gap-2">
+      {/* Barra fija abajo con "Confirmar recepción" (diseño 05): no hay que bajar hasta el final. */}
+      <div className="sticky bottom-[88px] z-10 flex flex-wrap items-center gap-2 rounded-card border border-borde bg-superficie px-3 py-2 shadow-sm lg:bottom-2">
         <input
           ref={fileRef}
           type="file"
@@ -714,10 +814,15 @@ function Receiving({
         >
           {photoId ? "Foto del remito ✓" : "Foto del remito"}
         </Button>
-        <span className="flex-1" />
+        {/* Con el botón apagado, se dice por qué. */}
+        <span className="flex-1 text-right text-[13px] text-texto-suave">
+          {touched.some((l) => num(l.received) > 0) ? "" : "Escaneá o contá algo para confirmar"}
+        </span>
         <Button
           size="lg"
-          disabled={!touched.some((l) => num(l.received) > 0) || confirm.isPending}
+          disabled={!touched.some((l) => num(l.received) > 0)}
+          busy={confirm.isPending}
+          busyLabel="Confirmando…"
           onClick={tryConfirm}
         >
           Confirmar recepción
@@ -761,8 +866,11 @@ export function ReceivePage() {
   const orderId = params.get("pedido");
   const kind =
     (params.get("tipo") as "no_order" | "wholesale" | null) ?? (orderId ? "order" : null);
+  // Sin la versión de sincronización en la clave: si cambiara, la pantalla se volvería a montar
+  // y se perdería lo cargado (ronda 3). Se refresca al confirmar.
   const order = useQuery({
     queryKey: ["receive-order", orderId],
+    staleTime: Number.POSITIVE_INFINITY,
     queryFn: () => api<OrderData>(`/api/receipts/order/${orderId}`),
     enabled: can && !!orderId,
   });
@@ -770,7 +878,7 @@ export function ReceivePage() {
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-4 p-4 lg:max-w-3xl lg:p-6">
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="m-0 text-[22px] font-semibold">Compras</h1>
+        <h1 className="m-0 hidden text-[22px] font-semibold lg:block">Compras</h1>
         <PurchasesTabs />
       </div>
       {!kind ? (

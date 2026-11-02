@@ -1,7 +1,9 @@
-import { formatDate, formatMoney, formatQty } from "@mostrador/shared";
+import { formatDate, formatMoney, formatQty, ORDER_STATUS } from "@mostrador/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { MessageCircle, Star } from "lucide-react";
+import { ChevronLeft, MessageCircle, Star } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router";
+import { NoPermissionFor } from "../../app/guards";
 import { useCan } from "../../app/session";
 import { ApiError, api } from "../../data/api";
 import { Button } from "../../ui/Button";
@@ -10,6 +12,7 @@ import { cx } from "../../ui/cx";
 import { SelectField, TextField } from "../../ui/Field";
 import { Sheet } from "../../ui/Sheet";
 import { EmptyState, ErrorState, SkeletonList } from "../../ui/States";
+import { useWide } from "../../ui/useMedia";
 import {
   type SupplierLink,
   SupplierLinkSheet,
@@ -54,7 +57,7 @@ export const DAYS = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Vier
 export const CHANNEL = {
   whatsapp: "WhatsApp",
   manual: "Manual",
-  wholesale: "Compra en persona",
+  wholesale: "Compra en mayorista",
 } as const;
 
 export function daysLabel(d: number[] | null, note?: string | null) {
@@ -108,13 +111,7 @@ function SupplierForm({ supplier, onClose }: { supplier?: Supplier | null; onClo
       await qc.invalidateQueries({ queryKey: ["supplier"] });
       onClose();
     },
-    onError: (e) =>
-      setError(
-        e instanceof ApiError
-          ? (((e.details as { message: string }[] | undefined)?.[0]?.message ??
-              e.message) as string)
-          : "No se pudo guardar.",
-      ),
+    onError: (e) => setError(e instanceof ApiError ? e.message : "No se pudo guardar."),
   });
   const dayPicker = (value: number[], onChange: (v: number[]) => void, label: string) => (
     <fieldset className="m-0 flex flex-col gap-1.5 border-0 p-0">
@@ -140,13 +137,16 @@ function SupplierForm({ supplier, onClose }: { supplier?: Supplier | null; onClo
       wide
       onClose={onClose}
       title={supplier ? "Editar proveedor" : "Nuevo proveedor"}
+      error={error}
       footer={
         <Button
           className="flex-1"
-          disabled={!f.name.trim() || save.isPending}
+          disabled={!f.name.trim()}
+          busy={save.isPending}
+          busyLabel="Guardando…"
           onClick={() => save.mutate()}
         >
-          Guardar
+          Guardar proveedor
         </Button>
       }
     >
@@ -203,11 +203,6 @@ function SupplierForm({ supplier, onClose }: { supplier?: Supplier | null; onClo
         />
         {dayPicker(orderDays, setOrderDays, "Días de pedido")}
         {dayPicker(deliveryDays, setDeliveryDays, "Días de entrega")}
-        {error && (
-          <div role="alert" className="text-sm font-semibold text-peligro lg:col-span-2">
-            {error}
-          </div>
-        )}
       </div>
     </Sheet>
   );
@@ -342,7 +337,9 @@ function SupplierDetailView({ id, onEdit }: { id: string; onEdit: (s: Supplier) 
           {s.orders.slice(0, 5).map((o) => (
             <div key={o.id} className="flex justify-between border-t border-borde py-1.5">
               <span>Pedido {String(o.number).padStart(4, "0")}</span>
-              <span className="text-texto-suave">{o.status}</span>
+              <span className="text-texto-suave">
+                {ORDER_STATUS[o.status as keyof typeof ORDER_STATUS]?.label ?? o.status}
+              </span>
             </div>
           ))}
         </>
@@ -361,18 +358,26 @@ function SupplierDetailView({ id, onEdit }: { id: string; onEdit: (s: Supplier) 
 
 /** Proveedores: lista con rubro, días, WhatsApp, saldo y último pedido; ficha en panel. */
 export function SuppliersPage() {
+  const canSee = useCan("count_receive");
   const canEdit = useCan("build_orders");
+  const canPrices = useCan("change_prices");
+  const canCosts = useCan("view_costs");
+  const canPriceList = canPrices && canCosts;
+  const navigate = useNavigate();
   const [open, setOpen] = useState<string | null>(null);
   const [form, setForm] = useState<{ s: Supplier | null } | null>(null);
+  // En el celular la ficha va sola, a pantalla completa, con "volver" (antes quedaba abajo de todo).
+  const wide = useWide();
   const q = useQuery({ queryKey: ["suppliers"], queryFn: () => api<Supplier[]>("/api/suppliers") });
   const total = (q.data ?? []).reduce((s, x) => s + (x.balanceCents ?? 0), 0);
+  if (!canSee) return <NoPermissionFor perm="count_receive" />;
   return (
     <div className="flex flex-col gap-4 p-4 lg:p-6">
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="m-0 text-[22px] font-semibold">Compras</h1>
+        <h1 className="m-0 hidden text-[22px] font-semibold lg:block">Compras</h1>
         <PurchasesTabs />
       </div>
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <h2 className="m-0 text-lg font-semibold">Proveedores</h2>
         <span className="text-texto-suave">· {q.data?.length ?? 0}</span>
         <span className="flex-1" />
@@ -380,6 +385,11 @@ export function SuppliersPage() {
           <span className="text-sm">
             A pagar <strong>{formatMoney(total)}</strong>
           </span>
+        )}
+        {canPriceList && (
+          <Button variant="secondary" onClick={() => navigate("/compras/listas")}>
+            Cargar lista de precios
+          </Button>
         )}
         {canEdit && <Button onClick={() => setForm({ s: null })}>Nuevo</Button>}
       </div>
@@ -391,11 +401,19 @@ export function SuppliersPage() {
         <EmptyState
           title="Todavía no hay proveedores"
           body="Cargá a quién le comprás para armar pedidos."
+          action={
+            canEdit ? (
+              <Button onClick={() => setForm({ s: null })}>Nuevo proveedor</Button>
+            ) : undefined
+          }
         />
       ) : (
         <div className={cx("grid gap-4", open ? "lg:grid-cols-[minmax(0,1fr)_420px]" : "")}>
           <ul
-            className="m-0 list-none overflow-hidden rounded-card border border-borde bg-superficie p-0"
+            className={cx(
+              "m-0 list-none overflow-hidden rounded-card border border-borde bg-superficie p-0",
+              !wide && open && "hidden",
+            )}
             aria-label="Proveedores"
           >
             {q.data.map((s) => (
@@ -411,8 +429,10 @@ export function SuppliersPage() {
                   <span className="min-w-0 flex-1">
                     <span className="font-semibold">{s.name}</span>
                     <span className="block truncate text-[13px] text-texto-suave">
-                      {s.category} · pedido {daysLabel(s.orderDays, s.scheduleNote).toLowerCase()} ·
-                      entrega {daysLabel(s.deliveryDays, s.scheduleNote).toLowerCase()}
+                      {s.category} · pedido {daysLabel(s.orderDays, s.scheduleNote).toLowerCase()}
+                      {s.deliveryDays?.length || !s.scheduleNote
+                        ? ` · entrega ${daysLabel(s.deliveryDays, s.scheduleNote).toLowerCase()}`
+                        : ""}
                     </span>
                     <span className="block text-xs text-texto-suave">
                       {CHANNEL[s.channel]}
@@ -421,13 +441,16 @@ export function SuppliersPage() {
                         : ""}
                     </span>
                   </span>
-                  {s.whatsapp ? (
-                    <Chip tone="ok" icon={MessageCircle}>
-                      WhatsApp
-                    </Chip>
-                  ) : (
-                    <Chip>Sin WhatsApp</Chip>
-                  )}
+                  {/* En el celular el canal ya está en la línea de abajo: el chip solo en la compu. */}
+                  <span className="hidden lg:inline-flex">
+                    {s.whatsapp ? (
+                      <Chip tone="ok" icon={MessageCircle}>
+                        WhatsApp
+                      </Chip>
+                    ) : (
+                      <Chip>Sin WhatsApp</Chip>
+                    )}
+                  </span>
                   {s.balanceCents !== undefined && (
                     <span
                       className={cx(
@@ -447,6 +470,16 @@ export function SuppliersPage() {
               aria-label="Ficha del proveedor"
               className="rounded-card border border-borde bg-superficie"
             >
+              {!wide && (
+                <Button
+                  variant="ghost"
+                  className="m-2"
+                  icon={<ChevronLeft size={18} />}
+                  onClick={() => setOpen(null)}
+                >
+                  Proveedores
+                </Button>
+              )}
               <SupplierDetailView key={open} id={open} onEdit={(s) => setForm({ s })} />
             </aside>
           )}

@@ -11,14 +11,18 @@ import {
   toDateStr,
 } from "@mostrador/shared";
 import { useQuery } from "@tanstack/react-query";
+import { ChevronLeft } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router";
 import { NoPermissionFor } from "../../app/guards";
 import { useCan, useMe } from "../../app/session";
 import { api } from "../../data/api";
 import { useSettings } from "../../data/settings";
+import { Button } from "../../ui/Button";
 import { FilterChip } from "../../ui/Chip";
 import { cx } from "../../ui/cx";
 import { EmptyState, ErrorState, SkeletonList } from "../../ui/States";
+import { useWide } from "../../ui/useMedia";
 import { ClosingReceipt } from "./ClosingReceipt";
 
 type ShiftRow = {
@@ -86,9 +90,11 @@ function Receipt({ id }: { id: string }) {
 
 /** Historial de cierres: por fecha, con turno, cajero, ventas y diferencia en color. */
 export function ClosingsPage() {
+  const navigate = useNavigate();
   const can = useCan("shift");
   const [daily, setDaily] = useState(false);
   const [open, setOpen] = useState<string | null>(null);
+  const wide = useWide();
   const q = useQuery({
     queryKey: ["closings"],
     queryFn: () => api<ShiftRow[]>("/api/shifts?limit=60"),
@@ -128,13 +134,29 @@ export function ClosingsPage() {
           onRetry={() => q.refetch()}
         />
       ) : !rows.length ? (
-        <EmptyState title="Todavía no hay cierres" />
+        <EmptyState
+          title="Todavía no hay cierres"
+          body="El comprobante de cada turno cerrado aparece acá."
+          action={<Button onClick={() => navigate("/caja")}>Ir a Caja</Button>}
+        />
       ) : (
         <div className={cx("grid gap-4", open ? "lg:grid-cols-[minmax(0,1fr)_420px]" : "")}>
           <ul
-            className="m-0 list-none overflow-hidden rounded-card border border-borde bg-superficie p-0"
+            className={cx(
+              "m-0 list-none overflow-hidden rounded-card border border-borde bg-superficie p-0",
+              // En el celular, el comprobante va solo, con "volver" (antes quedaba abajo de todo).
+              !wide && open && !daily && "hidden",
+            )}
             aria-label="Cierres"
           >
+            <li
+              aria-hidden
+              className="grid grid-cols-[1fr_auto_auto] gap-4 border-b border-borde bg-fondo px-4 py-2 text-xs font-semibold text-texto-suave"
+            >
+              <span>{daily ? "Día" : "Turno"}</span>
+              <span>Ventas</span>
+              <span className="min-w-20 text-right">Diferencia</span>
+            </li>
             {daily
               ? days.map((d) => (
                   <li
@@ -201,6 +223,16 @@ export function ClosingsPage() {
               aria-label="Comprobante"
               className="rounded-card border border-borde bg-superficie"
             >
+              {!wide && (
+                <Button
+                  variant="ghost"
+                  className="m-2"
+                  icon={<ChevronLeft size={18} />}
+                  onClick={() => setOpen(null)}
+                >
+                  Cierres
+                </Button>
+              )}
               <Receipt key={open} id={open} />
             </aside>
           )}

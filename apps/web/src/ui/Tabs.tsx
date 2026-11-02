@@ -27,7 +27,7 @@ export function Tabs<T extends string>({
           aria-selected={value === t.id}
           onClick={() => onChange(t.id)}
           className={cx(
-            "-mb-px min-h-10 shrink-0 border-b-2 px-2.5 py-1.5",
+            "-mb-px min-h-12 shrink-0 lg:min-h-10 border-b-2 px-2.5 py-1.5",
             value === t.id
               ? "border-primario text-primario"
               : "border-transparent hover:text-texto",

@@ -1,5 +1,24 @@
 /** Cliente HTTP de la API: agrega el token del dispositivo y la sesión con PIN. */
 
+import { sessionExpired } from "../app/sessionExpired";
+
+/** Se supo de una sesión (el /api/me respondió): a partir de ahí un 401 es sesión vencida. */
+let sessionKnown = false;
+export function markSessionKnown(v: boolean) {
+  sessionKnown = v;
+  if (v) sessionExpired.set(false);
+}
+
+/** Errores por campo de un 400 de validación: { "name": "como mucho 60 caracteres" }. */
+export function fieldErrorsFrom(e: unknown): Record<string, string> {
+  if (!(e instanceof ApiError) || !Array.isArray(e.details)) return {};
+  const out: Record<string, string> = {};
+  for (const d of e.details as { path?: string; message?: string }[]) {
+    if (d.path && d.message && !out[d.path]) out[d.path] = d.message;
+  }
+  return out;
+}
+
 export class ApiError extends Error {
   constructor(
     readonly status: number,
@@ -80,6 +99,17 @@ export async function api<T = unknown>(path: string, opts: RequestOptions = {}):
   }
   const text = await res.text();
   const data = text ? safeJson(text) : null;
+  // Entrar (email, PIN equivocado) también responde 401: eso no es una sesión vencida.
+  const expired =
+    res.status === 401 &&
+    Boolean(pinToken || sessionKnown) &&
+    !path.startsWith("/api/auth") &&
+    !path.startsWith("/api/pin/") &&
+    path !== "/api/me";
+  if (expired) {
+    // Había sesión y ya no: se avisa en pantalla, sin tirar lo que se estaba cargando.
+    sessionExpired.set(true);
+  }
   if (!res.ok) {
     const e = (data as { error?: { code?: string; message?: string; details?: unknown } } | null)
       ?.error;
@@ -87,7 +117,10 @@ export async function api<T = unknown>(path: string, opts: RequestOptions = {}):
     throw new ApiError(
       res.status,
       e?.code ?? "error",
-      e?.message ?? "Algo salió mal. Probá de nuevo.",
+      // En el formulario se dice qué hacer, no "Iniciá sesión para seguir." (ronda 3).
+      expired
+        ? "Tu sesión venció: entrá de nuevo y volvé a guardar (lo cargado sigue acá)."
+        : (e?.message ?? "Algo salió mal. Probá de nuevo."),
       e?.details,
     );
   }

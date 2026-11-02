@@ -31,3 +31,17 @@ test("Ajustes: el dueño cambia el recargo de crédito y el cobro lo usa", async
   await credit.getByLabel("Recargo Crédito (%)").press("Tab");
   await expect(owner.getByText("Guardado").first()).toBeVisible();
 });
+
+test("Ajustes › Usuarios: invitar con el PIN de otra persona avisa y no crea el usuario", async ({
+  page,
+}) => {
+  await loginOwner(page);
+  await page.goto("/ajustes/usuarios");
+  const invite = page.getByRole("region", { name: "Invitar" });
+  await invite.getByLabel("Nombre").fill("Paola Sosa");
+  await invite.getByLabel("Rol").selectOption("cashier");
+  await invite.getByLabel("PIN").fill("1234");
+  await invite.getByRole("button", { name: "Invitar" }).click();
+  await expect(page.getByText("Ese PIN no se puede usar: elegí otro.")).toBeVisible();
+  await expect(page.getByText("Listo: ya puede entrar con su PIN")).toHaveCount(0);
+});

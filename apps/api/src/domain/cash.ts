@@ -89,6 +89,7 @@ export type CashEntry = {
   reason?: string | null;
   category?: string | null;
   note?: string | null;
+  photoUrl?: string | null;
   refType?: string | null;
   refId?: string | null;
   memberId?: string | null;
@@ -109,6 +110,7 @@ export async function addCash(tx: DbOrTx, e: CashEntry): Promise<string> {
     reason: e.reason ?? null,
     category: e.category ?? null,
     note: e.note ?? null,
+    photoUrl: e.photoUrl ?? null,
     refType: e.refType ?? null,
     refId: e.refId ?? null,
     memberId: e.memberId ?? null,
@@ -177,6 +179,7 @@ export async function cashMovement(tx: DbOrTx, ctx: OpContext, p: OpPayload<"cas
     reason: p.reason,
     category: p.category ?? null,
     note: p.note ?? null,
+    photoUrl: p.photoId ? `/api/files/${p.photoId}` : null,
     refType,
     refId,
     memberId: ctx.memberId,
@@ -226,10 +229,18 @@ export async function closeShift(tx: DbOrTx, ctx: OpContext, p: OpPayload<"cash.
     .select({ name: members.name })
     .from(members)
     .where(eq(members.id, s.memberId));
+  const [closer] =
+    ctx.memberId === s.memberId
+      ? [cashier]
+      : await tx.select({ name: members.name }).from(members).where(eq(members.id, ctx.memberId));
   const moves = await tx.select().from(cashMovements).where(eq(cashMovements.shiftId, s.id));
+  const who =
+    closer?.name && closer.name !== cashier?.name
+      ? `${cashier?.name ?? ""} · cerró ${closer.name}`
+      : (cashier?.name ?? "");
   const notice = closeNotice({
     shiftLabel: shiftName(s.openedAt),
-    cashier: cashier?.name ?? "",
+    cashier: who,
     salesCents: summarizeShift(s.openingFloatCents, moves).salesCents,
     countedCents: p.countedCashCents,
     differenceCents: difference,

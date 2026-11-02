@@ -1,13 +1,14 @@
-import { formatDate, formatMoney, formatQty } from "@mostrador/shared";
+import { formatDate, formatMoney, formatQty, parseDecimal, plural } from "@mostrador/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CircleCheck, ScanBarcode } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { NoPermissionFor } from "../../app/guards";
 import { useCan, useGrant } from "../../app/session";
 import { ApiError, api } from "../../data/api";
 import { localDb } from "../../data/db";
 import { fetchCategories } from "../../data/products";
+import { useSettings } from "../../data/settings";
 import { beep } from "../../scan/beep";
 import { scanRouter } from "../../scan/GlobalScan";
 import { Button } from "../../ui/Button";
@@ -15,6 +16,7 @@ import { Checkbox } from "../../ui/Checkbox";
 import { Chip, FilterChip } from "../../ui/Chip";
 import { cx } from "../../ui/cx";
 import { SelectField, TextField } from "../../ui/Field";
+import { Key } from "../../ui/Key";
 import { NumPad } from "../../ui/NumPad";
 import { Sheet } from "../../ui/Sheet";
 import { EmptyState, ErrorState, SkeletonList } from "../../ui/States";
@@ -41,6 +43,15 @@ type CountLine = {
   differenceQty?: number | null;
   differenceCents?: number;
 };
+/**
+ * Una diferencia muy grande (+99.951 latas) casi siempre es un error de tipeo: se marca para
+ * revisarla en vez de pintarla de verde (ronda 3).
+ */
+function bigDifference(l: CountLine): boolean {
+  const d = Math.abs(l.differenceQty ?? 0);
+  return d >= 100 && d > 5 * Math.max(1, l.systemQty ?? 0);
+}
+
 type CountDetail = {
   id: string;
   name: string;
@@ -168,9 +179,15 @@ function NewCount({ onClose }: { onClose: (id?: string) => void }) {
 export function CountsPage() {
   const can = useCan("count_receive");
   const canCreate = useGrant("adjust_stock") === "allow";
+  const canSettings = useCan("settings");
+  const countsOn = useSettings().features.counts;
   const navigate = useNavigate();
   const [creating, setCreating] = useState(false);
-  const q = useQuery({ queryKey: ["counts"], queryFn: () => api<CountRow[]>("/api/counts") });
+  const q = useQuery({
+    queryKey: ["counts"],
+    queryFn: () => api<CountRow[]>("/api/counts"),
+    enabled: can,
+  });
   if (!can) return <NoPermissionFor perm="count_receive" />;
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-4 p-4 lg:p-6">
@@ -185,7 +202,23 @@ export function CountsPage() {
       ) : !q.data.length ? (
         <EmptyState
           title="Todavía no hay conteos"
-          body="Creá uno por categoría o por góndola y asignáselo a alguien."
+          body={
+            !countsOn
+              ? canSettings
+                ? "Los conteos están apagados. Prendelos en Ajustes › Funciones y creá el primero."
+                : "Los conteos están apagados: los prende el dueño en Ajustes › Funciones."
+              : canCreate
+                ? "Creá uno por categoría o por góndola y asignáselo a alguien."
+                : "Los conteos los crea un encargado o el dueño y te los asigna: cuando haya uno para vos, aparece acá y en Inicio."
+          }
+          // "Nuevo conteo" ya está arriba: acá, solo el camino para prenderlos si están apagados.
+          action={
+            !countsOn && canSettings ? (
+              <Button variant="secondary" onClick={() => navigate("/ajustes/funciones")}>
+                Ir a Funciones
+              </Button>
+            ) : undefined
+          }
         />
       ) : (
         <ul
@@ -245,11 +278,11 @@ function QtyEntry({
             ? kg && !t.includes(",")
               ? `${t},`
               : t
-            : (t + k).slice(0, 7),
+            : (t + k).slice(0, kg ? 7 : 5),
       ),
     [kg],
   );
-  const n = Number(typed.replace(",", "."));
+  const n = parseDecimal(typed) ?? 0;
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
       if (e.key === "Enter" && typed) {
@@ -275,7 +308,7 @@ function QtyEntry({
         </div>
         <NumPad onKey={onKey} decimal={kg} big />
         <Button size="xl" disabled={!typed} onClick={() => onSave(n)}>
-          Guardar · ⏎
+          Guardar <Key>⏎</Key>
         </Button>
       </div>
     </Sheet>
@@ -289,18 +322,25 @@ export function CountPage() {
   const navigate = useNavigate();
   const [entry, setEntry] = useState<CountLine | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const can = useCan("count_receive");
   const q = useQuery({
     queryKey: ["count", id],
     queryFn: () => api<CountDetail>(`/api/counts/${id}`),
+    enabled: can,
   });
+  // Si algo falla, se dice (antes no pasaba nada y parecía guardado).
+  const failed = (e: unknown) =>
+    toast({ text: e instanceof Error ? e.message : "No se pudo. Probá de nuevo.", tone: "error" });
   const save = useMutation({
     mutationFn: (a: { productId: string; countedQty: number }) =>
       api(`/api/counts/${id}/lines`, { method: "PUT", body: a }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["count", id] }),
+    onError: failed,
   });
   const submit = useMutation({
     mutationFn: () => api(`/api/counts/${id}/submit`, { body: {} }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["count", id] }),
+    onError: failed,
   });
   const approve = useMutation({
     mutationFn: (lineIds?: string[]) =>
@@ -308,9 +348,12 @@ export function CountPage() {
         body: lineIds ? { lineIds } : {},
       }),
     onSuccess: (r) => {
-      toast({ text: `Aprobado: ${r.approved} productos, ${r.moved} con diferencia` });
+      toast({
+        text: `Aprobado: ${plural(r.approved, "producto", "productos")}, ${r.moved} con diferencia`,
+      });
       void qc.invalidateQueries({ queryKey: ["count", id] });
     },
+    onError: failed,
   });
   const lines = q.data?.lines ?? [];
   const open = q.data?.status === "open";
@@ -319,6 +362,7 @@ export function CountPage() {
     for (const l of lines) for (const c of l.barcodes) m.set(c, l);
     return m;
   }, [lines]);
+  const scannedRef = useRef(false);
   useEffect(() => {
     if (!open) return;
     return scanRouter.claim(async (code) => {
@@ -334,11 +378,13 @@ export function CountPage() {
         return;
       }
       beep("ok");
+      scannedRef.current = scanRouter.isCameraOpen();
       scanRouter.closeCamera();
       setEntry(l);
     });
   }, [open, byCode, lines]);
 
+  if (!can) return <NoPermissionFor perm="count_receive" />;
   if (q.isPending) return <SkeletonList className="p-6" />;
   if (q.isError) return <ErrorState onRetry={() => q.refetch()} />;
   const c = q.data;
@@ -420,13 +466,16 @@ export function CountPage() {
                 <span
                   className={cx(
                     "tnum min-w-24 text-right text-sm font-semibold",
-                    l.differenceQty < 0
-                      ? "text-peligro"
-                      : l.differenceQty > 0
-                        ? "text-exito"
-                        : "text-texto-suave",
+                    bigDifference(l)
+                      ? "rounded bg-alerta-suave px-1.5 text-alerta"
+                      : l.differenceQty < 0
+                        ? "text-peligro"
+                        : l.differenceQty > 0
+                          ? "text-exito"
+                          : "text-texto-suave",
                   )}
                 >
+                  {bigDifference(l) && <span className="block text-xs">¿Seguro? Revisalo</span>}
                   {l.differenceQty > 0 ? "+" : l.differenceQty < 0 ? "−" : ""}
                   {formatQty(Math.abs(l.differenceQty), unit)}
                   {l.differenceCents !== undefined && l.differenceCents !== 0 && (
@@ -448,7 +497,17 @@ export function CountPage() {
         <Button
           size="lg"
           className="self-start"
-          onClick={() => submit.mutate()}
+          onClick={() => {
+            const left = lines.filter((l) => l.countedQty === null).length;
+            if (
+              left &&
+              !window.confirm(
+                `${left === 1 ? "Queda 1 producto" : `Quedan ${left} productos`} sin contar: van como "no contados". ¿Terminás igual? Lo revisa un encargado o el dueño.`,
+              )
+            )
+              return;
+            submit.mutate();
+          }}
           disabled={!counted}
         >
           Terminar conteo
@@ -463,7 +522,29 @@ export function CountPage() {
           >
             Aprobar elegidos
           </Button>
-          <Button onClick={() => approve.mutate(undefined)}>Aprobar todo</Button>
+          <Button
+            onClick={() => {
+              const moved = lines.filter(
+                (l) =>
+                  l.countedQty !== null &&
+                  l.systemQty !== undefined &&
+                  l.countedQty !== l.systemQty,
+              );
+              const plus = moved.filter((l) => (l.countedQty ?? 0) > (l.systemQty ?? 0)).length;
+              const minus = moved.length - plus;
+              const big = moved.filter(bigDifference).length;
+              if (
+                moved.length &&
+                !window.confirm(
+                  `Vas a ajustar el stock de ${plural(moved.length, "producto", "productos")} (${plus} ${plus === 1 ? "sube" : "suben"}, ${minus} ${minus === 1 ? "baja" : "bajan"}).${big ? ` ${big === 1 ? "Uno tiene" : `${big} tienen`} una diferencia muy grande: revisá que el número esté bien.` : ""} No se deshace. ¿Aprobar todo?`,
+                )
+              )
+                return;
+              approve.mutate(undefined);
+            }}
+          >
+            Aprobar todo
+          </Button>
         </div>
       )}
       {!open && !review && (
@@ -479,6 +560,9 @@ export function CountPage() {
           onSave={(qty) => {
             save.mutate({ productId: entry.productId, countedQty: qty });
             setEntry(null);
+            // Leído con la cámara: vuelve sola para el próximo producto.
+            if (scannedRef.current) scanRouter.openCamera();
+            scannedRef.current = false;
           }}
         />
       )}

@@ -1,4 +1,10 @@
-import { newId, type ShiftSummary, summarizeShift } from "@mostrador/shared";
+import {
+  assertOp,
+  newId,
+  type OpPayload,
+  type ShiftSummary,
+  summarizeShift,
+} from "@mostrador/shared";
 import { api, OfflineError } from "../data/api";
 import { localDb } from "../data/db";
 import type { LocalCashMove, LocalShift } from "../data/types";
@@ -41,6 +47,15 @@ export async function openShiftLocal(a: {
 }): Promise<string> {
   const shiftId = newId();
   const at = new Date().toISOString();
+  const payload: OpPayload<"cash.shift_open"> = {
+    shiftId,
+    registerId: a.registerId,
+    openingFloatCents: a.openingFloatCents,
+    counts: a.counts ?? null,
+    note: a.note ?? null,
+  };
+  // Lo que el servidor va a rechazar no se da por hecho ni un segundo.
+  assertOp("cash.shift_open", payload);
   await localDb().shifts.put({
     id: shiftId,
     registerId: a.registerId,
@@ -56,13 +71,7 @@ export async function openShiftLocal(a: {
     type: "cash.shift_open",
     memberId: a.memberId,
     deviceAt: at,
-    payload: {
-      shiftId,
-      registerId: a.registerId,
-      openingFloatCents: a.openingFloatCents,
-      counts: a.counts ?? null,
-      note: a.note ?? null,
-    },
+    payload,
   });
   bumpLocalVersion();
   void syncEngine().kick();
@@ -77,6 +86,7 @@ export type ManualMove = {
   category?: "cleaning" | "freight" | "maintenance" | "salary_advance" | "other" | null;
   note?: string | null;
   invoiceId?: string | null;
+  photoId?: string | null;
 };
 
 /** Retiro, gasto, ingreso o pago a proveedor (con quién autorizó, si hizo falta PIN). */
@@ -89,6 +99,18 @@ export async function addCashMoveLocal(
   const opId = newId();
   const at = new Date().toISOString();
   const sign = m.kind === "income" ? 1 : -1;
+  const payload: OpPayload<"cash.movement"> = {
+    id,
+    shiftId: m.shiftId,
+    kind: m.kind,
+    amountCents: m.amountCents,
+    reason: m.reason,
+    category: m.category ?? null,
+    note: m.note ?? null,
+    invoiceId: m.invoiceId ?? null,
+    photoId: m.photoId ?? null,
+  };
+  assertOp("cash.movement", payload);
   await localDb().cashMoves.put({
     id,
     shiftId: m.shiftId,
@@ -109,16 +131,7 @@ export async function addCashMoveLocal(
     memberId,
     authorizedBy: auth?.memberId ?? null,
     deviceAt: at,
-    payload: {
-      id,
-      shiftId: m.shiftId,
-      kind: m.kind,
-      amountCents: m.amountCents,
-      reason: m.reason,
-      category: m.category ?? null,
-      note: m.note ?? null,
-      invoiceId: m.invoiceId ?? null,
-    },
+    payload,
   });
   bumpLocalVersion();
   void syncEngine().kick();
@@ -157,7 +170,14 @@ export async function loadShiftView(shift: LocalShift): Promise<ShiftView> {
   const db = localDb();
   let offline = false;
   let meta = { registerName: "Caja", memberName: "", toleranceCents: 50000 };
+  // La apertura viaja por la cola: hasta que llegue, el servidor no conoce el turno (404).
+  const stillOpening = await db.queue
+    .where("type")
+    .equals("cash.shift_open")
+    .filter((q) => (q.op.payload as { shiftId?: string }).shiftId === shift.id)
+    .count();
   try {
+    if (stillOpening) throw new OfflineError();
     const r = await api<ServerShift>(`/api/shifts/${shift.id}`);
     meta = {
       registerName: r.shift.registerName,
@@ -206,6 +226,18 @@ export async function closeShiftLocal(a: {
 }) {
   const db = localDb();
   const at = new Date().toISOString();
+  const payload: OpPayload<"cash.shift_close"> = {
+    shiftId: a.shiftId,
+    countedCashCents: a.countedCashCents,
+    counts: a.counts,
+    otherMedia: a.otherMedia,
+    expectedCashCents: a.expectedCashCents,
+    differenceCents: a.countedCashCents - a.expectedCashCents,
+    note: a.note,
+    leftFloatCents: a.leftFloatCents,
+    withdrawnCents: Math.max(0, a.countedCashCents - a.leftFloatCents),
+  };
+  assertOp("cash.shift_close", payload);
   const shift = await db.shifts.get(a.shiftId);
   if (shift)
     await db.shifts.put({
@@ -219,17 +251,7 @@ export async function closeShiftLocal(a: {
     type: "cash.shift_close",
     memberId: a.memberId,
     deviceAt: at,
-    payload: {
-      shiftId: a.shiftId,
-      countedCashCents: a.countedCashCents,
-      counts: a.counts,
-      otherMedia: a.otherMedia,
-      expectedCashCents: a.expectedCashCents,
-      differenceCents: a.countedCashCents - a.expectedCashCents,
-      note: a.note,
-      leftFloatCents: a.leftFloatCents,
-      withdrawnCents: Math.max(0, a.countedCashCents - a.leftFloatCents),
-    },
+    payload,
   });
   bumpLocalVersion();
   void syncEngine().kick();

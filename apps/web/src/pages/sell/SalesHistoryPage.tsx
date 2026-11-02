@@ -27,6 +27,7 @@ import { Button } from "../../ui/Button";
 import { Chip, FilterChip } from "../../ui/Chip";
 import { cx } from "../../ui/cx";
 import { SelectField, TextField } from "../../ui/Field";
+import { Key } from "../../ui/Key";
 import { Sheet } from "../../ui/Sheet";
 import { EmptyState, ErrorState, OfflineBanner, SkeletonList } from "../../ui/States";
 import { Stepper } from "../../ui/Stepper";
@@ -78,8 +79,9 @@ type SaleRow = {
   local?: boolean;
 };
 
+/** Medio o estado; se combina con el día y el cajero (antes cada filtro borraba al otro). */
 const FILTERS = [
-  { id: "today", label: "Hoy" },
+  { id: "all", label: "Todas" },
   { id: "cash", label: "Efectivo" },
   { id: "card", label: "Tarjeta" },
   { id: "account", label: "Fiado" },
@@ -196,6 +198,7 @@ function ReturnDialog({ sale, onClose }: { sale: SaleDetail; onClose: () => void
                 </span>
                 {l.unit === "unit" ? (
                   <Stepper
+                    big
                     label={l.description}
                     value={qty[l.id] ?? 0}
                     onChange={(v) => setQty((q) => ({ ...q, [l.id]: Math.min(max, v) }))}
@@ -208,11 +211,15 @@ function ReturnDialog({ sale, onClose }: { sale: SaleDetail; onClose: () => void
                     {formatQty(max, "kg")}
                   </FilterChip>
                 )}
-                <span className="inline-flex overflow-hidden rounded-lg border border-borde text-xs font-semibold">
+                {/* Qué pasa con lo devuelto, dicho como pregunta (antes: "Góndola / Merma" sueltos). */}
+                <fieldset
+                  aria-label={`¿Qué pasa con ${l.description}?`}
+                  className="m-0 inline-flex overflow-hidden rounded-lg border border-borde p-0 text-xs font-semibold"
+                >
                   {(
                     [
-                      ["shelf", "Góndola"],
-                      ["waste", "Merma"],
+                      ["shelf", "Vuelve a la góndola"],
+                      ["waste", "Va a merma"],
                     ] as const
                   ).map(([id, label]) => (
                     <button
@@ -221,14 +228,14 @@ function ReturnDialog({ sale, onClose }: { sale: SaleDetail; onClose: () => void
                       aria-pressed={d === id}
                       onClick={() => setDest((x) => ({ ...x, [l.id]: id }))}
                       className={cx(
-                        "h-8 px-2.5",
+                        "h-12 px-2.5 lg:h-8",
                         d === id ? "bg-texto text-fondo" : "bg-superficie",
                       )}
                     >
                       {label}
                     </button>
                   ))}
-                </span>
+                </fieldset>
               </li>
             );
           })}
@@ -296,7 +303,7 @@ function VoidDialog({ sale, onClose }: { sale: SaleDetail; onClose: () => void }
       footer={
         <>
           <Button variant="secondary" onClick={onClose} className="flex-1">
-            Cancelar · Esc
+            Cancelar <Key>Esc</Key>
           </Button>
           <Button
             variant="danger"
@@ -381,7 +388,9 @@ function SaleDetailView({ id, onBack }: { id: string; onBack?: () => void }) {
         </div>
         <div className="text-[13px] text-texto-suave">
           {formatDate(new Date(s.deviceAt))} {formatTime(new Date(s.deviceAt))} ·{" "}
-          {s.memberName ?? ""} · {s.registerName ?? "Caja 1"} · {s.customerName ?? "sin cliente"}
+          {[s.memberName, s.registerName, s.customerName ?? "sin cliente"]
+            .filter(Boolean)
+            .join(" · ")}
           {s.local ? " · sin sincronizar" : ""}
         </div>
       </div>
@@ -460,17 +469,38 @@ export function SalesHistoryPage() {
   const navigate = useNavigate();
   const params = useParams();
   const { version } = useSyncStatus();
-  const [filter, setFilter] = useState<(typeof FILTERS)[number]["id"]>("today");
+  const [filter, setFilter] = useState<(typeof FILTERS)[number]["id"]>("all");
+  // Día: hoy, una fecha elegida o todas.
+  const [day, setDay] = useState<string | null>(todayAR());
+  const [memberId, setMemberId] = useState("");
+  const me = useMe();
+  const seesOthers = me?.member.role !== "cashier";
+  // Las personas salen de la copia local (también sin conexión).
+  const people = useQuery({
+    queryKey: ["local-members"],
+    queryFn: async () =>
+      ((await localDb().members.toArray()) as unknown as { id: string; name: string }[]).sort(
+        (a, b) => a.name.localeCompare(b.name, "es"),
+      ),
+    enabled: can && seesOthers,
+  });
   const [number, setNumber] = useState("");
   const [open, setOpen] = useState<string | null>(null);
   const q = useQuery({
-    queryKey: ["sales", filter, number, version],
+    queryKey: ["sales", filter, day, memberId, number, version],
+    // Sin permiso de vender no se pide nada (eran ocho 403 con el repositor).
+    enabled: can,
     placeholderData: (p) => p,
     queryFn: async (): Promise<{ rows: SaleRow[]; offline: boolean }> => {
       const p = new URLSearchParams();
       if (number) p.set("number", number);
-      else if (filter === "today") p.set("from", todayAR());
+      else if (day) {
+        p.set("from", day);
+        p.set("to", day);
+      }
+      if (memberId) p.set("memberId", memberId);
       if (filter === "cash") p.set("method", "cash");
+      if (filter === "card") p.set("method", "card");
       if (filter === "account") p.set("method", "account");
       if (filter === "voided") p.set("status", "voided");
       if (filter === "returned") p.set("status", "returned");
@@ -524,7 +554,7 @@ export function SalesHistoryPage() {
           <span className="rounded-md bg-superficie px-3 py-1.5">Historial</span>
         </nav>
         <span className="flex-1" />
-        <label className="flex h-9 w-48 items-center gap-2 rounded-lg border border-borde bg-superficie px-2.5 text-[13px] text-texto-suave">
+        <label className="flex h-11 w-full items-center gap-2 sm:w-48 lg:h-9 rounded-lg border border-borde bg-superficie px-2.5 text-[13px] text-texto-suave">
           <Search size={16} aria-hidden />
           <input
             aria-label="Número de venta"
@@ -543,6 +573,36 @@ export function SalesHistoryPage() {
           </FilterChip>
         ))}
       </div>
+      <div className="flex flex-wrap items-end gap-2">
+        <FilterChip active={day === todayAR()} onClick={() => setDay(todayAR())}>
+          Hoy
+        </FilterChip>
+        <FilterChip active={day === null} onClick={() => setDay(null)}>
+          Todos los días
+        </FilterChip>
+        <TextField
+          label="Fecha"
+          type="date"
+          value={day ?? ""}
+          onChange={(e) => setDay(e.target.value || null)}
+          className="w-44"
+        />
+        {seesOthers && (
+          <SelectField
+            label="Cajero"
+            value={memberId}
+            onChange={(e) => setMemberId(e.target.value)}
+            className="w-44"
+          >
+            <option value="">Todos</option>
+            {(people.data ?? []).map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.name}
+              </option>
+            ))}
+          </SelectField>
+        )}
+      </div>
       {q.data?.offline && (
         <OfflineBanner>Sin conexión: se ven las ventas de este dispositivo.</OfflineBanner>
       )}
@@ -560,7 +620,12 @@ export function SalesHistoryPage() {
           ) : !rows.length ? (
             <EmptyState
               title="No hay ventas con ese filtro"
-              body={filter === "today" ? "Todavía no hay ventas hoy." : undefined}
+              body={day === todayAR() ? "Todavía no hay ventas hoy." : undefined}
+              action={
+                day === todayAR() ? (
+                  <Button onClick={() => navigate("/vender")}>Nueva venta</Button>
+                ) : undefined
+              }
             />
           ) : (
             <table
@@ -568,11 +633,11 @@ export function SalesHistoryPage() {
               aria-label="Ventas"
             >
               <thead className="block">
-                <tr className="grid grid-cols-[80px_56px_minmax(0,1fr)_110px_100px] gap-2 border-b border-borde bg-fondo px-4 py-2 text-left text-xs font-semibold text-texto-suave lg:grid-cols-[80px_56px_minmax(0,1fr)_130px_100px_120px]">
+                <tr className="grid grid-cols-[64px_44px_minmax(0,1fr)_92px] gap-2 border-b border-borde bg-fondo px-3 py-2 text-left text-xs font-semibold text-texto-suave lg:grid-cols-[80px_56px_minmax(0,1fr)_130px_100px_120px]">
                   <th className="font-semibold">N°</th>
                   <th className="font-semibold">Hora</th>
                   <th className="font-semibold">Cajero · cliente</th>
-                  <th className="font-semibold">Medio</th>
+                  <th className="hidden font-semibold lg:block">Medio</th>
                   <th className="text-right font-semibold">Total</th>
                   <th className="hidden font-semibold lg:block">Estado</th>
                 </tr>
@@ -590,7 +655,7 @@ export function SalesHistoryPage() {
                       (desktop ? setOpen(r.id) : navigate(`/vender/historial/${r.id}`))
                     }
                     className={cx(
-                      "grid min-h-11 cursor-pointer grid-cols-[80px_56px_minmax(0,1fr)_110px_100px] items-center gap-2 border-b border-borde px-4 text-sm last:border-b-0 hover:bg-fondo lg:grid-cols-[80px_56px_minmax(0,1fr)_130px_100px_120px]",
+                      "grid min-h-11 cursor-pointer grid-cols-[64px_44px_minmax(0,1fr)_92px] items-center gap-2 border-b border-borde px-3 text-sm last:border-b-0 hover:bg-fondo lg:grid-cols-[80px_56px_minmax(0,1fr)_130px_100px_120px]",
                       selected === r.id && "bg-primario-suave/60",
                     )}
                   >
@@ -601,7 +666,7 @@ export function SalesHistoryPage() {
                       {r.customerName ? ` · ${r.customerName}` : ""}
                       {r.local ? " · sin sincronizar" : ""}
                     </td>
-                    <td className="truncate text-texto-suave">
+                    <td className="hidden truncate text-texto-suave lg:block">
                       {r.methods.map((m) => METHOD_LABEL[m]).join(" + ")}
                     </td>
                     <td

@@ -1,4 +1,4 @@
-import { formatMoney, parseMoney } from "@mostrador/shared";
+import { formatMoney, MAX_CENTS, parseDecimal, parseMoney } from "@mostrador/shared";
 import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { useMe } from "../../app/session";
@@ -77,7 +77,13 @@ export function QuickCreateForm({
       try {
         localStorage.setItem(LAST_CATEGORY, categoryId);
       } catch {}
-      const n = stock.trim() ? Number(stock.replace(",", ".")) : null;
+      const n = stock.trim() ? parseDecimal(stock) : null;
+      if (name.trim().length > 120) return setError("Nombre: como mucho 120 caracteres.");
+      if (/[<>]/.test(name)) return setError("Nombre: no puede tener < ni >.");
+      if (priceCents > MAX_CENTS)
+        return setError(`Precio: no puede pasar de ${formatMoney(MAX_CENTS)}.`);
+      if (n !== null && (n < 0 || !Number.isInteger(n)))
+        return setError("Stock inicial: un número entero, por ejemplo 12.");
       const p = await quickCreateProduct(me.member.id, {
         name,
         priceCents,
@@ -86,6 +92,8 @@ export function QuickCreateForm({
         initialStock: n && n > 0 ? n : null,
       });
       onCreated(p);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudo cargar.");
     } finally {
       setBusy(false);
     }
@@ -105,7 +113,7 @@ export function QuickCreateForm({
         label="Nombre"
         value={name}
         onChange={(e) => setName(e.target.value)}
-        placeholder="Galletitas de agua 200 g"
+        placeholder="Ej.: Galletitas de agua 200 g"
         hint={
           off.isFetching
             ? "Buscando el nombre en Open Food Facts…"
@@ -120,7 +128,7 @@ export function QuickCreateForm({
           inputMode="decimal"
           value={price}
           onChange={(e) => setPrice(e.target.value)}
-          placeholder="1500"
+          placeholder="Ej.: 1500"
           hint={priceCents ? formatMoney(priceCents) : undefined}
         />
         {withStock ? (

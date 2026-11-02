@@ -1,6 +1,7 @@
 import {
   type ColumnMapping,
   formatMoney,
+  formatQty,
   guessMapping,
   IMPORT_FIELDS,
   type ImportField,
@@ -27,6 +28,10 @@ type Item = {
   action: "new" | "update" | "unchanged" | "error";
   name: string;
   errors: string[];
+  priceCents?: number | null;
+  costCents?: number | null;
+  stock?: number | null;
+  unit?: "unit" | "kg";
   warnings?: string[];
   changes?: Record<string, [unknown, unknown]>;
 };
@@ -108,6 +113,7 @@ export function ImportPage() {
   const headers = rows[0] ?? [];
   const recognized = Object.keys(mapping).length;
   const items = preview.data?.items.filter((i) => i.action === tab) ?? [];
+  const renamed = preview.data?.items.filter((i) => i.changes?.name).length ?? 0;
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-4 p-4 lg:p-6">
@@ -158,8 +164,8 @@ export function ImportPage() {
             <div>
               <div className="text-base font-semibold">Decinos qué es cada columna</div>
               <div className="text-sm text-texto-suave">
-                Reconocimos {recognized} de {Object.keys(IMPORT_FIELDS).length} por el encabezado.
-                Revisá y seguí.
+                Reconocimos {recognized} {recognized === 1 ? "columna" : "columnas"} por el
+                encabezado; revisá el resto. Revisá y seguí.
               </div>
             </div>
             {(Object.keys(IMPORT_FIELDS) as ImportField[]).map((f) => (
@@ -241,7 +247,11 @@ export function ImportPage() {
             {(
               [
                 ["new", `${preview.data.summary.new} nuevos`, "ok"],
-                ["update", `${preview.data.summary.updated} actualizados`, "info"],
+                [
+                  "update",
+                  `${preview.data.summary.updated} actualizados${renamed ? ` (${renamed} cambian de nombre)` : ""}`,
+                  renamed ? "alerta" : "info",
+                ],
                 ["unchanged", `${preview.data.summary.unchanged} sin cambios`, "neutro"],
                 ["error", `${preview.data.summary.errors} con error`, "peligro"],
               ] as const
@@ -267,8 +277,22 @@ export function ImportPage() {
               <li key={i.line} className="flex flex-col gap-0.5 border-t border-borde py-2 text-sm">
                 <span className="font-medium">
                   <span className="text-texto-suave">Fila {i.line} · </span>
-                  {i.name || "(sin nombre)"}
+                  {i.name
+                    ? i.name.length > 80
+                      ? `${i.name.slice(0, 80)}…`
+                      : i.name
+                    : "(sin nombre)"}
                 </span>
+                {i.action === "new" && (
+                  <span className="text-texto-suave">
+                    {i.priceCents != null ? `Precio ${formatMoney(i.priceCents)}` : "Sin precio"}
+                    {i.costCents != null ? ` · costo ${formatMoney(i.costCents)}` : ""}
+                    {i.stock != null
+                      ? ` · stock ${formatQty(i.stock, i.unit === "kg" ? "kg" : "unit")}`
+                      : ""}
+                    {i.unit === "kg" ? " · por kilo" : " · por unidad"}
+                  </span>
+                )}
                 {i.errors.map((e) => (
                   <span key={e} className="text-peligro">
                     {e}

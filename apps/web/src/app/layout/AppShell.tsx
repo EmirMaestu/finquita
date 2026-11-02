@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Outlet, useLocation } from "react-router";
 import { PinAuthorizer } from "../../auth/pinAuth";
 import { GlobalScan } from "../../scan/GlobalScan";
 import { InstallGuide } from "../../ui/InstallGuide";
 import { Toaster } from "../../ui/toast";
+import { GlobalSearch } from "../GlobalSearch";
 import { moduleForPath } from "../modules";
 import { useViewport } from "../useViewport";
 import { BottomBar } from "./BottomBar";
@@ -11,6 +12,7 @@ import { CounterTopBar } from "./CounterTopBar";
 import { DesktopTopBar } from "./DesktopTopBar";
 import { MobileTopBar } from "./MobileTopBar";
 import { Rail } from "./Rail";
+import { SessionExpiredBar } from "./SessionExpiredBar";
 import { Sidebar } from "./Sidebar";
 
 function readCollapsed(): boolean {
@@ -29,19 +31,32 @@ export function AppShell() {
   const { layout } = useViewport();
   const location = useLocation();
   const title =
-    location.pathname === "/mas" ? "Más" : (moduleForPath(location.pathname)?.label ?? "");
+    location.pathname === "/mas"
+      ? "Más"
+      : location.pathname.startsWith("/avisos")
+        ? "Avisos"
+        : (moduleForPath(location.pathname)?.label ?? "");
   const [collapsed, setCollapsed] = useState(readCollapsed);
+  // Cada pantalla arranca arriba (si no, Caja abría scrolleada hasta el fondo de Ajustes).
+  const path = location.pathname;
+  useEffect(() => {
+    if (!path) return;
+    window.scrollTo(0, 0);
+    for (const m of document.querySelectorAll("main")) m.scrollTo?.(0, 0);
+  }, [path]);
 
   if (layout === "phone") {
     return (
       <div className="flex min-h-full flex-col bg-fondo" data-layout="phone">
         <MobileTopBar title={title} />
+        <SessionExpiredBar />
         <main className="flex-1 pb-[96px]">
-          <InstallGuide />
+          {location.pathname === "/inicio" && <InstallGuide />}
           <Outlet />
         </main>
         <BottomBar />
         <GlobalScan />
+        <GlobalSearch />
         <Toaster />
         <PinAuthorizer />
       </div>
@@ -54,11 +69,13 @@ export function AppShell() {
         <Rail />
         <div className="flex min-w-0 flex-1 flex-col">
           <MobileTopBar title={title} />
+          <SessionExpiredBar />
           <main className="min-h-0 flex-1 overflow-y-auto">
             <Outlet />
           </main>
         </div>
         <GlobalScan />
+        <GlobalSearch />
         <Toaster />
         <PinAuthorizer />
       </div>
@@ -70,10 +87,12 @@ export function AppShell() {
     return (
       <div className="flex h-full flex-col bg-fondo" data-layout={layout} data-mode="counter">
         <CounterTopBar />
+        <SessionExpiredBar />
         <main className="min-h-0 flex-1">
           <Outlet />
         </main>
         <GlobalScan />
+        <GlobalSearch />
         <Toaster />
         <PinAuthorizer />
       </div>
@@ -92,6 +111,8 @@ export function AppShell() {
   return (
     <div className="flex h-full flex-col bg-fondo" data-layout={layout}>
       <DesktopTopBar onToggleSidebar={toggle} />
+      {/* En la compu también: es la que pide el PIN cuando la sesión vence (ronda 3). */}
+      <SessionExpiredBar />
       <div className="flex min-h-0 flex-1">
         {collapsed ? <Rail /> : <Sidebar />}
         <main className="min-w-0 flex-1 overflow-y-auto">
@@ -99,6 +120,7 @@ export function AppShell() {
         </main>
       </div>
       <GlobalScan />
+      <GlobalSearch />
       <Toaster />
       <PinAuthorizer />
     </div>

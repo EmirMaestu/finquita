@@ -1,6 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { Download, MessageCircle } from "lucide-react";
 import { useNavigate } from "react-router";
+import { useCan } from "../../app/session";
 import { ApiError, api, downloadFile } from "../../data/api";
 import { Button } from "../../ui/Button";
 import { toast } from "../../ui/toast";
@@ -9,6 +10,7 @@ import { type SuggestedOrder, SuggestedPage } from "./SuggestedPage";
 /** El sugerido con sus acciones: guardar borrador, enviar por WhatsApp o bajar el PDF. */
 export function SuggestedFlow() {
   const navigate = useNavigate();
+  const canWhatsapp = useCan("send_orders");
   const create = useMutation({
     mutationFn: ({
       o,
@@ -17,8 +19,17 @@ export function SuggestedFlow() {
       o: SuggestedOrder;
       qty: Record<string, number>;
       next: "draft" | "send" | "pdf";
-    }) =>
-      api<{ id: string; number: number }>("/api/orders", {
+    }) => {
+      for (const [productId, n] of Object.entries(qty)) {
+        const l = (o.lines ?? []).find((x) => x.productId === productId);
+        const name = l?.name ?? "Un producto";
+        if (n < 0 || !Number.isFinite(n))
+          throw new Error(`${name}: la cantidad no puede ser negativa.`);
+        if (n > 100_000) throw new Error(`${name}: la cantidad no puede pasar de 100.000.`);
+        if (l?.unit === "unit" && !Number.isInteger(n))
+          throw new Error(`${name}: se pide por unidad, poné un número entero.`);
+      }
+      return api<{ id: string; number: number }>("/api/orders", {
         body: {
           supplierId: o.supplierId,
           expectedOn: o.delivery,
@@ -26,8 +37,12 @@ export function SuggestedFlow() {
             .filter(([, n]) => n > 0)
             .map(([productId, n]) => ({ productId, qty: n })),
         },
-      }),
+      });
+    },
     onSuccess: async (r, v) => {
+      // Se dice qué quedó: el PDF y el borrador también crean el pedido (en Borrador).
+      if (v.next !== "send")
+        toast({ text: `Pedido ${String(r.number).padStart(4, "0")} guardado como borrador` });
       if (v.next === "pdf")
         await downloadFile(
           `/api/orders/${r.id}/pdf`,
@@ -37,26 +52,28 @@ export function SuggestedFlow() {
     },
     onError: (e) =>
       toast({
-        text: e instanceof ApiError ? e.message : "No se pudo guardar el pedido.",
+        text:
+          e instanceof ApiError || e instanceof Error ? e.message : "No se pudo guardar el pedido.",
         tone: "error",
       }),
   });
   return (
     <SuggestedPage
-      actions={(o, qty) => (
+      actions={(o, qty, problem) => (
         <div className="mt-1 flex flex-col gap-2">
           <Button
             icon={<MessageCircle size={18} />}
-            disabled={create.isPending}
+            busy={create.isPending}
+            disabled={Boolean(problem)}
             onClick={() => create.mutate({ o, qty, next: "send" })}
           >
-            Enviar por WhatsApp
+            {canWhatsapp ? "Enviar por WhatsApp" : "Guardar y enviar"}
           </Button>
           <div className="flex gap-2">
             <Button
               variant="secondary"
               className="flex-1"
-              disabled={create.isPending}
+              disabled={create.isPending || Boolean(problem)}
               onClick={() => create.mutate({ o, qty, next: "draft" })}
             >
               Guardar borrador
@@ -65,7 +82,7 @@ export function SuggestedFlow() {
               variant="secondary"
               className="flex-1"
               icon={<Download size={18} />}
-              disabled={create.isPending}
+              disabled={create.isPending || Boolean(problem)}
               onClick={() => create.mutate({ o, qty, next: "pdf" })}
             >
               Descargar PDF

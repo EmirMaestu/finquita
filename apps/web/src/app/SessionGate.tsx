@@ -10,9 +10,9 @@ import { primeSaleNumbers } from "../sell/complete";
 import { syncEngine } from "../sync";
 import { SkeletonList } from "../ui/States";
 import { LiveShell } from "./LiveShell";
-import { lockScreen, useLockScreen } from "./lock";
+import { lockScreen, useLockReason, useLockScreen } from "./lock";
 import type { ModuleId } from "./modules";
-import { type Me, SessionProvider, useSessionQuery } from "./session";
+import { type Me, SessionProvider, useSessionQuery, useSignOut } from "./session";
 
 /** Módulos que ve cada uno según sus permisos (lo que no puede usar, no aparece). */
 export function modulesFor(me: Me): ModuleId[] {
@@ -54,7 +54,7 @@ export function SessionGate({ children }: { children: ReactNode }) {
   return (
     <SessionProvider me={me}>
       <SyncOnLogin me={me} />
-      <IdleLock />
+      <IdleLock onPassword={() => setScreen("password")} />
       <LiveShell
         base={{
           businessName: me.business?.name ?? "Mostrador",
@@ -74,14 +74,16 @@ const IDLE_MS = 5 * 60_000;
  * En un dispositivo habilitado, la sesión con PIN se bloquea sola tras unos minutos sin uso
  * (nunca en el medio de una venta).
  */
-function IdleLock() {
+function IdleLock({ onPassword }: { onPassword: () => void }) {
   const locked = useLockScreen();
+  const reason = useLockReason();
+  const signOut = useSignOut();
   useEffect(() => {
     if (!credentials.get().pinToken) return;
-    let timer = setTimeout(() => !isSaleInProgress() && lockScreen.open(), IDLE_MS);
+    let timer = setTimeout(() => !isSaleInProgress() && lockScreen.open("idle"), IDLE_MS);
     const reset = () => {
       clearTimeout(timer);
-      timer = setTimeout(() => !isSaleInProgress() && lockScreen.open(), IDLE_MS);
+      timer = setTimeout(() => !isSaleInProgress() && lockScreen.open("idle"), IDLE_MS);
     };
     const events = ["keydown", "pointerdown", "touchstart"] as const;
     for (const e of events) window.addEventListener(e, reset);
@@ -90,7 +92,18 @@ function IdleLock() {
       for (const e of events) window.removeEventListener(e, reset);
     };
   }, []);
-  return locked ? <LockScreen onCancel={() => lockScreen.close()} /> : null;
+  // Bloqueada por inactividad, solo se destraba con el PIN: no hay "Volver".
+  return locked ? (
+    <LockScreen
+      onCancel={reason === "switch" ? () => lockScreen.close() : undefined}
+      onPassword={() => {
+        // Directo al email: sin pasar otra vez por "¿Quién sos?" (ronda 3).
+        onPassword();
+        lockScreen.close();
+        void signOut();
+      }}
+    />
+  ) : null;
 }
 
 /**

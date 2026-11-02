@@ -78,8 +78,9 @@ describe("proxy de Open Food Facts", () => {
     const app = createApp({ db: ref.t.db, auth: TEST_AUTH, off: { fetch } });
     const c = await as(app, ref.t.db, "tomas");
     const r = await c.get("/api/off/7790000001017");
-    expect(r.status).toBe(503);
-    expect(r.body.error.message).toContain("a mano");
+    // Caído no es un error de la app: el alta sigue a mano, sin un 5xx en la consola del navegador.
+    expect(r.status).toBe(200);
+    expect(r.body).toMatchObject({ found: false, unavailable: true });
     expect((await c.get("/api/off/abc")).status).toBe(400);
   });
 

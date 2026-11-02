@@ -19,13 +19,15 @@ export async function loginWithPin(page: Page, name: string, pin: string) {
   await page.goto("/");
   await page.getByRole("button", { name: new RegExp(`^${name.charAt(0)} ${name} `) }).click();
   for (const d of pin) await page.getByRole("button", { name: d, exact: true }).click();
-  // El cajero entra directo a Vender (modo mostrador, sin la barra de módulos).
+  // El cajero entra directo a Vender (modo mostrador, sin la barra de módulos); con la caja
+  // cerrada, Vender muestra "Abrir turno".
   await expect(
     page
       .getByRole("navigation", { name: "Módulos" })
       .or(page.getByLabel("Escaneá o buscá por nombre"))
+      .or(page.getByRole("region", { name: "Abrir turno" }))
       .first(),
-  ).toBeVisible();
+  ).toBeVisible({ timeout: 20_000 });
 }
 
 /**
@@ -64,7 +66,8 @@ export async function ensureShiftOpen(page: Page, floatPesos = "20000") {
   const shiftView = page.getByRole("region", { name: "Efectivo esperado" });
   await expect(open.or(search).or(shiftView).first()).toBeVisible({ timeout: 20_000 });
   if (await open.isVisible().catch(() => false)) {
-    await open.getByRole("button", { name: "Total directo" }).click();
+    const other = open.getByRole("button", { name: "Hay otra cantidad" });
+    if (await other.isVisible().catch(() => false)) await other.click();
     await open.getByLabel("Fondo inicial").fill(floatPesos);
     const comment = open.getByLabel("Comentario");
     if (await comment.isVisible().catch(() => false)) await comment.fill("Prueba");

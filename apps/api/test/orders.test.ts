@@ -27,16 +27,22 @@ describe("pedidos", () => {
     expect(text.split("\n")[0]).toMatch(
       /^Hola Marcelo, te paso el pedido 0042 de Almacén La Esquina para el jueves \d+\/10:$/,
     );
-    expect(text).toContain("• Leche entera 1 L sachet [LE-1L]: 24 u (2 cajones)");
+    expect(text).toContain("• Leche entera 1 L sachet [LE-1L]: 24 unidades (2 cajones)");
     expect(text).toContain("14 productos, total estimado $ 186.400.");
     expect(url).toBe(`https://wa.me/5492614000002?text=${encodeURIComponent(text)}`);
   });
 
-  it("estados a mano: enviado por WhatsApp, confirmado con cambios y cerrado no se salta", async () => {
+  it("estados a mano: enviado (el encargado, en PDF), confirmado con cambios y cerrado no se salta", async () => {
     const julian = await as(app(), ref.t.db, "julian");
-    const sent = await julian.post(`/api/orders/${ORDER_42}/status`, {
+    // Mandarlo por WhatsApp es del dueño (al encargado se le puede dar: matriz, "Opcional").
+    const denied = await julian.post(`/api/orders/${ORDER_42}/status`, {
       status: "sent",
       via: "whatsapp",
+    });
+    expect(denied.status).toBe(403);
+    const sent = await julian.post(`/api/orders/${ORDER_42}/status`, {
+      status: "sent",
+      via: "pdf",
     });
     expect(sent.body).toMatchObject({
       status: "sent",
@@ -64,7 +70,7 @@ describe("pedidos", () => {
       "sent",
       "changed",
     ]);
-    expect(detail.body.timeline[1]).toMatchObject({ note: "Enviado por WhatsApp", by: "Julián" });
+    expect(detail.body.timeline[1]).toMatchObject({ note: "Enviado en PDF", by: "Julián" });
     // Lo ya pedido entra en el sugerido: la leche ya no hace falta.
     const sug = await julian.get(`/api/purchasing/suggested?supplierId=${LACTEOS}`);
     expect(

@@ -3,16 +3,21 @@ import {
   formatPercent,
   marginOnCostBp,
   moneyInput,
+  parseDecimal,
   parseMoney,
   priceFromMargin,
 } from "@mostrador/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { type FormEvent, useState } from "react";
+import { Camera } from "lucide-react";
+import { type FormEvent, useEffect, useState } from "react";
 import { useCan } from "../../app/session";
+import { useViewport } from "../../app/useViewport";
 import { ApiError, api } from "../../data/api";
 import { fetchCategories, type ProductDetail, type ProductItem } from "../../data/products";
-import { Button } from "../../ui/Button";
+import { scanRouter } from "../../scan/GlobalScan";
+import { Button, IconButton } from "../../ui/Button";
 import { SelectField, TextField, Toggle } from "../../ui/Field";
+import { MoreFields } from "../../ui/MoreFields";
 import { Sheet } from "../../ui/Sheet";
 import { toast } from "../../ui/toast";
 import { saveSupplierLink, useCanLinkSuppliers } from "./SupplierLinkSheet";
@@ -28,6 +33,21 @@ type Props = {
 
 /** Alta y edición de producto: nombre, categoría, precio (y costo con permiso), códigos y stock. */
 export function ProductForm({ open, onClose, product, onSaved, initialCode }: Props) {
+  const phone = useViewport().layout === "phone";
+  // Mientras la hoja está abierta, lo escaneado (pistola o cámara) va al campo de códigos.
+  useEffect(() => {
+    if (!open) return;
+    return scanRouter.claim((code) => {
+      scanRouter.closeCamera();
+      setCodes((c) => {
+        const list = c
+          .split(",")
+          .map((x) => x.trim())
+          .filter(Boolean);
+        return list.includes(code) ? c : [...list, code].join(", ");
+      });
+    });
+  }, [open]);
   const qc = useQueryClient();
   const seeCosts = useCan("view_costs");
   const cats = useQuery({ queryKey: ["categories"], queryFn: fetchCategories, enabled: open });
@@ -135,6 +155,26 @@ export function ProductForm({ open, onClose, product, onSaved, initialCode }: Pr
     setError(null);
     if (!name.trim()) return setError("Poné el nombre del producto.");
     if (priceCents === null) return setError("Poné un precio válido, por ejemplo 6900.");
+    if (/[<>]/.test(name)) return setError("Nombre: no puede tener < ni >.");
+    const badCode = codes
+      .split(/[,\s]+/)
+      .map((c) => c.trim())
+      .filter(Boolean)
+      .find((c) => !/^\d{4,14}$/.test(c));
+    if (badCode)
+      return setError(`Código "${badCode}": un código de barras tiene de 4 a 14 números.`);
+    if (cost.trim() && (parseMoney(cost) === null || (parseMoney(cost) ?? 0) < 0))
+      return setError("Costo: poné un monto, por ejemplo 4500.");
+    const ms = minStock.trim() ? parseDecimal(minStock) : null;
+    if (minStock.trim() && (ms === null || ms < 0))
+      return setError("Stock mínimo: no puede ser negativo.");
+    if (ms !== null && unit === "unit" && !Number.isInteger(ms))
+      return setError("Stock mínimo: se vende por unidad, poné un número entero.");
+    const is = initialStock.trim() ? parseDecimal(initialStock) : null;
+    if (initialStock.trim() && (is === null || is < 0))
+      return setError("Stock inicial: no puede ser negativo.");
+    if (is !== null && unit === "unit" && !Number.isInteger(is))
+      return setError("Stock inicial: se vende por unidad, poné un número entero.");
     save.mutate();
   };
 
@@ -144,6 +184,7 @@ export function ProductForm({ open, onClose, product, onSaved, initialCode }: Pr
       onClose={onClose}
       title={editing ? "Editar producto" : "Nuevo producto"}
       wide
+      error={error}
       footer={
         <>
           <Button variant="secondary" onClick={onClose} className="flex-1 lg:flex-none">
@@ -153,7 +194,8 @@ export function ProductForm({ open, onClose, product, onSaved, initialCode }: Pr
           <Button
             type="submit"
             form="product-form"
-            disabled={save.isPending}
+            busy={save.isPending}
+            busyLabel="Guardando…"
             className="flex-1 lg:flex-none"
           >
             Guardar
@@ -166,7 +208,7 @@ export function ProductForm({ open, onClose, product, onSaved, initialCode }: Pr
           label="Nombre y presentación"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Yerba Playadito 1 kg"
+          placeholder="Ej.: Yerba Playadito 1 kg"
           className="lg:col-span-2"
         />
         <SelectField
@@ -175,16 +217,18 @@ export function ProductForm({ open, onClose, product, onSaved, initialCode }: Pr
           onChange={(e) => setCategoryId(e.target.value)}
         >
           <option value="">Sin categoría</option>
-          {(cats.data ?? []).map((c) => (
-            <optgroup key={c.id} label={c.name}>
-              <option value={c.id}>{c.name}</option>
-              {c.children.map((ch) => (
-                <option key={ch.id} value={ch.id}>
-                  {c.name} › {ch.name}
-                </option>
-              ))}
-            </optgroup>
-          ))}
+          {/* Opciones planas ("Almacén", "Almacén › Infusiones"): con grupos, la lista se leía
+              como si solo existiera "Sin categoría" (ronda 3). */}
+          {(cats.data ?? []).flatMap((c) => [
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>,
+            ...c.children.map((ch) => (
+              <option key={ch.id} value={ch.id}>
+                {c.name} › {ch.name}
+              </option>
+            )),
+          ])}
         </SelectField>
         <SelectField
           label="Se vende por"
@@ -200,7 +244,7 @@ export function ProductForm({ open, onClose, product, onSaved, initialCode }: Pr
             inputMode="decimal"
             value={cost}
             onChange={(e) => setCost(e.target.value)}
-            placeholder="4850"
+            placeholder="Ej.: 4850"
             hint={
               costCents
                 ? `Con 40 % de ganancia: ${formatMoney(priceFromMargin(costCents, 4000, 5000))}`
@@ -213,62 +257,41 @@ export function ProductForm({ open, onClose, product, onSaved, initialCode }: Pr
           inputMode="decimal"
           value={price}
           onChange={(e) => setPrice(e.target.value)}
-          placeholder="6900"
+          placeholder="Ej.: 6900"
           hint={margin !== null ? `Ganancia ${formatPercent(margin)} sobre el costo` : undefined}
           error={
             margin !== null && margin < 0 ? "El precio está debajo del costo: pierde plata." : null
           }
         />
-        <TextField
-          label="Códigos de barras"
-          value={codes}
-          onChange={(e) => setCodes(e.target.value)}
-          placeholder="7791234000012"
-          hint="Si tiene varios, separalos con coma."
-        />
-        <TextField
-          label="Código interno o PLU"
-          value={plu}
-          onChange={(e) => setPlu(e.target.value)}
-          placeholder="1042"
-          hint="Para pesables y botones rápidos."
-        />
-        {!editing && canLink && (
-          <>
-            <SelectField
-              label="Proveedor principal"
-              value={supplierId}
-              onChange={(e) => setSupplierId(e.target.value)}
-              hint={
-                suppliers.isError
-                  ? "No pudimos traer los proveedores. Lo podés agregar después desde la ficha."
-                  : "Opcional. Lo usa el pedido sugerido."
-              }
+        <div className="flex items-end gap-2">
+          <TextField
+            label="Códigos de barras"
+            value={codes}
+            onChange={(e) => setCodes(e.target.value)}
+            placeholder="Ej.: 7791234000012"
+            hint={
+              phone
+                ? "Escanealo con la cámara o escribilo."
+                : "Escanealo con la pistola o escribilo. Si tiene varios, separalos con coma."
+            }
+            className="flex-1"
+          />
+          {phone && (
+            <IconButton
+              label="Escanear el código con la cámara"
+              onClick={() => scanRouter.openCamera()}
+              className="mb-6 size-12 rounded-lg bg-primario text-sobre-primario"
             >
-              <option value="">{suppliers.isPending ? "Cargando…" : "Sin proveedor"}</option>
-              {(suppliers.data ?? []).map((x) => (
-                <option key={x.id} value={x.id}>
-                  {x.name}
-                </option>
-              ))}
-            </SelectField>
-            <TextField
-              label="Código del proveedor"
-              value={supplierCode}
-              onChange={(e) => setSupplierCode(e.target.value)}
-              placeholder="YPL-1K"
-              maxLength={40}
-              disabled={!supplierId}
-              hint={supplierId ? "Opcional." : "Elegí primero el proveedor."}
-            />
-          </>
-        )}
+              <Camera size={22} />
+            </IconButton>
+          )}
+        </div>
         <TextField
           label="Stock mínimo"
           inputMode="decimal"
           value={minStock}
           onChange={(e) => setMinStock(e.target.value)}
-          placeholder="8"
+          placeholder="Ej.: 8"
         />
         {!editing && (
           <TextField
@@ -279,40 +302,95 @@ export function ProductForm({ open, onClose, product, onSaved, initialCode }: Pr
             placeholder="Opcional"
           />
         )}
-        <TextField
-          label="Ubicación"
-          value={location}
-          onChange={(e) => setLocation(e.target.value)}
-          placeholder="Góndola 3"
-        />
-        <div className="flex flex-col lg:col-span-2">
-          <Toggle
-            label="Precio fijo"
-            hint="Queda afuera del cambio masivo de precios (cigarrillos)."
-            checked={fixedPrice}
-            onChange={setFixedPrice}
-          />
-          <Toggle
-            label="Mayores de 18"
-            hint="Recuerda pedir documento al vender."
-            checked={adult}
-            onChange={setAdult}
-          />
-          <Toggle
-            label="Botón rápido en Vender"
-            hint="Para lo que no tiene código: pan, fiambres, verdura."
-            checked={quick}
-            onChange={setQuick}
-          />
-        </div>
-        {error && (
-          <div
-            role="alert"
-            className="rounded-lg bg-peligro-suave px-3 py-2 text-[13px] font-semibold text-peligro lg:col-span-2"
-          >
-            {error}
-          </div>
+        {/* Lo pesable necesita su código interno a la vista; lo demás es opcional y va plegado. */}
+        {unit === "kg" && (
+          <>
+            {" "}
+            <TextField
+              label="Código interno (el de la planilla)"
+              value={plu}
+              onChange={(e) => setPlu(e.target.value)}
+              placeholder="Ej.: 1042"
+              hint="Para pesables y botones rápidos."
+            />
+          </>
         )}
+        <div className="lg:col-span-2">
+          <MoreFields
+            open={Boolean(location || fixedPrice || adult || quick || (unit !== "kg" && plu))}
+          >
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              {unit !== "kg" && (
+                <>
+                  {" "}
+                  <TextField
+                    label="Código interno (el de la planilla)"
+                    value={plu}
+                    onChange={(e) => setPlu(e.target.value)}
+                    placeholder="Ej.: 1042"
+                    hint="Para pesables y botones rápidos."
+                  />
+                </>
+              )}
+              {!editing && canLink && (
+                <>
+                  <SelectField
+                    label="Proveedor principal"
+                    value={supplierId}
+                    onChange={(e) => setSupplierId(e.target.value)}
+                    hint={
+                      suppliers.isError
+                        ? "No pudimos traer los proveedores. Lo podés agregar después desde la ficha."
+                        : "Opcional. Lo usa el pedido sugerido."
+                    }
+                  >
+                    <option value="">{suppliers.isPending ? "Cargando…" : "Sin proveedor"}</option>
+                    {(suppliers.data ?? []).map((x) => (
+                      <option key={x.id} value={x.id}>
+                        {x.name}
+                      </option>
+                    ))}
+                  </SelectField>
+                  <TextField
+                    label="Código del proveedor"
+                    value={supplierCode}
+                    onChange={(e) => setSupplierCode(e.target.value)}
+                    placeholder="Ej.: YPL-1K"
+                    maxLength={40}
+                    disabled={!supplierId}
+                    hint={supplierId ? "Opcional." : "Elegí primero el proveedor."}
+                  />
+                </>
+              )}
+              <TextField
+                label="Ubicación"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder="Ej.: Góndola 3"
+              />
+              <div className="flex flex-col lg:col-span-2">
+                <Toggle
+                  label="Precio fijo"
+                  hint="Queda afuera del cambio masivo de precios (cigarrillos)."
+                  checked={fixedPrice}
+                  onChange={setFixedPrice}
+                />
+                <Toggle
+                  label="Mayores de 18"
+                  hint="Acordate de pedir documento al vender."
+                  checked={adult}
+                  onChange={setAdult}
+                />
+                <Toggle
+                  label="Botón rápido en Vender"
+                  hint="Para lo que no tiene código: pan, fiambres, verdura."
+                  checked={quick}
+                  onChange={setQuick}
+                />
+              </div>
+            </div>
+          </MoreFields>
+        </div>
       </form>
     </Sheet>
   );

@@ -2,18 +2,21 @@ import {
   formatDate,
   PROMO_LABEL,
   type PromotionKind,
+  parseMoney,
   promoStatus,
   todayAR,
 } from "@mostrador/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { useSearchParams } from "react-router";
 import { NoPermissionFor } from "../../app/guards";
 import { useCan } from "../../app/session";
 import { ApiError, api } from "../../data/api";
-import { fetchCategories, fetchProducts } from "../../data/products";
+import { fetchCategories, fetchProduct, fetchProducts } from "../../data/products";
 import { Button } from "../../ui/Button";
 import { Chip, FilterChip } from "../../ui/Chip";
 import { SelectField, TextField } from "../../ui/Field";
+import { MoreFields } from "../../ui/MoreFields";
 import { Sheet } from "../../ui/Sheet";
 import { EmptyState, ErrorState, SkeletonList } from "../../ui/States";
 
@@ -37,13 +40,22 @@ const STATUS_LABEL = {
   ended: ["Terminada", "neutro"],
 } as const;
 
-function PromoForm({ onClose }: { onClose: () => void }) {
+function PromoForm({
+  onClose,
+  initial,
+}: {
+  onClose: () => void;
+  /** Producto que ya viene elegido (desde Vencimientos: "Armar promo"). */
+  initial?: { productId: string; name: string } | null;
+}) {
   const qc = useQueryClient();
   const cats = useQuery({ queryKey: ["categories"], queryFn: fetchCategories });
   const [kind, setKind] = useState<PromotionKind>("two_for_one");
   const [name, setName] = useState("");
   const [search, setSearch] = useState("");
-  const [picked, setPicked] = useState<{ productId: string; name: string; qty: number }[]>([]);
+  const [picked, setPicked] = useState<{ productId: string; name: string; qty: number }[]>(
+    initial ? [{ ...initial, qty: 1 }] : [],
+  );
   const [categoryId, setCategoryId] = useState("");
   const [percent, setPercent] = useState("50");
   const [n, setN] = useState("2");
@@ -73,9 +85,7 @@ function PromoForm({ onClose }: { onClose: () => void }) {
             ...(usesCategory ? { percentBp: Math.round(Number(percent) * 100) } : {}),
             ...(kind === "combo"
               ? {
-                  comboPriceCents: Math.round(
-                    Number(combo.replace(/\./g, "").replace(",", ".")) * 100,
-                  ),
+                  comboPriceCents: parseMoney(combo) ?? 0,
                 }
               : {}),
           },
@@ -92,6 +102,20 @@ function PromoForm({ onClose }: { onClose: () => void }) {
     },
     onError: (e) => setError(e instanceof ApiError ? e.message : "No se pudo guardar."),
   });
+  const daysField = (
+    <fieldset className="m-0 flex flex-wrap gap-2 border-0 p-0">
+      <legend className="mb-1.5 w-full text-[13px] font-semibold">Días de la semana</legend>
+      {DAYS.map((d, i) => (
+        <FilterChip
+          key={d}
+          active={days.includes(i)}
+          onClick={() => setDays((x) => (x.includes(i) ? x.filter((y) => y !== i) : [...x, i]))}
+        >
+          {d}
+        </FilterChip>
+      ))}
+    </fieldset>
+  );
   return (
     <Sheet
       open
@@ -112,12 +136,6 @@ function PromoForm({ onClose }: { onClose: () => void }) {
             </FilterChip>
           ))}
         </div>
-        <TextField
-          label="Nombre"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Se arma solo si lo dejás vacío"
-        />
         {kind === "nth_unit" && (
           <div className="grid grid-cols-2 gap-3">
             <TextField
@@ -183,7 +201,7 @@ function PromoForm({ onClose }: { onClose: () => void }) {
               <li key={p.id}>
                 <button
                   type="button"
-                  className="w-full rounded-md px-2 py-2 text-left hover:bg-neutro-suave"
+                  className="min-h-12 w-full rounded-md px-2 py-2 text-left hover:bg-neutro-suave lg:min-h-10"
                   onClick={() => {
                     setPicked((x) => [
                       ...x.filter((y) => y.productId !== p.id),
@@ -209,31 +227,31 @@ function PromoForm({ onClose }: { onClose: () => void }) {
             </button>
           ))}
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        {/* "Día de la semana" necesita los días a la vista; el resto es opcional y va plegado. */}
+        {kind === "weekday" && daysField}
+        <MoreFields label="Nombre y fechas (opcional)" open={Boolean(name || startsOn || endsOn)}>
           <TextField
-            label="Desde"
-            type="date"
-            value={startsOn}
-            onChange={(e) => setStartsOn(e.target.value)}
+            label="Nombre"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Se arma solo si lo dejás vacío"
           />
-          <TextField
-            label="Hasta"
-            type="date"
-            value={endsOn}
-            onChange={(e) => setEndsOn(e.target.value)}
-          />
-        </div>
-        <fieldset className="m-0 flex flex-wrap gap-2 border-0 p-0" aria-label="Días">
-          {DAYS.map((d, i) => (
-            <FilterChip
-              key={d}
-              active={days.includes(i)}
-              onClick={() => setDays((x) => (x.includes(i) ? x.filter((y) => y !== i) : [...x, i]))}
-            >
-              {d}
-            </FilterChip>
-          ))}
-        </fieldset>
+          <div className="grid grid-cols-2 gap-3">
+            <TextField
+              label="Desde"
+              type="date"
+              value={startsOn}
+              onChange={(e) => setStartsOn(e.target.value)}
+            />
+            <TextField
+              label="Hasta"
+              type="date"
+              value={endsOn}
+              onChange={(e) => setEndsOn(e.target.value)}
+            />
+          </div>
+          {kind !== "weekday" && daysField}
+        </MoreFields>
         {error && (
           <div role="alert" className="text-sm font-semibold text-peligro">
             {error}
@@ -247,7 +265,16 @@ function PromoForm({ onClose }: { onClose: () => void }) {
 /** Promociones por estado: activa, programada y terminada. */
 export function PromotionsPage() {
   const can = useCan("change_prices");
+  const [params, setParams] = useSearchParams();
+  const fromExpiry = params.get("producto");
+  const initial = useQuery({
+    queryKey: ["product", fromExpiry],
+    queryFn: () => fetchProduct(fromExpiry ?? ""),
+    enabled: Boolean(fromExpiry) && can,
+  });
   const [creating, setCreating] = useState(false);
+  // Desde Vencimientos llega con ?producto=: se abre la promo con ese producto ya elegido.
+  const open = creating || Boolean(fromExpiry && initial.data);
   const q = useQuery({ queryKey: ["promotions"], queryFn: () => api<Promo[]>("/api/promotions") });
   const today = todayAR();
   if (!can) return <NoPermissionFor perm="change_prices" />;
@@ -289,7 +316,19 @@ export function PromotionsPage() {
           })}
         </ul>
       )}
-      {creating && <PromoForm onClose={() => setCreating(false)} />}
+      {open && (
+        <PromoForm
+          initial={
+            fromExpiry && initial.data
+              ? { productId: initial.data.id, name: initial.data.name }
+              : null
+          }
+          onClose={() => {
+            setCreating(false);
+            if (fromExpiry) setParams({}, { replace: true });
+          }}
+        />
+      )}
     </div>
   );
 }

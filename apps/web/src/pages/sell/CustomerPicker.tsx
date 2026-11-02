@@ -58,7 +58,7 @@ export function CustomerPicker({
             placeholder="Opcional"
           />
           <p className="m-0 text-[13px] text-texto-suave">
-            Arranca sin límite de fiado: lo carga un encargado o el dueño. Mientras tanto, fiarle
+            Arranca con límite de fiado $ 0: lo sube un encargado o el dueño. Mientras tanto, fiarle
             pide PIN.
           </p>
           <div className="flex gap-2">

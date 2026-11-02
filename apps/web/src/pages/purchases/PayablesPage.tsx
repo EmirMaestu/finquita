@@ -9,18 +9,17 @@ import {
   todayAR,
 } from "@mostrador/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Camera } from "lucide-react";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { NoPermissionFor } from "../../app/guards";
 import { useGrant, useMe } from "../../app/session";
 import { addCashMoveLocal } from "../../cash/local";
 import { useRegister } from "../../cash/useRegister";
 import { ApiError, api } from "../../data/api";
-import { queuePhoto } from "../../data/files";
 import { Button } from "../../ui/Button";
 import { Chip, FilterChip } from "../../ui/Chip";
 import { cx } from "../../ui/cx";
 import { SelectField, TextField } from "../../ui/Field";
+import { PhotoButton } from "../../ui/PhotoButton";
 import { Sheet } from "../../ui/Sheet";
 import { EmptyState, ErrorState, SkeletonList } from "../../ui/States";
 import { toast } from "../../ui/toast";
@@ -49,36 +48,6 @@ type Summary = {
 };
 
 const short = (d: string | null) => (d ? formatDate(d).slice(0, 5) : "—");
-
-function PhotoButton({
-  value,
-  onChange,
-  label,
-}: {
-  value: string | null;
-  onChange: (id: string) => void;
-  label: string;
-}) {
-  const ref = useRef<HTMLInputElement>(null);
-  return (
-    <>
-      <input
-        ref={ref}
-        type="file"
-        accept="image/*,application/pdf"
-        className="hidden"
-        aria-label={label}
-        onChange={async (e) => {
-          const f = e.target.files?.[0];
-          if (f) onChange(await queuePhoto(f));
-        }}
-      />
-      <Button variant="secondary" icon={<Camera size={18} />} onClick={() => ref.current?.click()}>
-        {value ? `${label} ✓` : label}
-      </Button>
-    </>
-  );
-}
 
 function PaySheet({
   item,
@@ -255,7 +224,7 @@ function NewPayable({ onClose }: { onClose: () => void }) {
           disabled={!f.supplierId || !(parseMoney(f.amount) ?? 0) || save.isPending}
           onClick={() => save.mutate()}
         >
-          Guardar
+          Guardar comprobante
         </Button>
       }
     >
@@ -322,7 +291,7 @@ export function PayablesPage() {
   return (
     <div className="flex flex-col gap-4 p-4 lg:p-6">
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="m-0 text-[22px] font-semibold">Compras</h1>
+        <h1 className="m-0 hidden text-[22px] font-semibold lg:block">Compras</h1>
         <PurchasesTabs />
       </div>
       <div className="flex flex-wrap items-center gap-2">
@@ -333,7 +302,8 @@ export function PayablesPage() {
         <FilterChip active={view === "paid"} onClick={() => setView("paid")}>
           Pagadas
         </FilterChip>
-        <Button variant="secondary" onClick={() => setCreating(true)}>
+        {/* La acción de la pantalla es una sola y va como primaria (en cada fila, secundaria). */}
+        <Button className="ml-auto" onClick={() => setCreating(true)}>
           Cargar comprobante
         </Button>
       </div>
@@ -366,6 +336,8 @@ export function PayablesPage() {
         ) : !q.data.items.length ? (
           <EmptyState
             title={view === "pending" ? "No hay nada para pagar" : "Todavía no hay pagos"}
+            body="Cargá la factura o el remito del proveedor para llevar lo que le debés."
+            action={<Button onClick={() => setCreating(true)}>Cargar comprobante</Button>}
           />
         ) : (
           <ul

@@ -2,6 +2,7 @@ import {
   formatMoney,
   formatPercent,
   formatQty,
+  formatTime,
   METHOD_LABEL,
   type PaymentMethodCode,
 } from "@mostrador/shared";
@@ -31,7 +32,7 @@ import { cx } from "../../ui/cx";
 import { EmptyState, ErrorState, SkeletonList } from "../../ui/States";
 import { FirstSteps, useSetupStatus } from "./Setup";
 
-type Attention = {
+export type Attention = {
   key: string;
   severity: "danger" | "warning" | "info";
   text: string;
@@ -46,6 +47,7 @@ type Dashboard = {
     tickets: number;
     averageTicketCents: number;
     cashCents: number;
+    shiftOpen?: boolean;
     marginCents?: number;
     marginBp?: number | null;
   };
@@ -89,8 +91,7 @@ function longDate() {
 
 function Header() {
   const me = useMe();
-  const shell = useShell();
-  const reg = shell.register;
+  const reg = useShell().register;
   return (
     <div>
       <h1 className="m-0 text-[26px] font-semibold">Hola, {me?.member.name.split(" ")[0]}</h1>
@@ -133,8 +134,9 @@ function Numbers({ n }: { n: Dashboard["numbers"] }) {
     ],
     ["Tickets", String(n.tickets)],
     ["Ticket promedio", formatMoney(n.averageTicketCents)],
-    ["Efectivo en caja", formatMoney(n.cashCents)],
   ];
+  // Con la caja cerrada no hay efectivo que mostrar: el estado ya está en el encabezado.
+  if (n.shiftOpen !== false) cards.push(["Efectivo en caja", formatMoney(n.cashCents)]);
   if (n.marginCents !== undefined)
     cards.push([
       "Margen estimado",
@@ -146,7 +148,12 @@ function Numbers({ n }: { n: Dashboard["numbers"] }) {
       ) : undefined,
     ]);
   return (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+    <div
+      className={cx(
+        "grid grid-cols-2 gap-3",
+        cards.length === 5 ? "lg:grid-cols-5" : "lg:grid-cols-4",
+      )}
+    >
       {cards.map(([label, value, extra], i) => (
         <section
           key={label}
@@ -165,7 +172,7 @@ function Numbers({ n }: { n: Dashboard["numbers"] }) {
   );
 }
 
-function AttentionList({ items }: { items: Attention[] }) {
+export function AttentionList({ items }: { items: Attention[] }) {
   const navigate = useNavigate();
   return (
     <section
@@ -210,7 +217,7 @@ function Shortcuts() {
     ["Escanear", ScanBarcode, () => scanRouter.openCamera()],
     ["Recibir mercadería", PackageCheck, () => navigate("/compras/recepcion")],
     ["Nuevo pedido", Truck, () => navigate("/compras/sugerido")],
-    ["Registrar gasto", Wallet, () => navigate("/caja")],
+    ["Registrar gasto", Wallet, () => navigate("/caja?gasto=1")],
     ["Cambiar precios", Tag, () => navigate("/productos/precios")],
   ];
   return (
@@ -312,16 +319,16 @@ function Methods({ methods }: { methods: Dashboard["methods"] }) {
 }
 
 function TopAndDeliveries({ d }: { d: Dashboard }) {
+  // Lo vacío no ocupa lugar: sin ventas ni entregas, no se muestra nada.
+  if (!d.top.length && !d.deliveries.length) return null;
   return (
     <div className="grid gap-4 lg:grid-cols-2">
-      <section
-        aria-label="Lo más vendido hoy"
-        className="rounded-card border border-borde bg-superficie p-4"
-      >
-        <h2 className="m-0 mb-2 text-base font-semibold">Lo más vendido hoy</h2>
-        {!d.top.length ? (
-          <div className="text-sm text-texto-suave">Todavía no hay ventas hoy.</div>
-        ) : (
+      {d.top.length > 0 && (
+        <section
+          aria-label="Lo más vendido hoy"
+          className="rounded-card border border-borde bg-superficie p-4"
+        >
+          <h2 className="m-0 mb-2 text-base font-semibold">Lo más vendido hoy</h2>
           <ol className="m-0 list-none p-0 text-sm">
             {d.top.map((t, i) => (
               <li key={t.name} className="flex gap-2 border-t border-borde py-1.5 first:border-t-0">
@@ -331,16 +338,14 @@ function TopAndDeliveries({ d }: { d: Dashboard }) {
               </li>
             ))}
           </ol>
-        )}
-      </section>
-      <section
-        aria-label="Entregas esperadas"
-        className="rounded-card border border-borde bg-superficie p-4"
-      >
-        <h2 className="m-0 mb-2 text-base font-semibold">Entregas esperadas</h2>
-        {!d.deliveries.length ? (
-          <div className="text-sm text-texto-suave">Nada para hoy ni mañana.</div>
-        ) : (
+        </section>
+      )}
+      {d.deliveries.length > 0 && (
+        <section
+          aria-label="Entregas esperadas"
+          className="rounded-card border border-borde bg-superficie p-4"
+        >
+          <h2 className="m-0 mb-2 text-base font-semibold">Entregas esperadas</h2>
           <ul className="m-0 list-none p-0 text-sm">
             {d.deliveries.map((x) => (
               <li key={x.id} className="flex gap-2 border-t border-borde py-1.5 first:border-t-0">
@@ -354,8 +359,8 @@ function TopAndDeliveries({ d }: { d: Dashboard }) {
               </li>
             ))}
           </ul>
-        )}
-      </section>
+        </section>
+      )}
     </div>
   );
 }
@@ -394,9 +399,7 @@ function StockerHome() {
           ))
         )}
       </section>
-      <p className="m-0 text-xs text-texto-suave">
-        No ves ventas, costos ni caja: tu rol es repositor.
-      </p>
+      <p className="m-0 text-xs text-texto-suave">No ves ventas, costos ni caja desde acá.</p>
     </div>
   );
 }
@@ -404,6 +407,8 @@ function StockerHome() {
 /** Inicio: en cinco segundos, cómo viene el día y qué necesita atención. */
 export function HomePage() {
   const me = useMe();
+  const navigate = useNavigate();
+  const reg = useShell().register;
   const reports = useGrant("reports");
   const role = me?.member.role;
   const enabled = role === "owner" || role === "manager";
@@ -414,6 +419,7 @@ export function HomePage() {
     refetchInterval: 60_000,
   });
   const setup = useSetupStatus(useGrant("settings") === "allow");
+  const noSales = !q.data?.numbers.tickets;
   // El cajero no ve el panel: entra directo a Vender.
   if (role === "cashier") return <Navigate to="/vender" replace />;
   if (role === "stocker" || reports === "deny") return <StockerHome />;
@@ -436,30 +442,62 @@ export function HomePage() {
       <Header />
       {q.isPending ? (
         <SkeletonList rows={6} />
-      ) : q.isError ? (
+      ) : !q.data ? (
         <ErrorState
           message="El panel del día se ve con conexión. Vender y la caja andan igual."
           onRetry={() => q.refetch()}
         />
       ) : (
         <>
-          <Numbers n={q.data.numbers} />
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
-            <AttentionList items={q.data.attention} />
-            <div className="flex flex-col gap-4">
-              <Shortcuts />
-              <Methods methods={q.data.methods} />
+          {/* Si falló la última actualización, se sigue mostrando lo que había, con la hora. */}
+          {q.isError && (
+            <div
+              role="status"
+              className="flex items-center gap-2 rounded-lg bg-alerta-suave px-3 py-2 text-[13px] text-alerta"
+            >
+              <span className="flex-1">
+                Actualizado a las {formatTime(new Date(q.dataUpdatedAt))}: sin conexión, no se pudo
+                traer lo último.
+              </span>
+              <button
+                type="button"
+                className="h-11 rounded-lg px-3 font-semibold lg:h-9"
+                onClick={() => q.refetch()}
+              >
+                Reintentar
+              </button>
             </div>
-          </div>
-          <HourChart data={q.data.byHour} />
-          <TopAndDeliveries d={q.data} />
-          {!q.data.numbers.tickets && !q.data.attention.length && (
+          )}
+          {/* Sin ventas hoy, en vez de un panel en cero, una sola tarjeta con qué hacer. */}
+          {noSales ? (
             <EmptyState
               title="Todavía no hay ventas hoy"
               body="Cuando vendas, acá ves cómo viene el día."
               icon={<Receipt size={28} aria-hidden />}
+              action={
+                <Button onClick={() => navigate(reg?.open ? "/vender" : "/caja")}>
+                  {reg?.open ? "Nueva venta" : "Abrir caja"}
+                </Button>
+              }
             />
+          ) : (
+            <Numbers n={q.data.numbers} />
           )}
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
+            {q.data.attention.length > 0 ? (
+              <AttentionList items={q.data.attention} />
+            ) : (
+              <div className="rounded-card border border-borde bg-superficie px-4 py-3 text-sm text-texto-suave">
+                Todo en orden: nada requiere atención.
+              </div>
+            )}
+            <div className="flex flex-col gap-4">
+              <Shortcuts />
+              {!noSales && <Methods methods={q.data.methods} />}
+            </div>
+          </div>
+          {!noSales && <HourChart data={q.data.byHour} />}
+          <TopAndDeliveries d={q.data} />
         </>
       )}
     </div>

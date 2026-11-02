@@ -1,5 +1,6 @@
 import { Share, SquarePlus, X } from "lucide-react";
 import { useState } from "react";
+import { cx } from "./cx";
 
 type Env = { userAgent: string; standalone: boolean; maxTouchPoints: number };
 
@@ -31,6 +32,7 @@ export function InstallGuide({ env = currentEnv() }: { env?: Env }) {
       return false;
     }
   });
+  const [open, setOpen] = useState(false);
   if (hidden || !shouldShowInstallGuide(env)) return null;
   const close = () => {
     setHidden(true);
@@ -41,15 +43,20 @@ export function InstallGuide({ env = currentEnv() }: { env?: Env }) {
   return (
     <section
       aria-label="Instalá Mostrador en tu iPhone"
-      className="m-4 flex flex-col gap-3 rounded-card border border-borde bg-superficie p-4"
+      className="mx-4 mt-3 flex flex-col gap-3 rounded-card border border-borde bg-superficie px-4 py-2.5"
     >
-      <div className="flex items-start gap-2">
-        <div className="flex-1">
-          <div className="text-base font-semibold">Instalá Mostrador en tu iPhone</div>
-          <div className="text-[13px] text-texto-suave">
-            Así abre más rápido, funciona sin internet y te llegan los avisos.
-          </div>
-        </div>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          aria-expanded={open}
+          className="flex min-h-10 flex-1 items-center gap-2 text-left"
+        >
+          <span className="text-[15px] font-semibold">Instalá Mostrador en tu iPhone</span>
+          <span className="text-[13px] font-semibold text-primario">
+            {open ? "Ocultar" : "Ver cómo"}
+          </span>
+        </button>
         <button
           type="button"
           aria-label="Cerrar"
@@ -59,7 +66,7 @@ export function InstallGuide({ env = currentEnv() }: { env?: Env }) {
           <X size={20} />
         </button>
       </div>
-      <ol className="m-0 flex list-none flex-col gap-2 p-0 text-[15px]">
+      <ol className={cx("m-0 flex list-none flex-col gap-2 p-0 text-[15px]", !open && "hidden")}>
         <li className="flex items-center gap-3">
           <span className="inline-flex size-8 items-center justify-center rounded-full bg-primario-suave font-semibold text-primario">
             1

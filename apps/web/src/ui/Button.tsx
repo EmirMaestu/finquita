@@ -1,5 +1,5 @@
 import { Lock } from "lucide-react";
-import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { type ButtonHTMLAttributes, type MouseEvent, type ReactNode, useRef } from "react";
 import { cx } from "./cx";
 
 type Variant = "primary" | "secondary" | "ghost" | "danger";
@@ -13,7 +13,7 @@ const VARIANT: Record<Variant, string> = {
 };
 
 const SIZE: Record<Size, string> = {
-  md: "h-10 px-4 text-sm",
+  md: "h-12 px-4 text-sm lg:h-10",
   lg: "h-12 px-5 text-base",
   xl: "h-14 px-6 text-lg",
 };
@@ -24,7 +24,16 @@ export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   /** Acción que pide PIN: se muestra con candado, no se esconde. */
   locked?: boolean;
   icon?: ReactNode;
+  /** Permite clics seguidos (por defecto, un doble clic cuenta una sola vez). */
+  repeatable?: boolean;
+  /** Está trabajando: se deshabilita y lo dice ("Guardando…"). */
+  busy?: boolean;
+  /** Texto mientras trabaja (si no, el texto del botón con puntos suspensivos). */
+  busyLabel?: string;
 };
+
+/** Dos clics en menos de este tiempo son uno (el dedo nervioso o el doble clic). */
+const DOUBLE_CLICK_MS = 500;
 
 /** Botón del sistema de diseño: una acción principal por pantalla. */
 export function Button({
@@ -36,12 +45,38 @@ export function Button({
   children,
   disabled,
   type = "button",
+  repeatable,
+  busy,
+  busyLabel,
+  onClick,
   ...rest
 }: ButtonProps) {
+  const last = useRef(0);
+  const pending = useRef<Promise<unknown> | null>(null);
+  // Un gesto, una operación: el segundo clic del doble clic no vuelve a disparar la acción,
+  // y si el manejador devuelve una promesa, tampoco se dispara hasta que termine.
+  const guarded = (e: MouseEvent<HTMLButtonElement>) => {
+    if (!onClick) return;
+    const now = Date.now();
+    if (!repeatable && (pending.current || now - last.current < DOUBLE_CLICK_MS)) {
+      e.preventDefault();
+      return;
+    }
+    last.current = now;
+    const r = (onClick as (ev: MouseEvent<HTMLButtonElement>) => unknown)(e);
+    if (r instanceof Promise) {
+      pending.current = r;
+      r.finally(() => {
+        pending.current = null;
+      });
+    }
+  };
   return (
     <button
       type={type}
-      disabled={disabled}
+      disabled={disabled || busy}
+      aria-busy={busy || undefined}
+      onClick={guarded}
       className={cx(
         "inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-lg font-semibold whitespace-nowrap transition-colors duration-150",
         "disabled:cursor-not-allowed disabled:border-deshabilitado disabled:bg-deshabilitado disabled:text-texto-apagado",
@@ -52,8 +87,14 @@ export function Button({
       {...rest}
     >
       {locked && <Lock size={16} aria-label="Pide PIN" />}
+      {busy && (
+        <span
+          aria-hidden
+          className="size-4 shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent"
+        />
+      )}
       {icon}
-      {children}
+      {busy ? (busyLabel ?? <>{children}…</>) : children}
     </button>
   );
 }

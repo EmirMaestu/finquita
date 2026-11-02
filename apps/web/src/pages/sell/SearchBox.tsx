@@ -1,5 +1,5 @@
 import { formatMoney } from "@mostrador/shared";
-import { ScanBarcode } from "lucide-react";
+import { ScanBarcode, Search } from "lucide-react";
 import { forwardRef } from "react";
 import type { LocalProduct } from "../../data/types";
 import { cx } from "../../ui/cx";
@@ -28,7 +28,12 @@ export const SearchBox = forwardRef<HTMLInputElement, Props>(function SearchBox(
           big ? "h-12" : "h-12",
         )}
       >
-        <ScanBarcode size={24} className="shrink-0 text-primario" aria-hidden />
+        {/* Con la cámara al lado, la lupa: dos íconos de escanear juntos confundían. */}
+        {onCamera ? (
+          <Search size={22} className="shrink-0 text-texto-suave" aria-hidden />
+        ) : (
+          <ScanBarcode size={24} className="shrink-0 text-primario" aria-hidden />
+        )}
         {multiplier && (
           <span className="rounded bg-acento-suave px-2 py-0.5 text-sm font-semibold">
             × {multiplier}
@@ -39,7 +44,8 @@ export const SearchBox = forwardRef<HTMLInputElement, Props>(function SearchBox(
           aria-label="Escaneá o buscá por nombre"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder="Escaneá o buscá por nombre"
+          // En el celular el botón de al lado ya dice "escanear" (diseño 02: "Buscar producto").
+          placeholder={onCamera ? "Buscar producto" : "Escaneá o buscá por nombre"}
           autoComplete="off"
           className="min-w-0 flex-1 bg-transparent text-base text-texto outline-none placeholder:text-texto-suave"
         />
@@ -48,7 +54,7 @@ export const SearchBox = forwardRef<HTMLInputElement, Props>(function SearchBox(
             type="button"
             aria-label="Escanear con la cámara"
             onClick={onCamera}
-            className="-mr-2 inline-flex size-11 items-center justify-center rounded-lg bg-primario text-sobre-primario"
+            className="-mr-2 inline-flex size-12 items-center justify-center rounded-lg bg-primario text-sobre-primario"
           >
             <ScanBarcode size={22} />
           </button>

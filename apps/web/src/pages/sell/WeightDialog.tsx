@@ -11,6 +11,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { LocalProduct } from "../../data/types";
 import { Button } from "../../ui/Button";
 import { cx } from "../../ui/cx";
+import { Key } from "../../ui/Key";
 import { NumPad } from "../../ui/NumPad";
 
 /** Gramos tipeados a kilos: "235" → 0,235 kg. */
@@ -71,7 +72,24 @@ export function WeightDialog({
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
+      // P cambia a "Por plata" y K a "Por peso", sin tabular (ronda 3).
+      const k = e.key.toLowerCase();
+      if ((k === "p" || k === "k") && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        const m = k === "p" ? "money" : "weight";
+        setMode(m);
+        setField(m === "money" ? "money" : "grams");
+        return;
+      }
       if (e.key === "Enter") {
+        // Enter sobre un botón enfocado ("Por plata") lo activa: no agrega con el modo viejo.
+        const el = document.activeElement;
+        if (
+          el instanceof HTMLButtonElement &&
+          el.hasAttribute("aria-pressed") &&
+          box.current?.contains(el)
+        )
+          return;
         e.preventDefault();
         next();
       } else if (e.key === "Escape") {
@@ -92,7 +110,8 @@ export function WeightDialog({
         role="dialog"
         aria-modal="true"
         aria-label={`Peso de ${product.name}`}
-        className="grid w-full gap-6 rounded-t-2xl bg-superficie p-5 shadow-xl outline-none lg:max-w-[720px] lg:grid-cols-[1fr_300px] lg:rounded-card lg:p-7"
+        data-keypad
+        className="grid max-h-[94vh] w-full gap-6 overflow-y-auto rounded-t-2xl bg-superficie p-5 shadow-xl outline-none lg:max-w-[720px] lg:grid-cols-[1fr_300px] lg:rounded-card lg:p-7"
       >
         <div className="flex flex-col gap-4">
           <div className="flex items-center gap-3">
@@ -104,15 +123,15 @@ export function WeightDialog({
               <div className="text-xl font-semibold">{product.name}</div>
               <div className="text-texto-suave">
                 {formatMoney(product.priceCents)} / kg
-                {product.internalCode ? ` · PLU ${product.internalCode}` : ""}
+                {product.internalCode ? ` · código ${product.internalCode}` : ""}
               </div>
             </div>
           </div>
           <div className="inline-flex w-max overflow-hidden rounded-lg border border-borde text-[13px] font-semibold">
             {(
               [
-                ["weight", "Por peso"],
-                ["money", "Por plata"],
+                ["weight", "Por peso (K)"],
+                ["money", "Por plata (P)"],
               ] as const
             ).map(([m, label]) => (
               <button
@@ -168,6 +187,7 @@ export function WeightDialog({
           >
             <span className="text-xs text-texto-suave">
               {mode === "money" ? "Peso real que marca la balanza" : "Peso que marca la balanza"}
+              {" · en gramos: 350 = 0,350 kg"}
             </span>
             <span className="flex items-baseline justify-between">
               <output
@@ -211,12 +231,11 @@ export function WeightDialog({
             onClick={next}
             className="mt-auto"
           >
-            {mode === "money" && field === "money"
-              ? "Ya corté · ⏎"
-              : `Agregar ${formatMoney(amount)} · ⏎`}
+            {mode === "money" && field === "money" ? "Ya corté" : `Agregar ${formatMoney(amount)}`}
+            <Key>⏎</Key>
           </Button>
           <Button variant="ghost" onClick={onClose}>
-            Cancelar · Esc
+            Cancelar <Key>Esc</Key>
           </Button>
         </div>
       </div>

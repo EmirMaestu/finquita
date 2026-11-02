@@ -26,6 +26,11 @@ export function ExpiryPage() {
   const canRemove = useGrant("adjust_stock") === "allow";
   const q = useQuery({ queryKey: ["lots"], queryFn: () => api<Lot[]>("/api/lots?within=30") });
   const remove = useMutation({
+    onError: (e) =>
+      toast({
+        text: e instanceof Error ? e.message : "No se pudo. Probá de nuevo.",
+        tone: "error",
+      }),
     mutationFn: (a: { id: string; action: "waste" | "supplier" }) =>
       api(`/api/lots/${a.id}/remove`, { body: { action: a.action } }),
     onSuccess: async (_r, a) => {
@@ -90,15 +95,23 @@ export function ExpiryPage() {
                       <>
                         <Button
                           variant="secondary"
-                          onClick={() => remove.mutate({ id: l.id, action: "supplier" })}
+                          onClick={() =>
+                            window.confirm(
+                              `¿Devolver ${l.productName} al proveedor? Sale del stock y no se deshace.`,
+                            ) && remove.mutate({ id: l.id, action: "supplier" })
+                          }
                         >
                           Devolver
                         </Button>
                         <Button
                           variant="danger"
-                          onClick={() => remove.mutate({ id: l.id, action: "waste" })}
+                          onClick={() =>
+                            window.confirm(
+                              `¿Dar de baja ${l.productName} como merma? Sale del stock y no se deshace.`,
+                            ) && remove.mutate({ id: l.id, action: "waste" })
+                          }
                         >
-                          Dar de baja
+                          Dar de baja como merma
                         </Button>
                       </>
                     )}

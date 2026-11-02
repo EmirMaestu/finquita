@@ -99,3 +99,37 @@ describe("importar productos", () => {
     ).toBe(403);
   });
 });
+
+describe("vista previa con datos", () => {
+  it("muestra precio, stock y unidad, y deduce 'por kilo' del nombre", async () => {
+    const carlos = await as(app(), ref.t.db, "carlos");
+    const r = await carlos.post("/api/import/products/preview", {
+      rows: [
+        ["Nombre", "Precio", "Stock"],
+        ["Jamón cocido x kg", "21000", "4,5"],
+        ["Galletitas de agua 200 g", "1500", "20"],
+        ["Azúcar Ledesma 1 kg", "1900", "12"],
+      ],
+      mapping: { name: 0, price: 1, stock: 2 },
+    });
+    expect(r.status).toBe(200);
+    const jamon = r.body.items.find((i: { line: number }) => i.line === 2);
+    expect(jamon).toMatchObject({
+      action: "new",
+      priceCents: 2_100_000,
+      stock: 4.5,
+      unit: "kg",
+      warnings: ["Se carga por kilo (lo dice el nombre)"],
+    });
+    const galletitas = r.body.items.find((i: { line: number }) => i.line === 3);
+    expect(galletitas).toMatchObject({
+      action: "new",
+      priceCents: 150_000,
+      stock: 20,
+      unit: "unit",
+    });
+    // "1 kg" es el envase, no se vende por peso (lo vio el desconfiado en la ronda 2).
+    const azucar = r.body.items.find((i: { line: number }) => i.line === 4);
+    expect(azucar).toMatchObject({ action: "new", unit: "unit" });
+  });
+});

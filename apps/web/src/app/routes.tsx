@@ -8,6 +8,7 @@ import { HomePage } from "../pages/home/HomePage";
 import { ModulePlaceholder } from "../pages/ModulePlaceholder";
 import { MorePage } from "../pages/MorePage";
 import { BulkPricePage } from "../pages/products/BulkPricePage";
+import { CategoriesPage } from "../pages/products/CategoriesPage";
 import { CodeSheetPage } from "../pages/products/CodeSheetPage";
 import { CountPage, CountsPage } from "../pages/products/CountsPage";
 import { ExpiryPage } from "../pages/products/ExpiryPage";
@@ -20,6 +21,7 @@ import { ShelfLabelsPage } from "../pages/products/ShelfLabelsPage";
 import { OrdersPage } from "../pages/purchases/OrdersPage";
 import { PayablesPage } from "../pages/purchases/PayablesPage";
 import { PriceListPage } from "../pages/purchases/PriceListPage";
+import { PurchasesHome } from "../pages/purchases/PurchasesTabs";
 import { ReceiptCostsPage } from "../pages/purchases/ReceiptCostsPage";
 import { ReceivePage } from "../pages/purchases/ReceivePage";
 import { SuggestedFlow } from "../pages/purchases/SuggestedFlow";
@@ -42,7 +44,7 @@ export const routes: RouteObject[] = [
       { path: "caja/cierre", element: <CloseShiftPage /> },
       { path: "caja/historial", element: <ClosingsPage /> },
       { path: "vender", element: <SellPage /> },
-      { path: "compras", element: <Navigate to="/compras/pedidos" replace /> },
+      { path: "compras", element: <PurchasesHome /> },
       { path: "compras/proveedores", element: <SuppliersPage /> },
       { path: "compras/sugerido", element: <SuggestedFlow /> },
       { path: "compras/pedidos", element: <OrdersPage /> },
@@ -62,6 +64,7 @@ export const routes: RouteObject[] = [
       { path: "vender/historial/:id", element: <SalesHistoryPage /> },
       { path: "productos", element: <ProductsPage /> },
       { path: "productos/carga", element: <LoadModePage /> },
+      { path: "productos/categorias", element: <CategoriesPage /> },
       { path: "productos/importar", element: <ImportPage /> },
       { path: "productos/planilla", element: <CodeSheetPage /> },
       { path: "productos/etiquetas", element: <ShelfLabelsPage /> },

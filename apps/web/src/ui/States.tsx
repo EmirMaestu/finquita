@@ -51,7 +51,9 @@ export function ErrorState({ message, onRetry }: { message?: string; onRetry?: (
       <CircleAlert size={28} className="text-peligro" aria-hidden />
       <div className="text-base font-semibold">No pudimos cargar esto</div>
       <div className="max-w-md text-sm text-texto-suave">
-        {message ?? "Revisá la conexión y probá de nuevo."}
+        {typeof navigator !== "undefined" && !navigator.onLine
+          ? (message ?? "Sin conexión: se ve al volver internet.")
+          : "Algo falló al cargar. Probá de nuevo; si sigue, avisale al dueño."}
       </div>
       {onRetry && (
         <Button variant="secondary" onClick={onRetry}>
@@ -67,8 +69,11 @@ export function NoPermission({ who }: { who: string }) {
   return (
     <div className="flex flex-col items-center gap-3 rounded-card border border-borde bg-superficie px-6 py-10 text-center">
       <Lock size={28} className="text-texto-suave" aria-hidden />
-      <div className="text-base font-semibold">No tenés permiso para ver esto</div>
-      <div className="text-sm text-texto-suave">Lo puede ver: {who}.</div>
+      {/* Sirve para ver y para hacer (vender, ajustar), no solo para "ver esto". */}
+      <div className="text-base font-semibold">Tu usuario no tiene permiso para esto</div>
+      <div className="text-sm text-texto-suave">
+        Lo puede usar: {who}. Si lo necesitás, pedíselo al dueño.
+      </div>
     </div>
   );
 }

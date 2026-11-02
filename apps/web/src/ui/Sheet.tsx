@@ -14,6 +14,7 @@ export function Sheet({
   children,
   footer,
   wide,
+  error,
 }: {
   open: boolean;
   onClose: () => void;
@@ -21,6 +22,8 @@ export function Sheet({
   children: ReactNode;
   footer?: ReactNode;
   wide?: boolean;
+  /** Error del formulario: se muestra junto al pie, siempre a la vista (sin bajar hasta el final). */
+  error?: string | null;
 }) {
   const { layout } = useViewport();
   const ref = useRef<HTMLDivElement>(null);
@@ -58,6 +61,29 @@ export function Sheet({
         role="dialog"
         aria-modal="true"
         aria-label={title}
+        onKeyDown={(e) => {
+          // Enter en un campo de una línea hace lo del botón principal del pie (como un
+          // formulario), salvo que el campo ya use el Enter o sea un teclado numérico.
+          const t = e.target;
+          if (
+            e.key !== "Enter" ||
+            e.defaultPrevented ||
+            e.nativeEvent.isComposing ||
+            !(t instanceof HTMLInputElement) ||
+            ["checkbox", "radio", "file", "button"].includes(t.type) ||
+            t.closest("[data-keypad]")
+          )
+            return;
+          const buttons = [
+            ...(ref.current?.querySelectorAll<HTMLButtonElement>("[data-sheet-footer] button") ??
+              []),
+          ].filter((x) => !x.disabled && x.classList.contains("bg-primario"));
+          // Solo la primaria (nunca "Sí, quitar" ni un secundario).
+          const main = buttons[buttons.length - 1];
+          if (!main) return;
+          e.preventDefault();
+          main.click();
+        }}
         className={cx(
           "relative flex max-h-[92vh] w-full flex-col bg-superficie shadow-xl",
           phone
@@ -77,7 +103,19 @@ export function Sheet({
           </button>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto p-5">{children}</div>
-        {footer && <div className="flex gap-2 border-t border-borde p-4">{footer}</div>}
+        {error && (
+          <div
+            role="alert"
+            className="border-t border-borde bg-peligro-suave px-5 py-2.5 text-[13px] font-semibold text-peligro"
+          >
+            {error}
+          </div>
+        )}
+        {footer && (
+          <div data-sheet-footer className="flex gap-2 border-t border-borde p-4">
+            {footer}
+          </div>
+        )}
       </div>
     </div>
   );

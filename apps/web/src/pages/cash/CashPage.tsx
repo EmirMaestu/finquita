@@ -10,12 +10,14 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { TriangleAlert } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { NoPermissionFor } from "../../app/guards";
 import { useCan } from "../../app/session";
 import { useViewport } from "../../app/useViewport";
 import { loadShiftView } from "../../cash/local";
+import { OtherShiftNotice } from "../../cash/OtherShiftNotice";
 import { useRegister } from "../../cash/useRegister";
+import { syncEngine } from "../../sync";
 import { useSyncStatus } from "../../sync/status";
 import { Button } from "../../ui/Button";
 import { Chip, FilterChip } from "../../ui/Chip";
@@ -47,6 +49,14 @@ export function CashPage() {
   >(null);
   const [filter, setFilter] = useState<"all" | "cash" | "manual">("all");
   const shift = reg.shift;
+  // Desde Inicio › "Registrar gasto" se llega con la hoja del gasto abierta.
+  const [params, setParams] = useSearchParams();
+  useEffect(() => {
+    if (params.get("gasto") === "1" && shift) {
+      setSheet("expense");
+      setParams({}, { replace: true });
+    }
+  }, [params, setParams, shift]);
   const view = useQuery({
     queryKey: ["shift-view", shift?.id, version],
     placeholderData: (prev) => prev,
@@ -69,7 +79,14 @@ export function CashPage() {
   if (!reg.ready) return <Skeleton className="m-6 h-64" />;
   if (!reg.registerId)
     return (
-      <ErrorState message="Todavía no bajó la configuración de las cajas. Revisá la conexión." />
+      <ErrorState
+        message={
+          navigator.onLine
+            ? "Todavía no bajó la configuración de las cajas."
+            : "Sin conexión: la configuración de las cajas baja al volver internet."
+        }
+        onRetry={() => void syncEngine().kick()}
+      />
     );
   if (!shift) {
     return (
@@ -155,15 +172,20 @@ export function CashPage() {
         <span className="font-semibold">Movimientos</span>
         <span className="text-texto-suave">· {v?.moves.length ?? 0}</span>
         <span className="flex-1" />
-        <FilterChip active={filter === "all"} onClick={() => setFilter("all")}>
-          Todos
-        </FilterChip>
-        <FilterChip active={filter === "cash"} onClick={() => setFilter("cash")}>
-          Solo efectivo
-        </FilterChip>
-        <FilterChip active={filter === "manual"} onClick={() => setFilter("manual")}>
-          Manuales
-        </FilterChip>
+        {/* Los filtros aparecen cuando hay algo que filtrar. */}
+        {(v?.moves.length ?? 0) > 0 && (
+          <>
+            <FilterChip active={filter === "all"} onClick={() => setFilter("all")}>
+              Todos
+            </FilterChip>
+            <FilterChip active={filter === "cash"} onClick={() => setFilter("cash")}>
+              Solo efectivo
+            </FilterChip>
+            <FilterChip active={filter === "manual"} onClick={() => setFilter("manual")}>
+              Manuales
+            </FilterChip>
+          </>
+        )}
       </div>
       <ul className="m-0 min-h-0 flex-1 list-none overflow-y-auto p-0">
         {moves.map((m) => (
@@ -206,7 +228,8 @@ export function CashPage() {
           {formatTime(new Date(shift.openedAt))} · {elapsed(shift.openedAt)}
         </span>
         <span className="flex-1" />
-        <div className="flex flex-wrap gap-2">
+        {/* En el celular: Retiro, Gasto e Ingreso en una fila de tres y el cierre a lo ancho. */}
+        <div className="grid w-full grid-cols-3 gap-2 lg:flex lg:w-auto lg:flex-wrap">
           <Button variant="secondary" onClick={() => setSheet("withdrawal")}>
             Retiro{desktop ? " · F9" : ""}
           </Button>
@@ -216,12 +239,23 @@ export function CashPage() {
           <Button variant="secondary" onClick={() => setSheet("income")}>
             Ingreso
           </Button>
-          <Button variant="ghost" onClick={() => navigate("/caja/historial")}>
-            Historial
+          {desktop && (
+            <Button variant="ghost" onClick={() => navigate("/caja/historial")}>
+              Cierres
+            </Button>
+          )}
+          {/* En la compu, F8 y Enter llevan del mostrador al cierre (ronda 3). */}
+          <Button
+            size={desktop ? "md" : "xl"}
+            className="col-span-3 lg:col-span-1"
+            autoFocus={desktop}
+            onClick={() => navigate("/caja/cierre")}
+          >
+            Arqueo y cierre{desktop ? " · Enter" : ""}
           </Button>
-          <Button onClick={() => navigate("/caja/cierre")}>Arqueo y cierre</Button>
         </div>
       </div>
+      <OtherShiftNotice />
       {v?.offline && (
         <OfflineBanner>
           Sin conexión: lo de otros dispositivos se ve al volver internet. Lo tuyo ya está sumado.
@@ -246,6 +280,10 @@ export function CashPage() {
         <>
           {summary}
           {list}
+          {/* En el celular, los cierres anteriores al final: es lo que menos se usa. */}
+          <Button variant="ghost" onClick={() => navigate("/caja/historial")}>
+            Cierres anteriores
+          </Button>
         </>
       )}
       {sheet && (

@@ -1,6 +1,6 @@
 import { formatMoney, formatPercent } from "@mostrador/shared";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { FileSpreadsheet } from "lucide-react";
+import { ChevronLeft, FileSpreadsheet } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { NoPermissionFor } from "../../app/guards";
@@ -8,7 +8,7 @@ import { useGrant } from "../../app/session";
 import { ApiError, api } from "../../data/api";
 import { localDb } from "../../data/db";
 import { useLive } from "../../data/live";
-import { Button } from "../../ui/Button";
+import { Button, IconButton } from "../../ui/Button";
 import { Chip } from "../../ui/Chip";
 import { SelectField, TextField, Toggle } from "../../ui/Field";
 import { toast } from "../../ui/toast";
@@ -115,13 +115,23 @@ export function PriceListPage() {
   );
   if (!can) return <NoPermissionFor perm="view_costs" />;
   const m = preview.data;
+  // "86 costos cambian, en promedio +7 %" (§ Flujos clave 4).
+  const moved = (m?.matched ?? []).filter((x) => x.changeBp != null && x.changeBp !== 0);
+  const avgBp = moved.length
+    ? Math.round(moved.reduce((t, x) => t + (x.changeBp ?? 0), 0) / moved.length)
+    : null;
   return (
     <div className="flex flex-col gap-4 p-4 lg:p-6">
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="m-0 text-[22px] font-semibold">Compras</h1>
+        <h1 className="m-0 hidden text-[22px] font-semibold lg:block">Compras</h1>
         <PurchasesTabs />
       </div>
-      <h2 className="m-0 text-lg font-semibold">Lista de precios del proveedor</h2>
+      <div className="flex items-center gap-1">
+        <IconButton label="Volver a Proveedores" onClick={() => navigate("/compras/proveedores")}>
+          <ChevronLeft size={20} />
+        </IconButton>
+        <h2 className="m-0 text-lg font-semibold">Lista de precios del proveedor</h2>
+      </div>
       <div className="grid gap-3 rounded-card border border-borde bg-superficie p-4 lg:grid-cols-2">
         <SelectField
           label="Proveedor"
@@ -206,6 +216,8 @@ export function PriceListPage() {
         )}
         <Button
           className="self-end"
+          // Con la vista previa a la vista, la primaria pasa a "Guardar costos".
+          variant={preview.data ? "secondary" : "primary"}
           disabled={!supplierId || !rows.length || preview.isPending}
           onClick={() => preview.mutate()}
         >
@@ -217,10 +229,17 @@ export function PriceListPage() {
           <div className="flex flex-wrap items-center gap-3 text-sm">
             <span>
               <strong>{m.matched.length}</strong> relacionados · <strong>{m.changed}</strong>{" "}
-              cambian de costo · <strong>{m.unmatched.length}</strong> sin relacionar
+              cambian de costo
+              {avgBp !== null
+                ? `, en promedio ${avgBp > 0 ? "+" : "−"}${formatPercent(Math.abs(avgBp))}`
+                : ""}{" "}
+              · <strong>{m.unmatched.length}</strong> sin relacionar
             </span>
             <span className="flex-1" />
-            <Button disabled={!m.matched.length || apply.isPending} onClick={() => apply.mutate()}>
+            <Button
+              disabled={!m.matched.length || apply.isPending || apply.isSuccess}
+              onClick={() => apply.mutate()}
+            >
               Guardar costos
             </Button>
             {apply.isSuccess && (
@@ -298,7 +317,7 @@ export function PriceListPage() {
                         <button
                           key={p.id}
                           type="button"
-                          className="rounded-md px-2 py-1.5 text-left hover:bg-neutro-suave"
+                          className="min-h-12 rounded-md px-2 py-1.5 text-left hover:bg-neutro-suave lg:min-h-10"
                           onClick={() => {
                             setLinks((l) => ({ ...l, [String(u.index)]: p.id }));
                             setLinking(null);

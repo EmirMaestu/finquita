@@ -4,6 +4,7 @@ import {
   effectiveGrant,
   marginOnCostBp,
   newId,
+  plainText,
   productFields,
   qty as qtySchema,
   stockState,
@@ -312,13 +313,32 @@ catalogRoutes.get("/products/:id", requireActor(), async (c) => {
   });
 });
 
-const createProduct = productFields.extend({
-  id: z.uuid().optional(),
-  name: z.string().min(1).max(120),
-  priceCents: z.number().int().nonnegative(),
-  barcodes: z.array(z.string().min(3).max(32)).max(20).optional(),
-  initialStock: qtySchema.optional(),
-});
+const barcodeStr = z.string().regex(/^\d{4,14}$/, "Un código de barras tiene de 4 a 14 números");
+/** Lo que se vende por unidad no tiene medias unidades. */
+function wholeUnits(
+  p: { saleUnit?: string; minStock?: number | null; initialStock?: number },
+  ctx: z.RefinementCtx,
+) {
+  if (p.saleUnit !== "unit") return;
+  for (const k of ["minStock", "initialStock"] as const) {
+    const v = p[k];
+    if (typeof v === "number" && !Number.isInteger(v))
+      ctx.addIssue({
+        code: "custom",
+        path: [k],
+        message: "Se vende por unidad: tiene que ser un número entero",
+      });
+  }
+}
+const createProduct = productFields
+  .extend({
+    id: z.uuid().optional(),
+    name: plainText(120),
+    priceCents: z.number().int().nonnegative(),
+    barcodes: z.array(barcodeStr).max(20).optional(),
+    initialStock: qtySchema.refine((v) => v >= 0, "No puede ser negativo").optional(),
+  })
+  .superRefine(wholeUnits);
 
 async function assertCodesFree(db: Db, codes: string[], productId: string) {
   if (!codes.length) return;
@@ -488,13 +508,29 @@ catalogRoutes.get("/categories", requireActor(), async (c) => {
 });
 
 const categoryBody = z.object({
-  name: z.string().min(1).max(60),
+  name: plainText(60),
   parentId: z.uuid().nullable().optional(),
   defaultMarginBp: z.number().int().min(0).max(100000).nullable().optional(),
   ageRestricted: z.boolean().optional(),
   tracksExpiry: z.boolean().optional(),
   sort: z.number().int().optional(),
 });
+
+/** Dos categorías con el mismo nombre en el mismo nivel confunden a todos los selectores. */
+async function assertNameFree(db: Db, name: string, parentId: string | null, selfId?: string) {
+  const rows = await db
+    .select({ id: categories.id })
+    .from(categories)
+    .where(
+      and(
+        ilike(categories.name, name.trim()),
+        parentId ? eq(categories.parentId, parentId) : isNull(categories.parentId),
+        isNull(categories.deletedAt),
+      ),
+    );
+  if (rows.some((r) => r.id !== selfId))
+    throw conflict(`Ya hay una categoría "${name.trim()}"${parentId ? " ahí adentro" : ""}.`);
+}
 
 async function assertParent(db: Db, parentId: string | null | undefined, selfId?: string) {
   if (!parentId) return;
@@ -526,6 +562,7 @@ catalogRoutes.post(
     const body = c.req.valid("json");
     const db = c.get("db");
     await assertParent(db, body.parentId);
+    await assertNameFree(db, body.name, body.parentId ?? null);
     const id = newId();
     await db.insert(categories).values({ id, ...body, parentId: body.parentId ?? null });
     await auditFrom(c, db, {
@@ -553,6 +590,13 @@ catalogRoutes.patch(
       .where(and(eq(categories.id, id), isNull(categories.deletedAt)));
     if (!before) throw notFound("Esa categoría no existe.");
     if (body.parentId !== undefined) await assertParent(db, body.parentId, id);
+    if (body.name !== undefined || body.parentId !== undefined)
+      await assertNameFree(
+        db,
+        body.name ?? before.name,
+        body.parentId === undefined ? before.parentId : (body.parentId ?? null),
+        id,
+      );
     const [after] = await db
       .update(categories)
       .set({ ...body, updatedAt: new Date() })

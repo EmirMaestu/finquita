@@ -1,4 +1,4 @@
-import { formatQty } from "@mostrador/shared";
+import { formatQty, MAX_QTY, parseDecimal } from "@mostrador/shared";
 import { useEffect, useState } from "react";
 import { useGrant, useMe } from "../../app/session";
 import { localStock } from "../../data/catalog";
@@ -36,22 +36,58 @@ export function AdjustStockSheet({
       setStock(await localStock(p));
     })();
   }, [productId]);
-  const n = Number(value.replace(",", "."));
-  const valid = value.trim() !== "" && Number.isFinite(n) && (mode === "real" ? n >= 0 : n > 0);
+  const n = parseDecimal(value) ?? Number.NaN;
+  const wholeOnly = unit === "unit" && Number.isFinite(n) && !Number.isInteger(n);
+  const noteLong = note.length > 500;
+  const valid =
+    value.trim() !== "" &&
+    Number.isFinite(n) &&
+    n <= MAX_QTY &&
+    (mode === "real" ? n >= 0 : n > 0) &&
+    !wholeOnly &&
+    !noteLong;
+  const invalidText =
+    value.trim() === "" || valid || (noteLong && Number.isFinite(n) && !wholeOnly)
+      ? null
+      : !Number.isFinite(n)
+        ? "Poné una cantidad, por ejemplo 12 o 1,5"
+        : n > MAX_QTY
+          ? "Es demasiado: revisá la cantidad"
+          : wholeOnly
+            ? "Se vende por unidad: poné un número entero, por ejemplo 2"
+            : mode === "real"
+              ? "El stock real no puede ser negativo"
+              : "La cantidad tiene que ser mayor que 0";
   const delta = mode === "real" ? n - (stock ?? 0) : mode === "in" ? n : -n;
+  const [busy, setBusy] = useState(false);
   const submit = async () => {
-    if (!me || !valid || stock === null) return;
-    await adjustStockLocal({
-      memberId: me.member.id,
-      productId,
-      ...(mode === "real" ? { realQty: n } : { qty: delta }),
-      reason,
-      note: note.trim() || null,
-      needsApproval: grant === "approval",
-      currentStock: stock,
-    });
-    toast({ text: grant === "approval" ? "Ajuste enviado: queda para aprobar" : "Stock ajustado" });
-    onClose();
+    if (!me || !valid || stock === null || busy) return;
+    const after = Math.round((stock + delta) * 1000) / 1000;
+    if (
+      after < 0 &&
+      !window.confirm(`El stock queda en ${formatQty(after, unit)} (negativo). ¿Ajustar igual?`)
+    )
+      return;
+    setBusy(true);
+    try {
+      await adjustStockLocal({
+        memberId: me.member.id,
+        productId,
+        ...(mode === "real" ? { realQty: n } : { qty: delta }),
+        reason,
+        note: note.trim() || null,
+        needsApproval: grant === "approval",
+        currentStock: stock,
+      });
+      toast({
+        text: grant === "approval" ? "Ajuste enviado: queda para aprobar" : "Stock ajustado",
+      });
+      onClose();
+    } catch (e) {
+      toast({ text: e instanceof Error ? e.message : "No se pudo ajustar.", tone: "error" });
+    } finally {
+      setBusy(false);
+    }
   };
   return (
     <Sheet
@@ -59,8 +95,8 @@ export function AdjustStockSheet({
       onClose={onClose}
       title={`Ajustar stock · ${name}`}
       footer={
-        <Button className="flex-1" onClick={() => void submit()} disabled={!valid}>
-          {grant === "approval" ? "Enviar para aprobar" : "Ajustar"}
+        <Button className="flex-1" onClick={() => submit()} disabled={!valid || busy}>
+          {grant === "approval" ? "Enviar para aprobar" : "Ajustar stock"}
         </Button>
       }
     >
@@ -85,7 +121,8 @@ export function AdjustStockSheet({
           inputMode="decimal"
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          placeholder={unit === "kg" ? "0,500" : "2"}
+          placeholder={unit === "kg" ? "Ej.: 0,500" : "Ej.: 2"}
+          error={invalidText}
           hint={
             valid && stock !== null
               ? `Queda en ${formatQty(Math.round((stock + delta) * 1000) / 1000, unit)}`
@@ -108,6 +145,7 @@ export function AdjustStockSheet({
           value={note}
           onChange={(e) => setNote(e.target.value)}
           placeholder="Opcional"
+          error={noteLong ? "Nota: como mucho 500 caracteres." : undefined}
         />
         {grant === "approval" && (
           <div className="rounded-lg bg-alerta-suave px-3 py-2 text-[13px] font-semibold text-alerta">
