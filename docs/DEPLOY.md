@@ -82,7 +82,7 @@ Mostrador corre en el mismo VPS que otros sitios, detrás del Caddy del sistema 
 - `/opt/mostrador`: `compose.yml` (proyecto `mostrador-prod`: postgres, api en `127.0.0.1:3100`, worker), `.env` (600) y `backups/`.
 - `/var/www/mostrador`: la web compilada. `/etc/caddy/mostrador.caddy`, importado desde el Caddyfile.
 - Copia diaria a las 04:30 (`backup.sh` por cron, guarda 30).
-- Deploy desde la PC: `bash infra/vps/deploy.sh` (commit limpio).
+- Deploy desde la PC: `bash infra/vps/deploy.sh` (commit limpio). Antes, mirá que el CI (pestaña Actions de GitHub: check y e2e) esté en verde para ese commit.
 
 ### Panel de soporte
 
