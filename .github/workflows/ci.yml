@@ -1,0 +1,61 @@
+# Lo mismo que se corre antes de cada deploy: check (Biome, typecheck y Vitest) y e2e (Playwright).
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  TZ: America/Argentina/Buenos_Aires
+  DATABASE_URL: postgres://mostrador:mostrador@localhost:5432/mostrador
+  TEST_DATABASE_URL: postgres://mostrador:mostrador@localhost:5432/mostrador_test
+
+jobs:
+  check:
+    name: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env: { POSTGRES_USER: mostrador, POSTGRES_PASSWORD: mostrador, POSTGRES_DB: mostrador }
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U mostrador" --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with: { bun-version: 1.4.3 }
+      - run: bun install --frozen-lockfile
+      - run: bun run check
+
+  e2e:
+    name: e2e
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env: { POSTGRES_USER: mostrador, POSTGRES_PASSWORD: mostrador, POSTGRES_DB: mostrador }
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U mostrador" --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with: { bun-version: 1.4.3 }
+      - run: bun install --frozen-lockfile
+      - run: bunx playwright install --with-deps chromium
+      - run: bun run e2e
+      # Si algo falla, las trazas quedan para bajar desde la página del run.
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trazas-e2e
+          path: test-results/
+          retention-days: 7

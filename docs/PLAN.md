@@ -175,3 +175,6 @@ Cinco usuarios nuevos recorrieron la app (docs/QA-USUARIOS.md). Las tareas agrup
 
 - [x] T68 · **Simplificar UI y UX.** Pedido del dueño el 27/10: menos cosas en pantalla y menos pasos. Por pantalla, sacar lo vacío, lo repetido y lo que el spec deja en "Más"; acortar los flujos de todos los días (abrir caja, vender, cobrar, recibir, pedir). §Navegación, §Módulo Vender (modo simple), §Módulo Inicio, §Sistema de diseño.
   Listo cuando: e2e de recepción con corte de red; tests de importar, proveedores y billetes; check y e2e en verde.
+
+- [x] T69 · **CI en GitHub Actions.** Pedido del dueño el 02/11: ver los pipelines en GitHub. Un workflow que corre `bun run check` y `bun run e2e` con Postgres 16 en cada push y PR, y guarda las trazas si un e2e falla. El deploy sigue siendo manual (`bash infra/vps/deploy.sh`).
+  Listo cuando: `.github/workflows/ci.yml` existe, el YAML es válido y check queda en verde.
